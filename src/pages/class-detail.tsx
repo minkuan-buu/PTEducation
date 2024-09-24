@@ -258,6 +258,58 @@ export default function ClassDetail() {
     },
   });
 
+  const formikCreateAttendance = useFormik({
+    initialValues: {
+      startDate: "",
+      endDate: "",
+      classId: id || "",
+    },
+    validationSchema: Yup.object({
+      startDate: Yup.date().required("Required"),
+      endDate: Yup.date().required("Required"),
+      classId: Yup.string().required("Required"),
+    }),
+    onSubmit: async (values) => {
+      setHandling(true);
+      var token = localStorage.getItem("token");
+      var body = {
+        startDate: values.startDate,
+        endDate: values.endDate,
+        classId: values.classId,
+        listIdStudent: [],
+      };
+      tableData.map((item) => {
+        var scoreReq = {
+          studentClassId: item.studentclassid,
+          score: item.score,
+        }
+        body.scoreReqList.push(scoreReq);
+      });
+      console.log(body);
+      try {
+        const { isSuccess, res } = await CREATESCORE(token, body);
+
+        if (!isSuccess) {
+          if (res.status === 401) {
+            Logout();
+          }
+          let result = await res.json();
+          alert(result.message);
+        } else {
+          CloseModal();
+          setloadForm(false);
+          setOnLoading(true);
+          let result = await res.json();
+          alert(result.message);
+        }
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setHandling(false);
+      }
+    },
+  });
+
   // Hàm xử lý sắp xếp
   const sortedClasses = [...classStudents].sort((a, b) => {
     if (sortConfig.key) {
@@ -602,7 +654,7 @@ export default function ClassDetail() {
                               <ModalBody>
                                 <p>Tạo điểm danh mới</p>
                                 <form onSubmit={formikCreate.handleSubmit}>
-                                  <Input name="testDateAt" label="Ngày điểm danh" type="date" value={formikCreate.values.testDateAt} onChange={formikCreate.handleChange} placeholder="Nhập ngày điểm danh"/>
+                                  <Input name="startDate" label="Ngày bắt đầu điểm danh" type="date" value={formikCreate.values.testDateAt} onChange={formikCreate.handleChange} placeholder="Nhập ngày điểm danh"/>
                                   {formikCreate.errors.testDateAt && formikCreate.touched.testDateAt && (
                                     <p style={{ color: "red" }}>{formikCreate.errors.testDateAt}</p>
                                   )}

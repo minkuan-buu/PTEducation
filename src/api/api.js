@@ -214,3 +214,15 @@ export async function CHANGEPASSWORD(token, body){
     })
     return { isSuccess : res.ok, res }
 }
+
+export async function CREATEATTENDANCE(token, body){
+    const res = await fetch(API_URL + `attendance/create`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
+        },
+        body: JSON.stringify(body)
+    })
+    return { isSuccess : res.ok, res }
+}
