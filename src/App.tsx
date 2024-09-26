@@ -18,6 +18,10 @@ function App() {
       <Route element={<ComingSoonPage />} path="/manage-students" />
       <Route element={<ComingSoonPage />} path="/user/:id" />
       <Route element={<ComingSoonPage />} path="/attendance" />
+      <Route
+        element={<ComingSoonPage />}
+        path="/class/:id/attendance/:attendanceId"
+      />
     </Routes>
   );
 }

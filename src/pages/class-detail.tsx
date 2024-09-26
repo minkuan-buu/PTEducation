@@ -8,7 +8,9 @@ import {
   GETTEMPLATEIMPORTSCORESTUDENT,
   GETLISTCLASSSELECT,
   CREATESCORE,
-  GETALLATTENDANCES
+  CREATEATTENDANCE,
+  GETALLATTENDANCES,
+  GETTEMPLATEIMPORTATTENDANCESTUDENT
 } from "../api/api";
 import { BreadcrumbItem, Breadcrumbs, Button, Card, CardBody, Chip, Image, Input, Link, Modal, ModalBody, ModalContent, ModalHeader, Select, SelectItem, Slider, Tab, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, Tabs, useDisclosure } from "@nextui-org/react";
 import { HeartFilledIcon } from "@/components/icons";
@@ -20,6 +22,7 @@ import { FaCalendarCheck } from "react-icons/fa6";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { Workbook } from 'exceljs';
+import moment from "moment";
 
 interface ClassDetail {
   id: string;
@@ -41,6 +44,11 @@ interface ClassDetail {
 
 export default function ClassDetail() {
   const {isOpen, onOpen, onOpenChange} = useDisclosure();
+  const {
+    isOpen: isOpenAttendance,
+    onOpen: onOpenAttendance,
+    onOpenChange: onOpenChangeAttendance,
+  } = useDisclosure();
   const [classDetail, setClassDetail] = useState<ClassDetail>();
   const [classListScore, setClassListScore] = useState([]);
   const [classListAttendance, setClassListAttendance] = useState([]);
@@ -51,6 +59,7 @@ export default function ClassDetail() {
   const [sortConfigAttendance, setSortConfigAttendance] = useState({ key: null, direction: 'ascending' });
   const [onLoading, setOnLoading] = useState<Boolean>(true);
   const [tableData, setTableData] = useState([]);
+  const [tableDataAttendance, setTableDataAttendance] = useState([]);
   const [loadForm, setloadForm] = useState(false);
   const [handling, setHandling] = useState<boolean>(false);
   const { id } = useParams();
@@ -170,27 +179,34 @@ export default function ClassDetail() {
     return format(date, 'dd/MM');
   };
 
-  function handleDownloadTemplate(){
+  function handleDownloadTemplate(key: string){
     var token = localStorage.getItem("token");
     const fetchData = async () => {
       try {
-        const { isSuccess, res } = await GETTEMPLATEIMPORTSCORESTUDENT(token, id);
+        var callback = null;
 
-        if (!isSuccess) {
-          if (res.status === 401) {
+        if (key == "diem") {
+          callback = await GETTEMPLATEIMPORTSCORESTUDENT(token, id);
+        } else if (key == "diemdanh") {
+          callback = await GETTEMPLATEIMPORTATTENDANCESTUDENT(token);
+        }
+        if (callback == null) return;
+
+        if (!callback.isSuccess) {
+          if (callback.res.status === 401) {
             Logout();
           }
-          let result = await res.json();
+          let result = await callback.res.json();
 
           alert(result.message);
         } else {
-          let result = await res.blob();
+          let result = await callback.res.blob();
           // Bước 2: Tạo URL cho Blob
           const blobUrl = URL.createObjectURL(result);
           // Bước 3: Tạo link và kích hoạt tải xuống
           const link = document.createElement('a');
           link.href = blobUrl;
-          link.download = 'ImportScoreStudent'; // Đặt tên file cho file tải xuống
+          link.download = key == "diem" ? "ImportScoreStudent" : key == "diemdanh" ? "ImportAttendanceStudent" : "Download"; // Đặt tên file cho file tải xuống
           link.click();
 
           // Giải phóng URL tạm thời
@@ -207,6 +223,12 @@ export default function ClassDetail() {
     onOpenChange();
     formikCreate.resetForm();
     setTableData([]);
+  }
+
+  function CloseModalAttendance(){
+    onOpenChangeAttendance();
+    formikCreateAttendance.resetForm();
+    setTableDataAttendance([]);
   }
 
   const formikCreate = useFormik({
@@ -265,8 +287,20 @@ export default function ClassDetail() {
       classId: id || "",
     },
     validationSchema: Yup.object({
-      startDate: Yup.date().required("Required"),
-      endDate: Yup.date().required("Required"),
+      startDate: Yup.date().required("Required").test(
+        "is-monday",
+        "Ngày bắt đầu điểm danh phải là thứ Hai",
+        (value) => moment(value).day() === 1 // Kiểm tra xem startDate có phải là thứ 2
+      ),
+      endDate: Yup.date().required("Required").test(
+        "is-six-days-later",
+        "Ngày kết thúc phải cách ngày bắt đầu 6 ngày",
+        function (endDate) {
+          const { startDate } = this.parent; // Lấy giá trị của startDate từ form
+          if (!startDate || !endDate) return false; // Nếu không có startDate hoặc endDate thì không hợp lệ
+          return moment(endDate).diff(moment(startDate), "days") === 6; // Kiểm tra khoảng cách là 6 ngày
+        }
+      ),
       classId: Yup.string().required("Required"),
     }),
     onSubmit: async (values) => {
@@ -278,16 +312,11 @@ export default function ClassDetail() {
         classId: values.classId,
         listIdStudent: [],
       };
-      tableData.map((item) => {
-        var scoreReq = {
-          studentClassId: item.studentclassid,
-          score: item.score,
-        }
-        body.scoreReqList.push(scoreReq);
+      tableDataAttendance.map((item) => {
+        body.listIdStudent.push(`${item.id}`);
       });
-      console.log(body);
       try {
-        const { isSuccess, res } = await CREATESCORE(token, body);
+        const { isSuccess, res } = await CREATEATTENDANCE(token, body);
 
         if (!isSuccess) {
           if (res.status === 401) {
@@ -296,7 +325,7 @@ export default function ClassDetail() {
           let result = await res.json();
           alert(result.message);
         } else {
-          CloseModal();
+          CloseModalAttendance();
           setloadForm(false);
           setOnLoading(true);
           let result = await res.json();
@@ -424,7 +453,62 @@ export default function ClassDetail() {
     }
   };
   
+  const handleFileUploadAttendance = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    setTableData([]);
+    if (file) {
+      const reader = new FileReader();
   
+      reader.onload = async (e: ProgressEvent<FileReader>) => {
+        try {
+          const arrayBuffer = e.target?.result as ArrayBuffer;
+
+          if (!arrayBuffer) {
+            console.error("arrayBuffer không tồn tại.");
+            return;
+          }
+  
+          const workbook = new Workbook();
+          
+          await workbook.xlsx.load(arrayBuffer);
+          console.log(workbook);
+  
+          // Kiểm tra workbook
+          if (!workbook || !workbook.worksheets) {
+            console.error("Workbook không tải đúng hoặc không có worksheets.");
+            return;
+          }
+  
+          // Kiểm tra worksheet
+          const worksheet = workbook.getWorksheet("ImportAttendance");
+          if (!worksheet) {
+            console.error('Worksheet "ScoreStudents" không tồn tại.');
+            return;
+          }
+  
+          const data: any[] = [];
+          let headers: string[] = [];
+  
+          worksheet.eachRow({ includeEmpty: true }, (row, rowNumber) => {
+            if (rowNumber === 1) {
+              headers = row.values.slice(1).map(header => header?.toString().toLowerCase()) as string[];
+            } else {
+              const rowData: any = {};
+              row.values.slice(1).forEach((cellValue, index) => {
+                rowData[headers[index]] = cellValue;
+              });
+              data.push(rowData);
+            }
+          });
+          console.log(data);
+          setTableDataAttendance(data);
+        } catch (error) {
+          console.error('Lỗi khi tải workbook hoặc worksheet:', error);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+  };
 
   const handleRowClick = (scoreId) => {
     window.location.href = `/class/${id}/score/${scoreId}`;
@@ -571,7 +655,7 @@ export default function ClassDetail() {
                                     ))}
                                   </Select>
                                   <div className="flex justify-between gap-1 min-w-full mt-4">
-                                    <Button color="success" variant="bordered" style={{width: "420px"}} onPress={() => handleDownloadTemplate()}>Tải mẫu nhập dữ liệu</Button>
+                                    <Button color="success" variant="bordered" style={{width: "420px"}} onPress={() => handleDownloadTemplate("diem")}>Tải mẫu nhập dữ liệu</Button>
                                     <Input color="primary" variant="bordered" type="file" accept=".xlsx" style={{width: "420px"}} onChange={handleFileUpload}>Upload template</Input>
                                   </div>
                                   <Table selectionMode="multiple" selectionBehavior="replace" aria-label="Example table with dynamic content" className="mt-7" fullWidth>
@@ -643,8 +727,8 @@ export default function ClassDetail() {
                       <Modal
                         isDismissable={false}
                         isKeyboardDismissDisabled={true}
-                        isOpen={isOpen}
-                        onOpenChange={CloseModal}
+                        isOpen={isOpenAttendance}
+                        onOpenChange={CloseModalAttendance}
                         size="4xl"
                       >
                         <ModalContent>
@@ -653,10 +737,14 @@ export default function ClassDetail() {
                               <ModalHeader>Tạo điểm danh</ModalHeader>
                               <ModalBody>
                                 <p>Tạo điểm danh mới</p>
-                                <form onSubmit={formikCreate.handleSubmit}>
-                                  <Input name="startDate" label="Ngày bắt đầu điểm danh" type="date" value={formikCreate.values.testDateAt} onChange={formikCreate.handleChange} placeholder="Nhập ngày điểm danh"/>
-                                  {formikCreate.errors.testDateAt && formikCreate.touched.testDateAt && (
-                                    <p style={{ color: "red" }}>{formikCreate.errors.testDateAt}</p>
+                                <form onSubmit={formikCreateAttendance.handleSubmit}>
+                                  <Input name="startDate" label="Ngày bắt đầu điểm danh" type="date" value={formikCreateAttendance.values.startDate} onChange={formikCreateAttendance.handleChange} placeholder="Nhập ngày bắt đầu"/>
+                                  {formikCreateAttendance.errors.startDate && formikCreateAttendance.touched.startDate && (
+                                    <p style={{ color: "red" }}>{formikCreateAttendance.errors.startDate}</p>
+                                  )}
+                                  <Input name="endDate" className="mt-3" label="Ngày kết thúc điểm danh" type="date" value={formikCreateAttendance.values.endDate} onChange={formikCreateAttendance.handleChange} placeholder="Nhập ngày kết thúc"/>
+                                  {formikCreateAttendance.errors.endDate && formikCreateAttendance.touched.endDate && (
+                                    <p style={{ color: "red" }}>{formikCreateAttendance.errors.endDate}</p>
                                   )}
                                   <Select
                                     items={classListSelect}
@@ -676,22 +764,18 @@ export default function ClassDetail() {
                                     ))}
                                   </Select>
                                   <div className="flex justify-between gap-1 min-w-full mt-4">
-                                    <Button color="success" variant="bordered" style={{width: "420px"}} onPress={() => handleDownloadTemplate()}>Tải mẫu nhập dữ liệu</Button>
-                                    <Input color="primary" variant="bordered" type="file" accept=".xlsx" style={{width: "420px"}} onChange={handleFileUpload}>Upload template</Input>
+                                    <Button color="success" variant="bordered" style={{width: "420px"}} onPress={() => handleDownloadTemplate("diemdanh")}>Tải mẫu nhập dữ liệu</Button>
+                                    <Input color="primary" variant="bordered" type="file" accept=".xlsx" style={{width: "420px"}} onChange={handleFileUploadAttendance}>Upload template</Input>
                                   </div>
                                   <Table selectionMode="multiple" selectionBehavior="replace" aria-label="Example table with dynamic content" className="mt-7" fullWidth>
                                     <TableHeader>
                                       <TableColumn key="1" width="70px">Id</TableColumn>
-                                      <TableColumn key="2" width="100px">Tên</TableColumn>
-                                      <TableColumn key="3" width="300px">Điểm</TableColumn>
                                       <TableColumn key="4" width="200px">Hành động</TableColumn>
                                     </TableHeader>
-                                    <TableBody items={tableData} emptyContent={"Chưa có dữ liệu"}>
-                                      {tableData.map((row, index) => (
+                                    <TableBody items={tableDataAttendance} emptyContent={"Chưa có dữ liệu"}>
+                                      {tableDataAttendance.map((row, index) => (
                                         <TableRow key={row.id}>
                                           <TableCell>{row.id}</TableCell>
-                                          <TableCell>{row.name}</TableCell>
-                                          <TableCell>{row.score}</TableCell>
                                           <TableCell></TableCell>
                                         </TableRow>
                                       ))}
@@ -706,8 +790,8 @@ export default function ClassDetail() {
                           )}
                         </ModalContent>
                       </Modal>
-                      <Button className="text-md" color="success" variant="bordered" onPress={onOpen}>
-                        Tạo điểm mới
+                      <Button className="text-md" color="success" variant="bordered" onPress={onOpenAttendance}>
+                        Tạo điểm danh mới
                       </Button>
                     </div>
                     <Table selectionMode="multiple" selectionBehavior="replace" aria-label="Example table with dynamic content" className="mt-7" fullWidth>

@@ -114,6 +114,18 @@ export async function GETTEMPLATEIMPORTSCORESTUDENT(token, classId){
     return { isSuccess : res.ok, res }
 }
 
+export async function GETTEMPLATEIMPORTATTENDANCESTUDENT(token){
+    const res = await fetch(API_URL + `template/import-attendance`, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
+        },
+    })
+    return { isSuccess : res.ok, res }
+}
+
+
 export async function GETLISTCLASSSELECT(token){
     const res = await fetch(API_URL + "class/select/all", {
         method: "GET",
@@ -149,6 +161,17 @@ export async function GETALLATTENDANCES(token, classId){
 
 export async function GETSCORE(token, scoreId){
     const res = await fetch(API_URL + `score/get?Id=${scoreId}`, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
+        },
+    })
+    return { isSuccess : res.ok, res }
+}
+
+export async function GETATTENDANCE(token, attendanceId){
+    const res = await fetch(API_URL + `score/get?Id=${attendanceId}`, {
         method: "GET",
         headers: {
             "Content-Type": "application/json",
