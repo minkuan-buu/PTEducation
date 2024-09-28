@@ -23,6 +23,7 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import { Workbook } from 'exceljs';
 import moment from "moment";
+import { useLocation } from "react-router-dom";
 
 interface ClassDetail {
   id: string;
@@ -255,7 +256,6 @@ export default function ClassDetail() {
         }
         body.scoreReqList.push(scoreReq);
       });
-      console.log(body);
       try {
         const { isSuccess, res } = await CREATESCORE(token, body);
 
@@ -443,7 +443,6 @@ export default function ClassDetail() {
               data.push(rowData);
             }
           });
-          console.log(data);
           setTableData(data);
         } catch (error) {
           console.error('Lỗi khi tải workbook hoặc worksheet:', error);
@@ -471,7 +470,6 @@ export default function ClassDetail() {
           const workbook = new Workbook();
           
           await workbook.xlsx.load(arrayBuffer);
-          console.log(workbook);
   
           // Kiểm tra workbook
           if (!workbook || !workbook.worksheets) {
@@ -500,7 +498,6 @@ export default function ClassDetail() {
               data.push(rowData);
             }
           });
-          console.log(data);
           setTableDataAttendance(data);
         } catch (error) {
           console.error('Lỗi khi tải workbook hoặc worksheet:', error);
@@ -530,7 +527,9 @@ export default function ClassDetail() {
               </Breadcrumbs>
               <h1 className={title()}>Lớp {classDetail.name}</h1>
               <div className="mt-10">
-                <Tabs aria-label="Options" color="primary" variant="bordered">
+                <Tabs aria-label="Options" color="primary" selectedKey={location.hash.split("#")[1]} onSelectionChange={(e: React.Key) =>{
+                  location.hash = e.toString();
+                }} variant="bordered">
                   <Tab
                     key="info"
                     title={

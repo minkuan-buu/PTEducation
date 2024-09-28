@@ -171,7 +171,7 @@ export async function GETSCORE(token, scoreId){
 }
 
 export async function GETATTENDANCE(token, attendanceId){
-    const res = await fetch(API_URL + `score/get?Id=${attendanceId}`, {
+    const res = await fetch(API_URL + `attendance/get?Id=${attendanceId}`, {
         method: "GET",
         headers: {
             "Content-Type": "application/json",
@@ -193,6 +193,18 @@ export async function UPDATESCOREDETAIL(token, body){
     return { isSuccess : res.ok, res }
 }
 
+export async function UPDATEATTENDANCEDETAIL(token, body){
+    const res = await fetch(API_URL + `attendance-detail/update`, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
+        },
+        body: JSON.stringify(body)
+    })
+    return { isSuccess : res.ok, res }
+}
+
 export async function GETMONTHTEST(token){
     const res = await fetch(API_URL + `score-detail/month`, {
         method: "GET",
@@ -204,8 +216,30 @@ export async function GETMONTHTEST(token){
     return { isSuccess : res.ok, res }
 }
 
+export async function GETMONTHATTENDANCE(token){
+    const res = await fetch(API_URL + `attendance-detail/month`, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
+        },
+    })
+    return { isSuccess : res.ok, res }
+}
+
 export async function GETSCORESTUDENT(token, query){
     const res = await fetch(API_URL + `score-detail?Month=${query.month}&Year=${query.year}`, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
+        },
+    })
+    return { isSuccess : res.ok, res }
+}
+
+export async function GETATTENDANCESTUDENT(token, query){
+    const res = await fetch(API_URL + `attendance-detail?Month=${query.month}&Year=${query.year}`, {
         method: "GET",
         headers: {
             "Content-Type": "application/json",

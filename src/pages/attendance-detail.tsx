@@ -2,7 +2,7 @@ import { title } from "@/components/primitives";
 import DefaultLayout from "@/layouts/default";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { GETATTENDANCE, UPDATESCOREDETAIL } from "../api/api";
+import { GETATTENDANCE, UPDATEATTENDANCEDETAIL } from "../api/api";
 import { format, set } from "date-fns";
 import { BreadcrumbItem, Breadcrumbs, Button, Card, CardBody, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, Link, RadioGroup, Radio } from "@nextui-org/react";
 import { Input } from "@nextui-org/react";
@@ -39,7 +39,7 @@ export default function AttendanceDetail() {
       const { isSuccess, res } = await GETATTENDANCE(token, attendanceId);
 
       if (!isSuccess || res.status == 401) {
-        window.location.href = "/";
+        //window.location.href = "/";
       } else {
         var result = await res.json();
 
@@ -47,7 +47,6 @@ export default function AttendanceDetail() {
         setAttendanceDetail(result.data);
         document.title = `Lớp ${result.data.className} - Điểm danh "Tuần ${formatAttendanceDate(result.data.startDate)} - ${formatScoreDate(result.data.endDate)}"`;
         setListAttendanceDetail(result.data.attendanceDetails);
-        console.log(result.data);
       }
     }
 
@@ -64,26 +63,26 @@ export default function AttendanceDetail() {
 
   function handleSaveEdit() {
     setHandling(true);
-    const updateScoreDetail = async () => {
+    const updateAttendanceDetail = async () => {
       try {
         var token = localStorage.getItem("token");
         var body = {
           "id": attendanceId,
-          "scoreReqList": []
+          "attendanceReqList": []
         }
 
         listAttendanceDetail.forEach((item) => {
-          var scoreReq = {
+          var addtendanceReq = {
             "studentClassId": item.studentClassId,
-            "score": item.score
+            "attendanceStatus": item.attendanceStatus
           }
 
-          body.scoreReqList.push(scoreReq);
+          body.attendanceReqList.push(addtendanceReq);
         })
-        const { isSuccess, res } = await UPDATESCOREDETAIL(token, body);
+        const { isSuccess, res } = await UPDATEATTENDANCEDETAIL(token, body);
   
         if (!isSuccess || res.status == 401) {
-          window.location.href = "/";
+          //window.location.href = "/";
         } else {
           var result = await res.json();
           alert(result.message);
@@ -96,8 +95,7 @@ export default function AttendanceDetail() {
       }
     }
 
-    updateScoreDetail();
-    console.log(listScoreDetail);
+    updateAttendanceDetail();
   }
 
   return (
@@ -108,7 +106,7 @@ export default function AttendanceDetail() {
             <>
               <Breadcrumbs className="mb-5">
                 <BreadcrumbItem href="/manage-classes">Tất cả lớp</BreadcrumbItem>
-                <BreadcrumbItem href={`/class/${id}`}>{scoreDetail.className}</BreadcrumbItem>
+                <BreadcrumbItem href={`/class/${id}#attendance`}>{attendanceDetail.className}</BreadcrumbItem>
                 <BreadcrumbItem href={`/class/${id}/attendance/${attendanceId}`}>Điểm danh "{`Tuần ${formatAttendanceDate(attendanceDetail.startDate)} - ${formatScoreDate(attendanceDetail.endDate)}`}"</BreadcrumbItem>
               </Breadcrumbs>
               <h1 className={title()}>Lớp {attendanceDetail.className} - Điểm danh "{`Tuần ${formatAttendanceDate(attendanceDetail.startDate)} - ${formatScoreDate(attendanceDetail.endDate)}`}"</h1>
@@ -145,7 +143,7 @@ export default function AttendanceDetail() {
               <div className="flex justify-between items-center">
                 <strong><h2 className={"mt-10 text-xl mb-3"}>Thông tin điểm danh</h2></strong>
                 {isEditMode ? (
-                  <Button className="text-md" color="success" variant="bordered" onPress={() => handleSaveEdit()}>
+                  <Button className="text-md" color="success" variant="bordered" onPress={() => handleSaveEdit()} isLoading={handling}>
                     Lưu
                   </Button>
                 ) : (
@@ -177,11 +175,11 @@ export default function AttendanceDetail() {
                               e: React.ChangeEvent<HTMLInputElement>,
                             ) => {
                               const newAttendance = [...listAttendanceDetail];
-
                               newAttendance[index].attendanceStatus =
                                 e.target.value;
-                              setAttendanceDetail(newAttendance);
+                              setListAttendanceDetail(newAttendance);
                             }}
+                            orientation="horizontal"
                           >
                             <Radio value="Vắng_mặt">Vắng mặt</Radio>
                             <Radio value="Có_mặt">Có mặt</Radio>
