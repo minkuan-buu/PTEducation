@@ -582,7 +582,10 @@ export default function ClassDetail() {
                         </div>
                       </CardBody>
                     </Card>
-                    <strong><h2 className={"mt-10 text-xl mb-3"}>Thông tin học viên</h2></strong>
+                    <div className="flex justify-between">
+                      <strong><h2 className={"mt-10 text-xl mb-3"}>Thông tin học viên</h2></strong>
+                      <Button color="success">Thêm học sinh</Button>
+                    </div>
                     <Table selectionMode="multiple" selectionBehavior="replace" aria-label="Example table with dynamic content" className="mt-7" fullWidth>
                       <TableHeader>
                         <TableColumn key="1" width="70px">No.</TableColumn>
@@ -657,7 +660,7 @@ export default function ClassDetail() {
                                     <Button color="success" variant="bordered" style={{width: "420px"}} onPress={() => handleDownloadTemplate("diem")}>Tải mẫu nhập dữ liệu</Button>
                                     <Input color="primary" variant="bordered" type="file" accept=".xlsx" style={{width: "420px"}} onChange={handleFileUpload}>Upload template</Input>
                                   </div>
-                                  <Table selectionMode="multiple" selectionBehavior="replace" aria-label="Example table with dynamic content" className="mt-7" fullWidth>
+                                  <Table selectionMode="multiple" selectionBehavior="replace" aria-label="Example table with dynamic content" className="mt-7 max-h-[300px]" fullWidth>
                                     <TableHeader>
                                       <TableColumn key="1" width="70px">Id</TableColumn>
                                       <TableColumn key="2" width="100px">Tên</TableColumn>
@@ -766,7 +769,7 @@ export default function ClassDetail() {
                                     <Button color="success" variant="bordered" style={{width: "420px"}} onPress={() => handleDownloadTemplate("diemdanh")}>Tải mẫu nhập dữ liệu</Button>
                                     <Input color="primary" variant="bordered" type="file" accept=".xlsx" style={{width: "420px"}} onChange={handleFileUploadAttendance}>Upload template</Input>
                                   </div>
-                                  <Table selectionMode="multiple" selectionBehavior="replace" aria-label="Example table with dynamic content" className="mt-7" fullWidth>
+                                  <Table selectionMode="multiple" selectionBehavior="replace" aria-label="Example table with dynamic content" className="mt-7 max-h-[300px]" fullWidth>
                                     <TableHeader>
                                       <TableColumn key="1" width="70px">Id</TableColumn>
                                       <TableColumn key="4" width="200px">Hành động</TableColumn>

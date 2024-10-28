@@ -376,7 +376,7 @@ export default function ManageClassesPage() {
                           <Button color="success" variant="bordered" style={{width: "420px"}} onPress={() => handleDownloadTemplate()}>Tải mẫu nhập dữ liệu</Button>
                           <Input color="primary" variant="bordered" type="file" accept=".xlsx" style={{width: "420px"}} onChange={handleFileUpload}>Upload template</Input>
                         </div>
-                        <Table selectionMode="multiple" selectionBehavior="replace" aria-label="Example table with dynamic content" className="mt-7" fullWidth>
+                        <Table selectionMode="multiple" selectionBehavior="replace" aria-label="Example table with dynamic content" className="mt-7 max-h-[300px]" fullWidth>
                           <TableHeader>
                             <TableColumn key="1" width="70px">Id</TableColumn>
                             <TableColumn key="2" width="300px" allowsSorting onClick={() => requestSort('name')}>

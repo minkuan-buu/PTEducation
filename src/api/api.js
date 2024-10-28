@@ -283,3 +283,37 @@ export async function CREATEATTENDANCE(token, body){
     })
     return { isSuccess : res.ok, res }
 }
+
+export async function SENDOTP(body){
+    const res = await fetch(API_URL + `otp/send`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body)
+    })
+    return { isSuccess : res.ok, res }
+}
+
+export async function VERIFYOTP(body){
+    const res = await fetch(API_URL + `otp/verify`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body)
+    })
+    return { isSuccess : res.ok, res }
+}
+
+export async function RESETPASSWORD(token, body){
+    const res = await fetch(API_URL + `authentication/reset-password`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
+        },
+        body: JSON.stringify(body)
+    })
+    return { isSuccess : res.ok, res }
+}
