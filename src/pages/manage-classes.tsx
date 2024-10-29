@@ -18,7 +18,7 @@ import { DateTime } from 'luxon';
 import { format, set } from "date-fns";
 import { MdOutlineSettingsBackupRestore } from "react-icons/md";
 import { Workbook } from 'exceljs';
-import Logout from "../pages/logout";
+import { Logout } from "../pages/logout";
 
 export default function ManageClassesPage() {
   const {isOpen, onOpen, onOpenChange} = useDisclosure();

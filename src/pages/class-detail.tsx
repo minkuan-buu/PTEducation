@@ -15,7 +15,7 @@ import {
 import { BreadcrumbItem, Breadcrumbs, Button, Card, CardBody, Chip, Image, Input, Link, Modal, ModalBody, ModalContent, ModalHeader, Select, SelectItem, Slider, Tab, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, Tabs, useDisclosure } from "@nextui-org/react";
 import { HeartFilledIcon } from "@/components/icons";
 import { format, set } from "date-fns";
-import Logout from "./logout";
+import { Logout } from "./logout";
 import { IoIosInformationCircle } from "react-icons/io";
 import { GrScorecard } from "react-icons/gr";
 import { FaCalendarCheck } from "react-icons/fa6";
@@ -582,9 +582,9 @@ export default function ClassDetail() {
                         </div>
                       </CardBody>
                     </Card>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between items-center">
                       <strong><h2 className={"mt-10 text-xl mb-3"}>Thông tin học viên</h2></strong>
-                      <Button color="success">Thêm học sinh</Button>
+                      <Button className="text-white" variant="bordered" color="success">Thêm học sinh</Button>
                     </div>
                     <Table selectionMode="multiple" selectionBehavior="replace" aria-label="Example table with dynamic content" className="mt-7" fullWidth>
                       <TableHeader>

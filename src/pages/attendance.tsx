@@ -9,7 +9,7 @@ import { GithubIcon } from "@/components/icons";
 import { useEffect, useRef, useState } from "react";
 import DefaultLayout from "@/layouts/default";
 import { CHECKSERVER, GETMONTHATTENDANCE, GETATTENDANCESTUDENT } from "../api/api";
-import Logout from "./logout";
+import { Logout } from "./logout";
 import { Card, CardBody, Chip, Select, SelectItem, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@nextui-org/react";
 import { format, set } from "date-fns";
 

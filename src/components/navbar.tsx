@@ -37,7 +37,8 @@ import {
   VERIFYOTP,
   RESETPASSWORD
 } from "../api/api";
-import Logout from "@/pages/logout";
+import { Logout, LogoutResetPassword } from "@/pages/logout";
+import { set } from "date-fns";
 
 export const Navbar = () => {
   const {isOpen, onOpen, onOpenChange} = useDisclosure();
@@ -46,6 +47,7 @@ export const Navbar = () => {
   const [isResetingPassword, setIsResetingPassword] = useState(false);
   const [isOTPTyping, setIsOTPTyping] = useState(false);
   const [isTypingPassword, setTypingPassword] = useState(false);
+  const [OTPCreateAt, setOTPCreateAt] = useState<Date>(null);
 
   const handleResize = () => {
     setIsMobile(window.innerWidth <= 640);
@@ -110,6 +112,8 @@ export const Navbar = () => {
           let result = await res.json();
           alert("Đã gửi mã OTP đến email của bạn");
           localStorage.setItem("email_reset", values.email);
+          var now = new Date();
+          setOTPCreateAt(now);
           setIsOTPTyping(true);
         }
       } catch (error) {
@@ -126,7 +130,7 @@ export const Navbar = () => {
       otpCode: "",
     },
     validationSchema: Yup.object({
-      otpCode: Yup.number().min(6, "Must be at least 6 numbers").required("Required"),
+      otpCode: Yup.string().length(6, "OTP code must be exactly 6 digits").required("Required"),
     }),
     onSubmit: async (values) => {
       values.email = localStorage.getItem("email_reset");
@@ -134,7 +138,7 @@ export const Navbar = () => {
       setOnLoading(true);
       try {
         const { isSuccess, res } = await VERIFYOTP(values);
-  
+
         if (!isSuccess) {
           let result = await res.json();
           alert(result.message);
@@ -169,6 +173,10 @@ export const Navbar = () => {
         const { isSuccess, res } = await RESETPASSWORD(tempToken, values);
   
         if (!isSuccess) {
+          if(res.status == 401){
+            LogoutResetPassword();
+            return;
+          }
           let result = await res.json();
           alert(result.message);
         } else {
@@ -212,11 +220,73 @@ export const Navbar = () => {
     />
   );
 
+  const [minutesResend, setMinutesResend] = useState(0);
+  const [secondsResend, setSecondsResend] = useState(0);
+  const [canResend, setCanResend] = useState(false);
+  const [onSendingOTP, setOnSendingOTP] = useState(false);
+
+  async function resendOTP(){
+    setOnSendingOTP(true);
+    try {
+      const { isSuccess, res } = await SENDOTP(localStorage.getItem("email_reset"));
+
+      if (!isSuccess) {
+        let result = await res.json();
+        alert(result.message);
+      } else {
+        let result = await res.json();
+        alert("Đã gửi mã OTP đến email của bạn");
+        var now = new Date();
+        setOTPCreateAt(now);
+        setCanResend(false);
+      }
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setOnSendingOTP(false);
+    }
+  }
+
+  useEffect(() => {
+    if(!isOTPTyping) return;
+    const createdTime = new Date(OTPCreateAt);
+    const canResend = createdTime.setMinutes(createdTime.getMinutes() + 2);
+    const firstNow = new Date();
+    let time = canResend - firstNow.getTime();
+    setMinutesResend(Math.floor((time % (1000 * 60 * 60)) / (1000 * 60)));
+    setSecondsResend(Math.floor((time % (1000 * 60)) / 1000));
+    const interval = setInterval(() => {
+        const now = new Date();
+        let time = canResend - now.getTime();
+        setMinutesResend(Math.floor((time % (1000 * 60 * 60)) / (1000 * 60)));
+        setSecondsResend(Math.floor((time % (1000 * 60)) / 1000));
+        if(time < 0){
+            setCanResend(true);
+            clearInterval(interval);
+            setMinutesResend(0);
+            setSecondsResend(0);
+        }
+    }, 1000);
+  }, [isOTPTyping, OTPCreateAt]);
+
   function CloseModal(){
     onOpenChange();
     formik.resetForm();
     formikEnterMailReset.resetForm();
     formikVerifyOTPReset.resetForm();
+    formikPasswordReset.resetForm();
+    setIsOTPTyping(false);
+    setTypingPassword(false);
+    setIsResetingPassword(false);
+  }
+
+  function handleCancel(){
+    localStorage.removeItem("temp_token");
+    localStorage.removeItem("email_reset");
+    formikEnterMailReset.resetForm();
+    formikVerifyOTPReset.resetForm();
+    formikPasswordReset.resetForm();
+    setCanResend(false);
     setIsOTPTyping(false);
     setTypingPassword(false);
     setIsResetingPassword(false);
@@ -317,10 +387,11 @@ export const Navbar = () => {
                             {formikVerifyOTPReset.errors.otpCode && formikVerifyOTPReset.touched.otpCode && (
                               <p style={{ color: "red" }}>{formikVerifyOTPReset.errors.otpCode}</p>
                             )}
+                            <p className="mt-2">Bạn chưa nhận được OTP? <Button className={`${canResend ? "cursor-pointer" : "cursor-not-allowed"} ml-2`} isLoading={onSendingOTP} isDisabled={!canResend || onSendingOTP} onClick={() => resendOTP()}>Gửi lại {canResend ? null : `sau ${minutesResend}:${secondsResend < 10 ? "0" : ""}${secondsResend}`}</Button></p>
                             <Button fullWidth id="send-code-button" color="primary" type="submit" isLoading={onLoading} style={{ marginTop: "2vh", marginBottom:"2vh"}}>
                               Tiếp tục
                             </Button>
-                            <Button onClick={() => setIsResetingPassword(!isResetingPassword)}>Quay lại đăng nhập</Button>
+                            <Button onClick={() => handleCancel()}>Quay lại đăng nhập</Button>
                           </form>
                         </>
                       ) : (
@@ -340,7 +411,7 @@ export const Navbar = () => {
                                 <Button fullWidth id="send-code-button" color="primary" type="submit" isLoading={onLoading} style={{ marginTop: "2vh", marginBottom:"2vh"}}>
                                   Tiếp tục
                                 </Button>
-                                <Button onClick={() => setIsResetingPassword(!isResetingPassword)}>Quay lại đăng nhập</Button>
+                                <Button onClick={() => handleCancel()}>Quay lại đăng nhập</Button>
                               </form>
                             </>
                           ) : (
@@ -354,7 +425,7 @@ export const Navbar = () => {
                                 <Button fullWidth id="send-code-button" color="primary" type="submit" isLoading={onLoading} style={{ marginTop: "2vh", marginBottom:"2vh"}}>
                                   Tiếp tục
                                 </Button>
-                                <Button onClick={() => setIsResetingPassword(!isResetingPassword)}>Quay lại đăng nhập</Button>
+                                <Button onClick={() => handleCancel()}>Quay lại đăng nhập</Button>
                               </form>
                             </>
                           )} 
