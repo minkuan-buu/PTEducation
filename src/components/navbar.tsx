@@ -28,7 +28,7 @@ import {
   DropdownIcon,
   LogoutIcon,
 } from "@/components/icons";
-import { useDisclosure, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Dropdown, DropdownTrigger, DropdownMenu, DropdownSection, DropdownItem  } from "@nextui-org/react";
+import { useDisclosure, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Dropdown, DropdownTrigger, DropdownMenu, DropdownSection, DropdownItem } from "@nextui-org/react";
 import { useEffect, useRef, useState } from "react";
 import { Logo } from "@/components/icons";
 import {
@@ -37,7 +37,7 @@ import {
 import Logout from "@/pages/logout";
 
 export const Navbar = () => {
-  const {isOpen, onOpen, onOpenChange} = useDisclosure();
+  const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [onLoading, setOnLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -64,13 +64,21 @@ export const Navbar = () => {
       setOnLoading(true);
       try {
         const { isSuccess, res } = await LOGIN(values);
-  
+
         if (!isSuccess) {
           let result = await res.json();
           alert(result.message);
         } else {
           let result = await res.json();
 
+          localStorage.setItem(
+            "isShowChangePassword",
+            result.data.isNeedChangePassword ?? false.toString(),
+          );
+          localStorage.setItem(
+            "isNeedToChangePassword",
+            result.data.isNeedChangePassword ?? false.toString(),
+          );
           localStorage.setItem("token", result.data.token);
           localStorage.setItem("role", result.data.role);
           localStorage.setItem("name", result.data.name);
@@ -106,7 +114,7 @@ export const Navbar = () => {
     />
   );
 
-  function CloseModal(){
+  function CloseModal() {
     onOpenChange();
     formik.resetForm();
   }
@@ -126,7 +134,7 @@ export const Navbar = () => {
         </NavbarBrand>
         <div className="hidden lg:flex gap-4 justify-start ml-2">
           {localStorage.getItem("role") == "Admin" ||
-          localStorage.getItem("role") == "Manager" ? (
+            localStorage.getItem("role") == "Manager" ? (
             <>
               {siteConfig.navItemsAdmin.map((item) => (
                 <NavbarItem key={item.href}>
@@ -161,7 +169,7 @@ export const Navbar = () => {
               ))}
             </>
           )}
-          
+
         </div>
       </NavbarContent>
 
@@ -180,15 +188,15 @@ export const Navbar = () => {
                 <ModalBody>
                   <p>Đăng nhập để sử dụng các tính năng của PT Education</p>
                   <form onSubmit={formik.handleSubmit}>
-                    <Input name="username" label="Tên đăng nhập" value={formik.values.username} onChange={formik.handleChange} placeholder="Id hoặc email"/>
+                    <Input name="username" label="Tên đăng nhập" value={formik.values.username} onChange={formik.handleChange} placeholder="Id hoặc email" />
                     {formik.errors.username && formik.touched.username && (
                       <p style={{ color: "red" }}>{formik.errors.username}</p>
                     )}
-                    <Input name="password" label="Mật khẩu" type="password" value={formik.values.password} onChange={formik.handleChange} placeholder="Nhập mật khẩu" className="mt-3"/>
+                    <Input name="password" label="Mật khẩu" type="password" value={formik.values.password} onChange={formik.handleChange} placeholder="Nhập mật khẩu" className="mt-3" />
                     {formik.errors.password && formik.touched.password && (
                       <p style={{ color: "red" }}>{formik.errors.password}</p>
                     )}
-                    <Button fullWidth id="send-code-button" color="primary" type="submit" isLoading={onLoading} style={{ marginTop: "2vh", marginBottom:"2vh"}}>
+                    <Button fullWidth id="send-code-button" color="primary" type="submit" isLoading={onLoading} style={{ marginTop: "2vh", marginBottom: "2vh" }}>
                       Tiếp tục
                     </Button>
                   </form>
@@ -198,57 +206,57 @@ export const Navbar = () => {
           </ModalContent>
         </Modal>
         <NavbarItem className="hidden md:flex">
-        {localStorage.getItem("token") == null ? (
-          <Button
-            isExternal
-            as={Link}
-            className="text-sm font-normal text-default-600 bg-default-100"
-            // href={siteConfig.links.sponsor}
-            onPress={onOpen}
-            startContent={<UserIcon />}
-            variant="flat"
-          >
-            Đăng nhập
-          </Button>
-        ) : (
-          <Dropdown>
-            <DropdownTrigger>
-              <Button
-                id="user-button"
-                isExternal
-                as={Link}
-                className="text-sm font-normal text-default-600 bg-default-100 border-solid border-2 border-zinc-400"
-                // href={siteConfig.links.sponsor}
-                startContent={<UserIcon />}
-                endContent={<DropdownIcon />}
-                variant="flat"
-              >
-                Chào, {localStorage.getItem("name")}
-              </Button>
-            </DropdownTrigger>
-            <DropdownMenu
-              className="shadow-xl"
-              aria-label="Dropdown menu with icons"
-              variant="bordered"
+          {localStorage.getItem("token") == null ? (
+            <Button
+              isExternal
+              as={Link}
+              className="text-sm font-normal text-default-600 bg-default-100"
+              // href={siteConfig.links.sponsor}
+              onPress={onOpen}
+              startContent={<UserIcon />}
+              variant="flat"
             >
-              <DropdownSection aria-label="Profile & Actions" showDivider>
-                <DropdownItem key="info" startContent={<UserIcon />} href="/user/me">
-                  Thông tin cá nhân
-                </DropdownItem>
-              </DropdownSection>
-              <DropdownItem
-                key="logout"
-                className="text-danger"
-                color="danger"
-                startContent={<LogoutIcon />}
-                onPress={() => Logout()}
-                //startContent={<DeleteDocumentIcon />}
+              Đăng nhập
+            </Button>
+          ) : (
+            <Dropdown>
+              <DropdownTrigger>
+                <Button
+                  id="user-button"
+                  isExternal
+                  as={Link}
+                  className="text-sm font-normal text-default-600 bg-default-100 border-solid border-2 border-zinc-400"
+                  // href={siteConfig.links.sponsor}
+                  startContent={<UserIcon />}
+                  endContent={<DropdownIcon />}
+                  variant="flat"
+                >
+                  Chào, {localStorage.getItem("name")}
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu
+                className="shadow-xl"
+                aria-label="Dropdown menu with icons"
+                variant="bordered"
               >
-                Đăng xuất
-              </DropdownItem>
-            </DropdownMenu>
-          </Dropdown>
-        )}
+                <DropdownSection aria-label="Profile & Actions" showDivider>
+                  <DropdownItem key="info" startContent={<UserIcon />} href="/user/me">
+                    Thông tin cá nhân
+                  </DropdownItem>
+                </DropdownSection>
+                <DropdownItem
+                  key="logout"
+                  className="text-danger"
+                  color="danger"
+                  startContent={<LogoutIcon />}
+                  onPress={() => Logout()}
+                //startContent={<DeleteDocumentIcon />}
+                >
+                  Đăng xuất
+                </DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
+          )}
         </NavbarItem>
       </NavbarContent>
 
@@ -310,7 +318,7 @@ export const Navbar = () => {
                 color="danger"
                 startContent={<LogoutIcon />}
                 onPress={() => Logout()}
-                //startContent={<DeleteDocumentIcon />}
+              //startContent={<DeleteDocumentIcon />}
               >
                 Đăng xuất
               </DropdownItem>
@@ -319,7 +327,7 @@ export const Navbar = () => {
         )}
         <div className="mx-4 mt-2 flex flex-col gap-2">
           {localStorage.getItem("role") == "Admin" ||
-          localStorage.getItem("role") == "Manager" ? (
+            localStorage.getItem("role") == "Manager" ? (
             <>
               {siteConfig.navMenuItemsAdmin.map((item, index) => (
                 <NavbarMenuItem key={`${item}-${index}`}>

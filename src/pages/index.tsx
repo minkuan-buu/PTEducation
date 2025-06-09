@@ -10,8 +10,9 @@ import { useEffect, useRef, useState } from "react";
 import DefaultLayout from "@/layouts/default";
 import { CHECKSERVER, GETMONTHTEST, GETSCORESTUDENT } from "../api/api";
 import Logout from "./logout";
-import { Card, CardBody, Select, SelectItem, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@nextui-org/react";
+import { Card, CardBody, Select, SelectItem, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, useDisclosure } from "@nextui-org/react";
 import { format, set } from "date-fns";
+import { ChangePassword } from "@/components/changePassword";
 
 export default function IndexPage() {
   const [now, setNow] = useState(new Date());
@@ -23,6 +24,8 @@ export default function IndexPage() {
   const [ScoreData, setScoreData] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const [handling, setHandling] = useState(false);
 
   const handleResize = () => {
     setIsMobile(window.innerWidth <= 640);
@@ -30,6 +33,11 @@ export default function IndexPage() {
 
   useEffect(() => {
     handleResize(); // Check initially
+    if (localStorage.getItem("isShowChangePassword") == "true" && localStorage.getItem("isNeedToChangePassword") == "true") {
+      localStorage.removeItem("isShowChangePassword");
+      localStorage.removeItem("isNeedToChangePassword");
+      onOpenChange();
+    }
     window.addEventListener('resize', handleResize); // Update on resize
     return () => window.removeEventListener('resize', handleResize); // Cleanup
   }, []);
@@ -39,7 +47,7 @@ export default function IndexPage() {
 
   useEffect(() => {
     const checkServer = async () => {
-      if(localStorage.getItem("token") == null) return;
+      if (localStorage.getItem("token") == null) return;
       var token = localStorage.getItem("token");
       const { isSuccess, res } = await CHECKSERVER(token);
       if (!isSuccess) {
@@ -47,7 +55,7 @@ export default function IndexPage() {
       }
     }
 
-    const checkMonth = async() => {
+    const checkMonth = async () => {
       if (localStorage.getItem("token") == null) return;
       if (
         localStorage.getItem("role") == "Admin" ||
@@ -71,7 +79,7 @@ export default function IndexPage() {
 
   useEffect(() => {
     setIsLoading(true);
-    const loadScore = async() => {
+    const loadScore = async () => {
       if (localStorage.getItem("token") == null) return;
       var token = localStorage.getItem("token");
 
@@ -112,6 +120,13 @@ export default function IndexPage() {
           <h1 className={title()}>
             websites regardless of your design experience.
           </h1> */}
+          <ChangePassword
+            isOpen={isOpen}
+            isMobile={isMobile}
+            setHandling={setHandling}
+            handling={handling}
+            onOpenChange={onOpenChange}
+          />
           {localStorage.getItem("role") == "Admin" || localStorage.getItem("role") == "Manager" ? (
             <>
               {now.getHours() < 12 ? (
@@ -215,11 +230,11 @@ export default function IndexPage() {
                           </TableHeader>
                           <TableBody items={ScoreData} emptyContent={"Chưa có dữ liệu"}>
                             {ScoreData.scores && ScoreData.scores.map((row, index) => (
-                                <TableRow key={index}>
-                                  <TableCell>{`Ngày ${formatScoreDate(row.testDateAt)}`}</TableCell>
-                                  <TableCell>{row.score}</TableCell>
-                                </TableRow>
-                              ))}
+                              <TableRow key={index}>
+                                <TableCell>{`Ngày ${formatScoreDate(row.testDateAt)}`}</TableCell>
+                                <TableCell>{row.score}</TableCell>
+                              </TableRow>
+                            ))}
                           </TableBody>
                         </Table>
                       </div>
@@ -231,19 +246,19 @@ export default function IndexPage() {
           )}
         </div>
         {localStorage.getItem("token") == null || localStorage.getItem("role") != "Student" ? (
-        <div className="flex gap-3">
-          <Link
-            isExternal
-            className={buttonStyles({
-              color: "primary",
-              radius: "full",
-              variant: "shadow",
-            })}
-            href={siteConfig.links.pteducation}
-          >
-            Truy cập E-Learning
-          </Link>
-          {/* <Link
+          <div className="flex gap-3">
+            <Link
+              isExternal
+              className={buttonStyles({
+                color: "primary",
+                radius: "full",
+                variant: "shadow",
+              })}
+              href={siteConfig.links.pteducation}
+            >
+              Truy cập E-Learning
+            </Link>
+            {/* <Link
             isExternal
             className={buttonStyles({ variant: "bordered", radius: "full" })}
             href={siteConfig.links.github}
@@ -251,7 +266,7 @@ export default function IndexPage() {
             <GithubIcon size={20} />
             GitHub
           </Link> */}
-        </div>
+          </div>
         ) : null}
         {/* <div className="mt-8">
           <Snippet hideCopyButton hideSymbol variant="bordered">

@@ -2,9 +2,10 @@ import { title } from "@/components/primitives";
 import DefaultLayout from "@/layouts/default";
 import { Button, Card, CardBody, Input, Modal, ModalBody, ModalContent, ModalHeader, useDisclosure } from "@nextui-org/react";
 import { useEffect, useState } from "react";
-import { GETMYPROFILE, CHANGEPASSWORD } from "../api/api";
+import { GETMYPROFILE } from "../api/api";
 import { useFormik } from "formik";
 import * as Yup from "yup";
+import { ChangePassword } from "@/components/changePassword";
 
 export default function MyProfile() {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
@@ -38,127 +39,19 @@ export default function MyProfile() {
     getProfile();
   }, []);
 
-  const formikChangePassword = useFormik({
-    initialValues: {
-      oldPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    },
-    validationSchema: Yup.object({
-      oldPassword: Yup.string().min(6, "Must be at least 6 characters").required("Bắt buộc"),
-      newPassword: Yup.string().min(6, "Must be at least 6 characters").required("Bắt buộc"),
-      confirmPassword: Yup.string().min(6, "Must be at least 6 characters").required("Bắt buộc"),
-    }),
-    onSubmit: async (values) => {
-      setHandling(true);
-      var token = localStorage.getItem("token");
-      const { isSuccess, res } = await CHANGEPASSWORD(token, values);
-
-      if (!isSuccess) {
-        if (res.status == 401) {
-          alert("Phiên đăng nhập hết hạn");
-          window.location.href = "/";
-        } else {
-          var result = await res.json();
-
-          alert(result.message);
-        }
-      } else {
-        var result = await res.json();
-
-        alert("Đổi mật khẩu thành công");
-        CloseModal();
-      }
-      setHandling(false);
-    }
-  });
-
-  function CloseModal() {
-    onOpenChange();
-    formikChangePassword.resetForm();
-  }
-
   return (
     <DefaultLayout>
       <section className="flex flex-col gap-4 py-8 md:py-10">
         <div className="inline-block max-w-full">
           <div className="flex justify-between">
             <h1 className={title()}>Thông tin cá nhân</h1>
-            <Modal
-              isDismissable={false}
-              isKeyboardDismissDisabled={true}
-              placement={isMobile ? "top" : "center"}
+            <ChangePassword
+              handling={handling}
+              isMobile={isMobile}
               isOpen={isOpen}
-              onOpenChange={CloseModal}
-              size="4xl"
-            >
-              <ModalContent>
-                {(onClose) => (
-                  <>
-                    <ModalHeader>Đổi mật khẩu</ModalHeader>
-                    <ModalBody>
-                      <p>Thay đổi mật khẩu mới</p>
-                      <form onSubmit={formikChangePassword.handleSubmit}>
-                        <Input
-                          label="Mật khẩu cũ"
-                          name="oldPassword"
-                          placeholder="Nhập mật khẩu cũ"
-                          type="password"
-                          value={formikChangePassword.values.oldPassword}
-                          onChange={formikChangePassword.handleChange}
-                        />
-                        {formikChangePassword.errors.oldPassword &&
-                          formikChangePassword.touched.oldPassword && (
-                            <p style={{ color: "red" }}>
-                              {formikChangePassword.errors.oldPassword}
-                            </p>
-                          )}
-                        <Input
-                          className="mt-3"
-                          label="Mật khẩu mới"
-                          name="newPassword"
-                          placeholder="Nhập mật khẩu mới"
-                          type="password"
-                          value={formikChangePassword.values.newPassword}
-                          onChange={formikChangePassword.handleChange}
-                        />
-                        {formikChangePassword.errors.newPassword &&
-                          formikChangePassword.touched.newPassword && (
-                            <p style={{ color: "red" }}>
-                              {formikChangePassword.errors.newPassword}
-                            </p>
-                          )}
-                        <Input
-                          className="mt-3"
-                          label="Xác nhận mật khẩu"
-                          name="confirmPassword"
-                          placeholder="Nhập lại mật khẩu mới"
-                          type="password"
-                          value={formikChangePassword.values.confirmPassword}
-                          onChange={formikChangePassword.handleChange}
-                        />
-                        {formikChangePassword.errors.confirmPassword &&
-                          formikChangePassword.touched.confirmPassword && (
-                            <p style={{ color: "red" }}>
-                              {formikChangePassword.errors.confirmPassword}
-                            </p>
-                        )}
-                        <Button
-                          fullWidth
-                          color="primary"
-                          id="send-code-button"
-                          isLoading={handling}
-                          style={{ marginTop: "2vh", marginBottom: "2vh" }}
-                          type="submit"
-                        >
-                          Đổi
-                        </Button>
-                      </form>
-                    </ModalBody>
-                  </>
-                )}
-              </ModalContent>
-            </Modal>
+              onOpenChange={onOpenChange}
+              setHandling={setHandling}
+            />
             {!isMobile ? (
               <Button
                 className="text-md"

@@ -1,6 +1,6 @@
-export const API_URL = "http://api.pteducation.edu.vn/api/";
+export const API_URL = "https://api.pteducation.edu.vn/api/";
 
-export async function LOGIN(body){
+export async function LOGIN(body) {
     const res = await fetch(API_URL + "authentication/login", {
         method: "POST",
         headers: {
@@ -8,10 +8,10 @@ export async function LOGIN(body){
         },
         body: JSON.stringify(body)
     })
-    return { isSuccess : res.ok, res }
+    return { isSuccess: res.ok, res }
 }
 
-export async function CHECKSERVER(token){
+export async function CHECKSERVER(token) {
     const res = await fetch(API_URL + "authentication/check-server", {
         method: "GET",
         headers: {
@@ -19,10 +19,10 @@ export async function CHECKSERVER(token){
             "Authorization": "Bearer " + token
         },
     })
-    return { isSuccess : res.ok, res }
+    return { isSuccess: res.ok, res }
 }
 
-export async function GETCLASSES(token, query){
+export async function GETCLASSES(token, query) {
     const res = await fetch(API_URL + `class/all?${query}`, {
         method: "GET",
         headers: {
@@ -30,10 +30,10 @@ export async function GETCLASSES(token, query){
             "Authorization": "Bearer " + token
         },
     })
-    return { isSuccess : res.ok, res }
+    return { isSuccess: res.ok, res }
 }
 
-export async function CLASSDETAIL(token, id){
+export async function CLASSDETAIL(token, id) {
     const res = await fetch(API_URL + `class/${id}`, {
         method: "GET",
         headers: {
@@ -41,10 +41,10 @@ export async function CLASSDETAIL(token, id){
             "Authorization": "Bearer " + token
         },
     })
-    return { isSuccess : res.ok, res }
+    return { isSuccess: res.ok, res }
 }
 
-export async function DELETECLASS(token, id){
+export async function DELETECLASS(token, id) {
     const res = await fetch(API_URL + `class/delete`, {
         method: "PUT",
         headers: {
@@ -53,10 +53,10 @@ export async function DELETECLASS(token, id){
         },
         body: JSON.stringify(id)
     })
-    return { isSuccess : res.ok, res }
+    return { isSuccess: res.ok, res }
 }
 
-export async function RESTORECLASS(token, id){
+export async function RESTORECLASS(token, id) {
     const res = await fetch(API_URL + `class/restore`, {
         method: "PUT",
         headers: {
@@ -65,10 +65,10 @@ export async function RESTORECLASS(token, id){
         },
         body: JSON.stringify(id)
     })
-    return { isSuccess : res.ok, res }
+    return { isSuccess: res.ok, res }
 }
 
-export async function CREATECLASS(token, body){
+export async function CREATECLASS(token, body) {
     const res = await fetch(API_URL + "class/create", {
         method: "POST",
         headers: {
@@ -77,10 +77,10 @@ export async function CREATECLASS(token, body){
         },
         body: JSON.stringify(body)
     })
-    return { isSuccess : res.ok, res }
+    return { isSuccess: res.ok, res }
 }
 
-export async function CREATESCORE(token, body){
+export async function CREATESCORE(token, body) {
     const res = await fetch(API_URL + "score/create", {
         method: "POST",
         headers: {
@@ -89,10 +89,10 @@ export async function CREATESCORE(token, body){
         },
         body: JSON.stringify(body)
     })
-    return { isSuccess : res.ok, res }
+    return { isSuccess: res.ok, res }
 }
 
-export async function GETTEMPLATEIMPORTSTUDENT(token){
+export async function GETTEMPLATEIMPORTSTUDENT(token) {
     const res = await fetch(API_URL + "template/import-student", {
         method: "GET",
         headers: {
@@ -100,10 +100,10 @@ export async function GETTEMPLATEIMPORTSTUDENT(token){
             "Authorization": "Bearer " + token
         },
     })
-    return { isSuccess : res.ok, res }
+    return { isSuccess: res.ok, res }
 }
 
-export async function GETTEMPLATEIMPORTSCORESTUDENT(token, classId){
+export async function GETTEMPLATEIMPORTSCORESTUDENT(token, classId) {
     const res = await fetch(API_URL + `template/import-score?ClassId=${classId}`, {
         method: "GET",
         headers: {
@@ -111,10 +111,10 @@ export async function GETTEMPLATEIMPORTSCORESTUDENT(token, classId){
             "Authorization": "Bearer " + token
         },
     })
-    return { isSuccess : res.ok, res }
+    return { isSuccess: res.ok, res }
 }
 
-export async function GETTEMPLATEIMPORTATTENDANCESTUDENT(token){
+export async function GETTEMPLATEIMPORTATTENDANCESTUDENT(token) {
     const res = await fetch(API_URL + `template/import-attendance`, {
         method: "GET",
         headers: {
@@ -122,11 +122,11 @@ export async function GETTEMPLATEIMPORTATTENDANCESTUDENT(token){
             "Authorization": "Bearer " + token
         },
     })
-    return { isSuccess : res.ok, res }
+    return { isSuccess: res.ok, res }
 }
 
 
-export async function GETLISTCLASSSELECT(token){
+export async function GETLISTCLASSSELECT(token) {
     const res = await fetch(API_URL + "class/select/all", {
         method: "GET",
         headers: {
@@ -134,10 +134,10 @@ export async function GETLISTCLASSSELECT(token){
             "Authorization": "Bearer " + token
         },
     })
-    return { isSuccess : res.ok, res }
+    return { isSuccess: res.ok, res }
 }
 
-export async function GETALLSCORES(token, classId){
+export async function GETALLSCORES(token, classId) {
     const res = await fetch(API_URL + `score/all?ClassId=${classId}`, {
         method: "GET",
         headers: {
@@ -145,10 +145,10 @@ export async function GETALLSCORES(token, classId){
             "Authorization": "Bearer " + token
         },
     })
-    return { isSuccess : res.ok, res }
+    return { isSuccess: res.ok, res }
 }
 
-export async function GETALLATTENDANCES(token, classId){
+export async function GETALLATTENDANCES(token, classId) {
     const res = await fetch(API_URL + `attendance/all?ClassId=${classId}`, {
         method: "GET",
         headers: {
@@ -156,10 +156,10 @@ export async function GETALLATTENDANCES(token, classId){
             "Authorization": "Bearer " + token
         },
     })
-    return { isSuccess : res.ok, res }
+    return { isSuccess: res.ok, res }
 }
 
-export async function GETSCORE(token, scoreId){
+export async function GETSCORE(token, scoreId) {
     const res = await fetch(API_URL + `score/get?Id=${scoreId}`, {
         method: "GET",
         headers: {
@@ -167,10 +167,10 @@ export async function GETSCORE(token, scoreId){
             "Authorization": "Bearer " + token
         },
     })
-    return { isSuccess : res.ok, res }
+    return { isSuccess: res.ok, res }
 }
 
-export async function GETATTENDANCE(token, attendanceId){
+export async function GETATTENDANCE(token, attendanceId) {
     const res = await fetch(API_URL + `score/get?Id=${attendanceId}`, {
         method: "GET",
         headers: {
@@ -178,10 +178,10 @@ export async function GETATTENDANCE(token, attendanceId){
             "Authorization": "Bearer " + token
         },
     })
-    return { isSuccess : res.ok, res }
+    return { isSuccess: res.ok, res }
 }
 
-export async function UPDATESCOREDETAIL(token, body){
+export async function UPDATESCOREDETAIL(token, body) {
     const res = await fetch(API_URL + `score-detail/update`, {
         method: "PUT",
         headers: {
@@ -190,10 +190,10 @@ export async function UPDATESCOREDETAIL(token, body){
         },
         body: JSON.stringify(body)
     })
-    return { isSuccess : res.ok, res }
+    return { isSuccess: res.ok, res }
 }
 
-export async function GETMONTHTEST(token){
+export async function GETMONTHTEST(token) {
     const res = await fetch(API_URL + `score-detail/month`, {
         method: "GET",
         headers: {
@@ -201,10 +201,10 @@ export async function GETMONTHTEST(token){
             "Authorization": "Bearer " + token
         },
     })
-    return { isSuccess : res.ok, res }
+    return { isSuccess: res.ok, res }
 }
 
-export async function GETSCORESTUDENT(token, query){
+export async function GETSCORESTUDENT(token, query) {
     const res = await fetch(API_URL + `score-detail?Month=${query.month}&Year=${query.year}`, {
         method: "GET",
         headers: {
@@ -212,10 +212,10 @@ export async function GETSCORESTUDENT(token, query){
             "Authorization": "Bearer " + token
         },
     })
-    return { isSuccess : res.ok, res }
+    return { isSuccess: res.ok, res }
 }
 
-export async function GETMYPROFILE(token){
+export async function GETMYPROFILE(token) {
     const res = await fetch(API_URL + `user/me`, {
         method: "GET",
         headers: {
@@ -223,10 +223,10 @@ export async function GETMYPROFILE(token){
             "Authorization": "Bearer " + token
         },
     })
-    return { isSuccess : res.ok, res }
+    return { isSuccess: res.ok, res }
 }
 
-export async function CHANGEPASSWORD(token, body){
+export async function CHANGEPASSWORD(token, body) {
     const res = await fetch(API_URL + `authentication/change-password`, {
         method: "POST",
         headers: {
@@ -235,10 +235,10 @@ export async function CHANGEPASSWORD(token, body){
         },
         body: JSON.stringify(body)
     })
-    return { isSuccess : res.ok, res }
+    return { isSuccess: res.ok, res }
 }
 
-export async function CREATEATTENDANCE(token, body){
+export async function CREATEATTENDANCE(token, body) {
     const res = await fetch(API_URL + `attendance/create`, {
         method: "POST",
         headers: {
@@ -247,5 +247,5 @@ export async function CREATEATTENDANCE(token, body){
         },
         body: JSON.stringify(body)
     })
-    return { isSuccess : res.ok, res }
+    return { isSuccess: res.ok, res }
 }
