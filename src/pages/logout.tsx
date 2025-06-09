@@ -1,8 +1,12 @@
-export default function Logout() {
+export const Logout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("role");
     localStorage.removeItem("name");
-    localStorage.removeItem("isShowChangePassword");
-    localStorage.removeItem("isNeedToChangePassword");
+    window.location.href = "/";
+}
+
+export const LogoutResetPassword = () => {
+    localStorage.removeItem("temp_token");
+    localStorage.removeItem("email_reset");
     window.location.href = "/";
 }

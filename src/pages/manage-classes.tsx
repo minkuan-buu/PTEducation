@@ -18,10 +18,10 @@ import { DateTime } from 'luxon';
 import { format, set } from "date-fns";
 import { MdOutlineSettingsBackupRestore } from "react-icons/md";
 import { Workbook } from 'exceljs';
-import Logout from "../pages/logout";
+import { Logout } from "../pages/logout";
 
 export default function ManageClassesPage() {
-  const {isOpen, onOpen, onOpenChange} = useDisclosure();
+  const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [classes, setClasses] = useState([]);
   const location = useLocation();
   const filterParams = new URLSearchParams(location.search);
@@ -180,7 +180,7 @@ export default function ManageClassesPage() {
 
   // Hàm xử lý khi click vào một hàng
   const handleRowClick = (id) => {
-    if(!handling){
+    if (!handling) {
       window.location.href = `/class/${id}`;
     }
   };
@@ -248,7 +248,7 @@ export default function ManageClassesPage() {
     fetchData();
   }
 
-  function handleDownloadTemplate(){
+  function handleDownloadTemplate() {
     var token = localStorage.getItem("token");
     const fetchData = async () => {
       try {
@@ -281,7 +281,7 @@ export default function ManageClassesPage() {
     fetchData();
   }
 
-  function CloseModal(){
+  function CloseModal() {
     onOpenChange();
     formikCreate.resetForm();
     setTableData([]);
@@ -294,17 +294,17 @@ export default function ManageClassesPage() {
       const reader = new FileReader();
       reader.onload = async (e: ProgressEvent<FileReader>) => {
         const arrayBuffer = e.target?.result as ArrayBuffer;
-  
+
         const workbook = new Workbook();
         await workbook.xlsx.load(arrayBuffer);
-  
+
         // Lấy worksheet theo tên 'ImportStudents'
         const worksheet = workbook.getWorksheet('ImportStudents');
-  
+
         if (worksheet) {
           const jsonData: any[] = [];
           let headers: string[] = [];
-  
+
           worksheet.eachRow({ includeEmpty: true }, (row, rowNumber) => {
             if (rowNumber === 1) {
               // Lấy hàng đầu tiên làm tiêu đề và chuyển đổi thành chữ thường
@@ -312,7 +312,7 @@ export default function ManageClassesPage() {
             } else {
               const rowData: any = {};
               const rowValues = row.values.slice(1); // Bỏ qua chỉ số hàng
-  
+
               headers.forEach((header, index) => {
                 if (index === 2) {
                   // Xử lý cột Email: loại bỏ hyperlink và chỉ lấy text
@@ -321,11 +321,11 @@ export default function ManageClassesPage() {
                   rowData[header] = rowValues[index] || null; // Gán giá trị vào đối tượng JSON
                 }
               });
-  
+
               jsonData.push(rowData);
             }
           });
-  
+
           console.log(jsonData); // Xem dữ liệu JSON đã xử lý
           setTableData(jsonData);
           // Xử lý dữ liệu JSON theo nhu cầu
@@ -358,23 +358,23 @@ export default function ManageClassesPage() {
                     <ModalBody>
                       <p>Tạo lớp học mới</p>
                       <form onSubmit={formikCreate.handleSubmit}>
-                        <Input name="name" label="Tên lớp" value={formikCreate.values.name} onChange={formikCreate.handleChange} placeholder="Nhập tên lớp"/>
+                        <Input name="name" label="Tên lớp" value={formikCreate.values.name} onChange={formikCreate.handleChange} placeholder="Nhập tên lớp" />
                         {formikCreate.errors.name && formikCreate.touched.name && (
                           <p style={{ color: "red" }}>{formikCreate.errors.name}</p>
                         )}
                         <div className="flex justify-between gap-2">
-                          <Input name="startAt" label="Ngày bắt đầu" type="date" value={formikCreate.values.startAt} onChange={formikCreate.handleChange} placeholder="Nhập ngày bắt đầu" className="mt-3"/>
+                          <Input name="startAt" label="Ngày bắt đầu" type="date" value={formikCreate.values.startAt} onChange={formikCreate.handleChange} placeholder="Nhập ngày bắt đầu" className="mt-3" />
                           {formikCreate.errors.startAt && formikCreate.touched.startAt && (
                             <p style={{ color: "red" }}>{formikCreate.errors.startAt}</p>
                           )}
-                          <Input name="endAt" label="Ngày kết thúc" type="date" value={formikCreate.values.endAt} onChange={formikCreate.handleChange} placeholder="Nhập ngày kết thúc" className="mt-3"/>
+                          <Input name="endAt" label="Ngày kết thúc" type="date" value={formikCreate.values.endAt} onChange={formikCreate.handleChange} placeholder="Nhập ngày kết thúc" className="mt-3" />
                           {formikCreate.errors.endAt && formikCreate.touched.endAt && (
                             <p style={{ color: "red" }}>{formikCreate.errors.endAt}</p>
                           )}
                         </div>
                         <div className="flex justify-between gap-1 min-w-full mt-3">
-                          <Button color="success" variant="bordered" style={{width: "420px"}} onPress={() => handleDownloadTemplate()}>Tải mẫu nhập dữ liệu</Button>
-                          <Input color="primary" variant="bordered" type="file" accept=".xlsx" style={{width: "420px"}} onChange={handleFileUpload}>Upload template</Input>
+                          <Button color="success" variant="bordered" style={{ width: "420px" }} onPress={() => handleDownloadTemplate()}>Tải mẫu nhập dữ liệu</Button>
+                          <Input color="primary" variant="bordered" type="file" accept=".xlsx" style={{ width: "420px" }} onChange={handleFileUpload}>Upload template</Input>
                         </div>
                         <Table selectionMode="multiple" selectionBehavior="replace" aria-label="Example table with dynamic content" className="mt-7 max-h-[300px]" fullWidth>
                           <TableHeader>
@@ -399,7 +399,7 @@ export default function ManageClassesPage() {
                             ))}
                           </TableBody>
                         </Table>
-                        <Button fullWidth id="send-code-button" color="primary" type="submit" isLoading={handling} style={{ marginTop: "2vh", marginBottom:"2vh"}}>
+                        <Button fullWidth id="send-code-button" color="primary" type="submit" isLoading={handling} style={{ marginTop: "2vh", marginBottom: "2vh" }}>
                           Tạo
                         </Button>
                       </form>

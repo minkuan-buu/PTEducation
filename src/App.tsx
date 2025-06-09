@@ -4,8 +4,10 @@ import IndexPage from "@/pages/index";
 import ClassDetail from "@/pages/class-detail";
 import MyProfile from "@/pages/about";
 import ScoreDetail from "@/pages/score-detail";
+import AttendanceDetail from "@/pages/attendance-detail";
 import ManageClassesPage from "@/pages/manage-classes";
 import ComingSoonPage from "@/pages/coming-soon";
+import AttendancePage from "@/pages/attendance";
 
 function App() {
   return (
@@ -17,9 +19,9 @@ function App() {
       <Route element={<MyProfile />} path="/user/me" />
       <Route element={<ComingSoonPage />} path="/manage-students" />
       <Route element={<ComingSoonPage />} path="/user/:id" />
-      <Route element={<ComingSoonPage />} path="/attendance" />
+      <Route element={<AttendancePage />} path="/attendance" />
       <Route
-        element={<ComingSoonPage />}
+        element={<AttendanceDetail />}
         path="/class/:id/attendance/:attendanceId"
       />
     </Routes>

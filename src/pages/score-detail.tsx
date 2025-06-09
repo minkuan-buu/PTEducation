@@ -9,7 +9,7 @@ import { Input } from "@nextui-org/react";
 
 export default function ScoreDetail() {
   const [scoreDetail, setScoreDetail] = useState({});
-  const [listScoreDetail, setListScoreDetail] = useState<{studentClassId: string, id: number, name: string, score: number }[]>([]);
+  const [listScoreDetail, setListScoreDetail] = useState<{ studentClassId: string, id: number, name: string, score: number }[]>([]);
   const [loading, setLoading] = useState(true);
   const [handling, setHandling] = useState(false);
   const { id, scoreId } = useParams();
@@ -47,7 +47,6 @@ export default function ScoreDetail() {
         setScoreDetail(result.data);
         document.title = `Lớp ${result.data.className} - Điểm "Ngày ${formatScoreDate(result.data.testDateAt)}"`;
         setListScoreDetail(result.data.scoreDetails);
-        console.log(result.data);
       }
     }
 
@@ -77,7 +76,7 @@ export default function ScoreDetail() {
           body.scoreReqList.push(scoreReq);
         })
         const { isSuccess, res } = await UPDATESCOREDETAIL(token, body);
-  
+
         if (!isSuccess || res.status == 401) {
           window.location.href = "/";
         } else {
@@ -93,7 +92,6 @@ export default function ScoreDetail() {
     }
 
     updateScoreDetail();
-    console.log(listScoreDetail);
   }
 
   return (
@@ -104,7 +102,7 @@ export default function ScoreDetail() {
             <>
               <Breadcrumbs className="mb-5">
                 <BreadcrumbItem href="/manage-classes">Tất cả lớp</BreadcrumbItem>
-                <BreadcrumbItem href={`/class/${id}`}>{scoreDetail.className}</BreadcrumbItem>
+                <BreadcrumbItem href={`/class/${id}#score`}>{scoreDetail.className}</BreadcrumbItem>
                 <BreadcrumbItem href={`/class/${id}/score/${scoreId}`}>Điểm "{`Ngày ${formatScoreDate(scoreDetail.testDateAt)}`}"</BreadcrumbItem>
               </Breadcrumbs>
               <h1 className={title()}>Lớp {scoreDetail.className} - Điểm "{`Ngày ${formatScoreDate(scoreDetail.testDateAt)}`}"</h1>
@@ -141,7 +139,7 @@ export default function ScoreDetail() {
               <div className="flex justify-between items-center">
                 <strong><h2 className={"mt-10 text-xl mb-3"}>Thông tin điểm</h2></strong>
                 {isEditMode ? (
-                  <Button className="text-md" color="success" variant="bordered" onPress={() => handleSaveEdit()}>
+                  <Button className="text-md" color="success" variant="bordered" onPress={() => handleSaveEdit()} isLoading={handling}>
                     Lưu
                   </Button>
                 ) : (

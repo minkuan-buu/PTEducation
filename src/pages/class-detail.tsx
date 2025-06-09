@@ -15,7 +15,7 @@ import {
 import { BreadcrumbItem, Breadcrumbs, Button, Card, CardBody, Chip, Image, Input, Link, Modal, ModalBody, ModalContent, ModalHeader, Select, SelectItem, Slider, Tab, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, Tabs, useDisclosure } from "@nextui-org/react";
 import { HeartFilledIcon } from "@/components/icons";
 import { format, set } from "date-fns";
-import Logout from "./logout";
+import { Logout } from "./logout";
 import { IoIosInformationCircle } from "react-icons/io";
 import { GrScorecard } from "react-icons/gr";
 import { FaCalendarCheck } from "react-icons/fa6";
@@ -23,6 +23,7 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import { Workbook } from 'exceljs';
 import moment from "moment";
+import { useLocation } from "react-router-dom";
 
 interface ClassDetail {
   id: string;
@@ -43,7 +44,7 @@ interface ClassDetail {
 }
 
 export default function ClassDetail() {
-  const {isOpen, onOpen, onOpenChange} = useDisclosure();
+  const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const {
     isOpen: isOpenAttendance,
     onOpen: onOpenAttendance,
@@ -179,7 +180,7 @@ export default function ClassDetail() {
     return format(date, 'dd/MM');
   };
 
-  function handleDownloadTemplate(key: string){
+  function handleDownloadTemplate(key: string) {
     var token = localStorage.getItem("token");
     const fetchData = async () => {
       try {
@@ -225,7 +226,7 @@ export default function ClassDetail() {
     setTableData([]);
   }
 
-  function CloseModalAttendance(){
+  function CloseModalAttendance() {
     onOpenChangeAttendance();
     formikCreateAttendance.resetForm();
     setTableDataAttendance([]);
@@ -255,7 +256,6 @@ export default function ClassDetail() {
         }
         body.scoreReqList.push(scoreReq);
       });
-      console.log(body);
       try {
         const { isSuccess, res } = await CREATESCORE(token, body);
 
@@ -401,7 +401,7 @@ export default function ClassDetail() {
     setTableData([]);
     if (file) {
       const reader = new FileReader();
-  
+
       reader.onload = async (e: ProgressEvent<FileReader>) => {
         try {
           const arrayBuffer = e.target?.result as ArrayBuffer;
@@ -410,28 +410,28 @@ export default function ClassDetail() {
             console.error("arrayBuffer không tồn tại.");
             return;
           }
-  
+
           const workbook = new Workbook();
-          
+
           await workbook.xlsx.load(arrayBuffer);
           console.log(workbook);
-  
+
           // Kiểm tra workbook
           if (!workbook || !workbook.worksheets) {
             console.error("Workbook không tải đúng hoặc không có worksheets.");
             return;
           }
-  
+
           // Kiểm tra worksheet
           const worksheet = workbook.getWorksheet("ScoreStudents");
           if (!worksheet) {
             console.error('Worksheet "ScoreStudents" không tồn tại.');
             return;
           }
-  
+
           const data: any[] = [];
           let headers: string[] = [];
-  
+
           worksheet.eachRow({ includeEmpty: true }, (row, rowNumber) => {
             if (rowNumber === 1) {
               headers = row.values.slice(1).map(header => header?.toString().toLowerCase()) as string[];
@@ -443,7 +443,6 @@ export default function ClassDetail() {
               data.push(rowData);
             }
           });
-          console.log(data);
           setTableData(data);
         } catch (error) {
           console.error('Lỗi khi tải workbook hoặc worksheet:', error);
@@ -452,13 +451,13 @@ export default function ClassDetail() {
       reader.readAsArrayBuffer(file);
     }
   };
-  
+
   const handleFileUploadAttendance = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     setTableData([]);
     if (file) {
       const reader = new FileReader();
-  
+
       reader.onload = async (e: ProgressEvent<FileReader>) => {
         try {
           const arrayBuffer = e.target?.result as ArrayBuffer;
@@ -467,28 +466,27 @@ export default function ClassDetail() {
             console.error("arrayBuffer không tồn tại.");
             return;
           }
-  
+
           const workbook = new Workbook();
-          
+
           await workbook.xlsx.load(arrayBuffer);
-          console.log(workbook);
-  
+
           // Kiểm tra workbook
           if (!workbook || !workbook.worksheets) {
             console.error("Workbook không tải đúng hoặc không có worksheets.");
             return;
           }
-  
+
           // Kiểm tra worksheet
           const worksheet = workbook.getWorksheet("ImportAttendance");
           if (!worksheet) {
             console.error('Worksheet "ScoreStudents" không tồn tại.');
             return;
           }
-  
+
           const data: any[] = [];
           let headers: string[] = [];
-  
+
           worksheet.eachRow({ includeEmpty: true }, (row, rowNumber) => {
             if (rowNumber === 1) {
               headers = row.values.slice(1).map(header => header?.toString().toLowerCase()) as string[];
@@ -500,7 +498,6 @@ export default function ClassDetail() {
               data.push(rowData);
             }
           });
-          console.log(data);
           setTableDataAttendance(data);
         } catch (error) {
           console.error('Lỗi khi tải workbook hoặc worksheet:', error);
@@ -530,7 +527,9 @@ export default function ClassDetail() {
               </Breadcrumbs>
               <h1 className={title()}>Lớp {classDetail.name}</h1>
               <div className="mt-10">
-                <Tabs aria-label="Options" color="primary" variant="bordered">
+                <Tabs aria-label="Options" color="primary" selectedKey={location.hash.split("#")[1]} onSelectionChange={(e: React.Key) => {
+                  location.hash = e.toString();
+                }} variant="bordered">
                   <Tab
                     key="info"
                     title={
@@ -583,7 +582,10 @@ export default function ClassDetail() {
                         </div>
                       </CardBody>
                     </Card>
-                    <strong><h2 className={"mt-10 text-xl mb-3"}>Thông tin học viên</h2></strong>
+                    <div className="flex justify-between items-center">
+                      <strong><h2 className={"mt-10 text-xl mb-3"}>Thông tin học viên</h2></strong>
+                      <Button className="text-white" variant="bordered" color="success">Thêm học sinh</Button>
+                    </div>
                     <Table selectionMode="multiple" selectionBehavior="replace" aria-label="Example table with dynamic content" className="mt-7" fullWidth>
                       <TableHeader>
                         <TableColumn key="1" width="70px">No.</TableColumn>
@@ -633,7 +635,7 @@ export default function ClassDetail() {
                               <ModalBody>
                                 <p>Tạo điểm mới</p>
                                 <form onSubmit={formikCreate.handleSubmit}>
-                                  <Input name="testDateAt" label="Ngày kiểm tra" type="date" value={formikCreate.values.testDateAt} onChange={formikCreate.handleChange} placeholder="Nhập ngày kiểm tra"/>
+                                  <Input name="testDateAt" label="Ngày kiểm tra" type="date" value={formikCreate.values.testDateAt} onChange={formikCreate.handleChange} placeholder="Nhập ngày kiểm tra" />
                                   {formikCreate.errors.testDateAt && formikCreate.touched.testDateAt && (
                                     <p style={{ color: "red" }}>{formikCreate.errors.testDateAt}</p>
                                   )}
@@ -655,8 +657,8 @@ export default function ClassDetail() {
                                     ))}
                                   </Select>
                                   <div className="flex justify-between gap-1 min-w-full mt-4">
-                                    <Button color="success" variant="bordered" style={{width: "420px"}} onPress={() => handleDownloadTemplate("diem")}>Tải mẫu nhập dữ liệu</Button>
-                                    <Input color="primary" variant="bordered" type="file" accept=".xlsx" style={{width: "420px"}} onChange={handleFileUpload}>Upload template</Input>
+                                    <Button color="success" variant="bordered" style={{ width: "420px" }} onPress={() => handleDownloadTemplate("diem")}>Tải mẫu nhập dữ liệu</Button>
+                                    <Input color="primary" variant="bordered" type="file" accept=".xlsx" style={{ width: "420px" }} onChange={handleFileUpload}>Upload template</Input>
                                   </div>
                                   <Table selectionMode="multiple" selectionBehavior="replace" aria-label="Example table with dynamic content" className="mt-7 max-h-[300px]" fullWidth>
                                     <TableHeader>
@@ -676,7 +678,7 @@ export default function ClassDetail() {
                                       ))}
                                     </TableBody>
                                   </Table>
-                                  <Button fullWidth id="send-code-button" color="primary" type="submit" isLoading={handling} style={{ marginTop: "2vh", marginBottom:"2vh"}}>
+                                  <Button fullWidth id="send-code-button" color="primary" type="submit" isLoading={handling} style={{ marginTop: "2vh", marginBottom: "2vh" }}>
                                     Tạo
                                   </Button>
                                 </form>
@@ -738,11 +740,11 @@ export default function ClassDetail() {
                               <ModalBody>
                                 <p>Tạo điểm danh mới</p>
                                 <form onSubmit={formikCreateAttendance.handleSubmit}>
-                                  <Input name="startDate" label="Ngày bắt đầu điểm danh" type="date" value={formikCreateAttendance.values.startDate} onChange={formikCreateAttendance.handleChange} placeholder="Nhập ngày bắt đầu"/>
+                                  <Input name="startDate" label="Ngày bắt đầu điểm danh" type="date" value={formikCreateAttendance.values.startDate} onChange={formikCreateAttendance.handleChange} placeholder="Nhập ngày bắt đầu" />
                                   {formikCreateAttendance.errors.startDate && formikCreateAttendance.touched.startDate && (
                                     <p style={{ color: "red" }}>{formikCreateAttendance.errors.startDate}</p>
                                   )}
-                                  <Input name="endDate" className="mt-3" label="Ngày kết thúc điểm danh" type="date" value={formikCreateAttendance.values.endDate} onChange={formikCreateAttendance.handleChange} placeholder="Nhập ngày kết thúc"/>
+                                  <Input name="endDate" className="mt-3" label="Ngày kết thúc điểm danh" type="date" value={formikCreateAttendance.values.endDate} onChange={formikCreateAttendance.handleChange} placeholder="Nhập ngày kết thúc" />
                                   {formikCreateAttendance.errors.endDate && formikCreateAttendance.touched.endDate && (
                                     <p style={{ color: "red" }}>{formikCreateAttendance.errors.endDate}</p>
                                   )}
@@ -764,8 +766,8 @@ export default function ClassDetail() {
                                     ))}
                                   </Select>
                                   <div className="flex justify-between gap-1 min-w-full mt-4">
-                                    <Button color="success" variant="bordered" style={{width: "420px"}} onPress={() => handleDownloadTemplate("diemdanh")}>Tải mẫu nhập dữ liệu</Button>
-                                    <Input color="primary" variant="bordered" type="file" accept=".xlsx" style={{width: "420px"}} onChange={handleFileUploadAttendance}>Upload template</Input>
+                                    <Button color="success" variant="bordered" style={{ width: "420px" }} onPress={() => handleDownloadTemplate("diemdanh")}>Tải mẫu nhập dữ liệu</Button>
+                                    <Input color="primary" variant="bordered" type="file" accept=".xlsx" style={{ width: "420px" }} onChange={handleFileUploadAttendance}>Upload template</Input>
                                   </div>
                                   <Table selectionMode="multiple" selectionBehavior="replace" aria-label="Example table with dynamic content" className="mt-7 max-h-[300px]" fullWidth>
                                     <TableHeader>
@@ -781,7 +783,7 @@ export default function ClassDetail() {
                                       ))}
                                     </TableBody>
                                   </Table>
-                                  <Button fullWidth id="send-code-button" color="primary" type="submit" isLoading={handling} style={{ marginTop: "2vh", marginBottom:"2vh"}}>
+                                  <Button fullWidth id="send-code-button" color="primary" type="submit" isLoading={handling} style={{ marginTop: "2vh", marginBottom: "2vh" }}>
                                     Tạo
                                   </Button>
                                 </form>

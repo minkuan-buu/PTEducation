@@ -8,24 +8,21 @@ import { title, subtitle } from "@/components/primitives";
 import { GithubIcon } from "@/components/icons";
 import { useEffect, useRef, useState } from "react";
 import DefaultLayout from "@/layouts/default";
-import { CHECKSERVER, GETMONTHTEST, GETSCORESTUDENT } from "../api/api";
+import { CHECKSERVER, GETMONTHATTENDANCE, GETATTENDANCESTUDENT } from "../api/api";
 import { Logout } from "./logout";
-import { Card, CardBody, Select, SelectItem, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, useDisclosure } from "@nextui-org/react";
+import { Card, CardBody, Chip, Select, SelectItem, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@nextui-org/react";
 import { format, set } from "date-fns";
-import { ChangePassword } from "@/components/changePassword";
 
-export default function IndexPage() {
+export default function AttendancePage() {
   const [now, setNow] = useState(new Date());
   const [nowKey, setNowKey] = useState<string>("");
   const [monthYearData, setMonthYearData] = useState<MonthYearData[]>([]);
   const currentMonth = now.getMonth() + 1; // Tháng trong JavaScript bắt đầu từ 0
   const currentYear = now.getFullYear();
   const currentKey = `${currentMonth}/${currentYear}`; // Định dạng giá trị theo {tháng}/{năm}
-  const [ScoreData, setScoreData] = useState({});
+  const [AttendanceData, setAttendanceData] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
-  const [handling, setHandling] = useState(false);
 
   const handleResize = () => {
     setIsMobile(window.innerWidth <= 640);
@@ -33,11 +30,6 @@ export default function IndexPage() {
 
   useEffect(() => {
     handleResize(); // Check initially
-    if (localStorage.getItem("isShowChangePassword") == "true" && localStorage.getItem("isNeedToChangePassword") == "true") {
-      localStorage.removeItem("isShowChangePassword");
-      localStorage.removeItem("isNeedToChangePassword");
-      onOpenChange();
-    }
     window.addEventListener('resize', handleResize); // Update on resize
     return () => window.removeEventListener('resize', handleResize); // Cleanup
   }, []);
@@ -47,7 +39,7 @@ export default function IndexPage() {
 
   useEffect(() => {
     const checkServer = async () => {
-      if (localStorage.getItem("token") == null) return;
+      if(localStorage.getItem("token") == null) return;
       var token = localStorage.getItem("token");
       const { isSuccess, res } = await CHECKSERVER(token);
       if (!isSuccess) {
@@ -55,7 +47,7 @@ export default function IndexPage() {
       }
     }
 
-    const checkMonth = async () => {
+    const checkMonth = async() => {
       if (localStorage.getItem("token") == null) return;
       if (
         localStorage.getItem("role") == "Admin" ||
@@ -63,7 +55,7 @@ export default function IndexPage() {
       )
         return;
       var token = localStorage.getItem("token");
-      const { isSuccess, res } = await GETMONTHTEST(token);
+      const { isSuccess, res } = await GETMONTHATTENDANCE(token);
 
       if (isSuccess) {
         var result = await res.json();
@@ -79,7 +71,7 @@ export default function IndexPage() {
 
   useEffect(() => {
     setIsLoading(true);
-    const loadScore = async () => {
+    const loadScore = async() => {
       if (localStorage.getItem("token") == null) return;
       var token = localStorage.getItem("token");
 
@@ -93,12 +85,12 @@ export default function IndexPage() {
         month: parseInt(date[0]),
         year: parseInt(date[1])
       };
-      const { isSuccess, res } = await GETSCORESTUDENT(token, dateReq);
+      const { isSuccess, res } = await GETATTENDANCESTUDENT(token, dateReq);
 
       if (isSuccess) {
         var result = await res.json();
 
-        setScoreData(result.data);
+        setAttendanceData(result.data);
         setIsLoading(false);
       }
     };
@@ -108,6 +100,10 @@ export default function IndexPage() {
 
   const formatScoreDate = (date: Date): string => {
     return format(date, 'dd/MM/yyyy');
+  };
+
+  const formatAttendanceDate = (date: Date): string => {
+    return format(date, 'dd/MM');
   };
 
   return (
@@ -120,13 +116,6 @@ export default function IndexPage() {
           <h1 className={title()}>
             websites regardless of your design experience.
           </h1> */}
-          <ChangePassword
-            isOpen={isOpen}
-            isMobile={isMobile}
-            setHandling={setHandling}
-            handling={handling}
-            onOpenChange={onOpenChange}
-          />
           {localStorage.getItem("role") == "Admin" || localStorage.getItem("role") == "Manager" ? (
             <>
               {now.getHours() < 12 ? (
@@ -180,17 +169,17 @@ export default function IndexPage() {
                       <Table selectionMode="multiple" selectionBehavior="replace" aria-label="Example table with dynamic content" className="min-w-full w-auto" fullWidth>
                         <TableHeader>
                           <TableColumn key="1" width="70px">Id</TableColumn>
-                          <TableColumn key="2" width="500px">Tên</TableColumn>
-                          {ScoreData.scores.map((score) => (
-                            <TableColumn key={score.testDateAt} width="300px">{`Ngày ${formatScoreDate(score.testDateAt)}`}</TableColumn>
+                          <TableColumn key="2" className="min-w-full">Tên</TableColumn>
+                          {AttendanceData.attendances.map((attendance) => (
+                            <TableColumn key={attendance.startDate} width="200px">{`Tuần ${formatAttendanceDate(attendance.startDate)} - ${formatAttendanceDate(attendance.endDate)}`}</TableColumn>
                           ))}
                         </TableHeader>
-                        <TableBody items={ScoreData} emptyContent={"Chưa có dữ liệu"}>
+                        <TableBody items={AttendanceData} emptyContent={"Chưa có dữ liệu"}>
                           <TableRow key="1">
-                            <TableCell>{ScoreData.id}</TableCell>
-                            <TableCell>{ScoreData.name}</TableCell>
-                            {ScoreData.scores && ScoreData.scores.map((row, index) => (
-                              <TableCell>{row.score}</TableCell>
+                            <TableCell>{AttendanceData.id}</TableCell>
+                            <TableCell>{AttendanceData.name}</TableCell>
+                            {AttendanceData.attendances && AttendanceData.attendances.map((row, index) => (
+                              <TableCell>{row.isPresent ? <Chip color="success">Có mặt</Chip> : <Chip color="danger">Vắng</Chip>}</TableCell>
                             ))}
                           </TableRow>
                         </TableBody>
@@ -210,13 +199,13 @@ export default function IndexPage() {
                                 <div>
                                   <strong>Id</strong>
                                 </div>
-                                <div>{ScoreData.id}</div>
+                                <div>{AttendanceData.id}</div>
                               </div>
                               <div>
                                 <div>
                                   <strong>Tên</strong>
                                 </div>
-                                <div>{ScoreData.name}</div>
+                                <div>{AttendanceData.name}</div>
                               </div>
                             </div>
                           </CardBody>
@@ -225,16 +214,16 @@ export default function IndexPage() {
                       <div className="flex flex-col gap-2 mt-7 min-w-full overflow-x-auto ">
                         <Table selectionMode="multiple" selectionBehavior="replace" aria-label="Example table with dynamic content" className="min-w-full w-auto" fullWidth>
                           <TableHeader>
-                            <TableColumn key="1" width="300px">Ngày kiểm tra</TableColumn>
-                            <TableColumn key="2" width="500px">Điểm</TableColumn>
+                            <TableColumn key="1" width="300px">Tuần điểm danh</TableColumn>
+                            <TableColumn key="2" width="500px">Trạng thái điểm danh</TableColumn>
                           </TableHeader>
-                          <TableBody items={ScoreData} emptyContent={"Chưa có dữ liệu"}>
-                            {ScoreData.scores && ScoreData.scores.map((row, index) => (
-                              <TableRow key={index}>
-                                <TableCell>{`Ngày ${formatScoreDate(row.testDateAt)}`}</TableCell>
-                                <TableCell>{row.score}</TableCell>
-                              </TableRow>
-                            ))}
+                          <TableBody items={AttendanceData} emptyContent={"Chưa có dữ liệu"}>
+                            {AttendanceData.attendances && AttendanceData.attendances.map((row, index) => (
+                                <TableRow key={index}>
+                                  <TableCell>{`Tuần ${formatAttendanceDate(row.startDate)} - ${formatAttendanceDate(row.endDate)}`}</TableCell>
+                                  <TableCell>{row.isPresent ? <Chip color="success">Có mặt</Chip> : <Chip color="danger">Vắng</Chip>}</TableCell>
+                                </TableRow>
+                              ))}
                           </TableBody>
                         </Table>
                       </div>
@@ -246,19 +235,19 @@ export default function IndexPage() {
           )}
         </div>
         {localStorage.getItem("token") == null || localStorage.getItem("role") != "Student" ? (
-          <div className="flex gap-3">
-            <Link
-              isExternal
-              className={buttonStyles({
-                color: "primary",
-                radius: "full",
-                variant: "shadow",
-              })}
-              href={siteConfig.links.pteducation}
-            >
-              Truy cập E-Learning
-            </Link>
-            {/* <Link
+        <div className="flex gap-3">
+          <Link
+            isExternal
+            className={buttonStyles({
+              color: "primary",
+              radius: "full",
+              variant: "shadow",
+            })}
+            href={siteConfig.links.pteducation}
+          >
+            Truy cập E-Learning
+          </Link>
+          {/* <Link
             isExternal
             className={buttonStyles({ variant: "bordered", radius: "full" })}
             href={siteConfig.links.github}
@@ -266,8 +255,16 @@ export default function IndexPage() {
             <GithubIcon size={20} />
             GitHub
           </Link> */}
-          </div>
+        </div>
         ) : null}
+        {/* <div className="mt-8">
+          <Snippet hideCopyButton hideSymbol variant="bordered">
+            <span>
+              Get started by editing{" "}
+              <Code color="primary">pages/index.tsx</Code>
+            </span>
+          </Snippet>
+        </div> */}
       </section>
     </DefaultLayout>
   );

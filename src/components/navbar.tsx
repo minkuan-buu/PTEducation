@@ -32,14 +32,22 @@ import { useDisclosure, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter
 import { useEffect, useRef, useState } from "react";
 import { Logo } from "@/components/icons";
 import {
-  LOGIN
+  LOGIN,
+  SENDOTP,
+  VERIFYOTP,
+  RESETPASSWORD
 } from "../api/api";
-import Logout from "@/pages/logout";
+import { Logout, LogoutResetPassword } from "@/pages/logout";
+import { set } from "date-fns";
 
 export const Navbar = () => {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [onLoading, setOnLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isResetingPassword, setIsResetingPassword] = useState(false);
+  const [isOTPTyping, setIsOTPTyping] = useState(false);
+  const [isTypingPassword, setTypingPassword] = useState(false);
+  const [OTPCreateAt, setOTPCreateAt] = useState<Date>(null);
 
   const handleResize = () => {
     setIsMobile(window.innerWidth <= 640);
@@ -184,22 +192,82 @@ export const Navbar = () => {
           <ModalContent>
             {(onClose) => (
               <>
-                <ModalHeader>Đăng nhập</ModalHeader>
+                <ModalHeader>{isResetingPassword ? "Đặt lại mật khẩu" : "Đăng nhập"}</ModalHeader>
                 <ModalBody>
-                  <p>Đăng nhập để sử dụng các tính năng của PT Education</p>
-                  <form onSubmit={formik.handleSubmit}>
-                    <Input name="username" label="Tên đăng nhập" value={formik.values.username} onChange={formik.handleChange} placeholder="Id hoặc email" />
-                    {formik.errors.username && formik.touched.username && (
-                      <p style={{ color: "red" }}>{formik.errors.username}</p>
-                    )}
-                    <Input name="password" label="Mật khẩu" type="password" value={formik.values.password} onChange={formik.handleChange} placeholder="Nhập mật khẩu" className="mt-3" />
-                    {formik.errors.password && formik.touched.password && (
-                      <p style={{ color: "red" }}>{formik.errors.password}</p>
-                    )}
-                    <Button fullWidth id="send-code-button" color="primary" type="submit" isLoading={onLoading} style={{ marginTop: "2vh", marginBottom: "2vh" }}>
-                      Tiếp tục
-                    </Button>
-                  </form>
+                  {!isResetingPassword ? (
+                    <>
+                      <p>Đăng nhập để sử dụng các tính năng của PT Education</p>
+                      <form onSubmit={formik.handleSubmit}>
+                        <Input name="username" label="Tên đăng nhập" value={formik.values.username} onChange={formik.handleChange} placeholder="Id hoặc email" />
+                        {formik.errors.username && formik.touched.username && (
+                          <p style={{ color: "red" }}>{formik.errors.username}</p>
+                        )}
+                        <Input name="password" label="Mật khẩu" type="password" value={formik.values.password} onChange={formik.handleChange} placeholder="Nhập mật khẩu" className="mt-3" />
+                        {formik.errors.password && formik.touched.password && (
+                          <p style={{ color: "red" }}>{formik.errors.password}</p>
+                        )}
+                        <Button fullWidth id="send-code-button" color="primary" type="submit" isLoading={onLoading} style={{ marginTop: "2vh", marginBottom: "2vh" }}>
+                          Tiếp tục
+                        </Button>
+                        <Button onClick={() => setIsResetingPassword(!isResetingPassword)}>Quên mật khẩu?</Button>
+                      </form>
+                    </>
+                  ) : (
+                    <>
+                      {isOTPTyping ? (
+                        <>
+                          <p>Nhập mã OTP đã được gửi đến email của bạn</p>
+                          <form onSubmit={formikVerifyOTPReset.handleSubmit}>
+                            <Input name="otpCode" label="OTP Code" value={formikVerifyOTPReset.values.otpCode} onChange={formikVerifyOTPReset.handleChange} placeholder="Nhập OTP Code" />
+                            {formikVerifyOTPReset.errors.otpCode && formikVerifyOTPReset.touched.otpCode && (
+                              <p style={{ color: "red" }}>{formikVerifyOTPReset.errors.otpCode}</p>
+                            )}
+                            <p className="mt-2">Bạn chưa nhận được OTP? <Button className={`${canResend ? "cursor-pointer" : "cursor-not-allowed"} ml-2`} isLoading={onSendingOTP} isDisabled={!canResend || onSendingOTP} onClick={() => resendOTP()}>Gửi lại {canResend ? null : `sau ${minutesResend}:${secondsResend < 10 ? "0" : ""}${secondsResend}`}</Button></p>
+                            <Button fullWidth id="send-code-button" color="primary" type="submit" isLoading={onLoading} style={{ marginTop: "2vh", marginBottom: "2vh" }}>
+                              Tiếp tục
+                            </Button>
+                            <Button onClick={() => handleCancel()}>Quay lại đăng nhập</Button>
+                          </form>
+                        </>
+                      ) : (
+                        <>
+                          {isTypingPassword ? (
+                            <>
+                              <p>Nhập mật khẩu mới</p>
+                              <form onSubmit={formikPasswordReset.handleSubmit}>
+                                <Input name="newPassword" label="Mật khẩu mới" type="password" value={formikPasswordReset.values.newPassword} onChange={formikPasswordReset.handleChange} placeholder="Nhập mật khẩu mới" />
+                                {formikPasswordReset.errors.newPassword && formikPasswordReset.touched.newPassword && (
+                                  <p style={{ color: "red" }}>{formikPasswordReset.errors.newPassword}</p>
+                                )}
+                                <Input name="confirmPassword" label="Nhập lại mật khẩu mới" type="password" className="mt-3" value={formikPasswordReset.values.confirmPassword} onChange={formikPasswordReset.handleChange} placeholder="Nhập lại mật khẩu mới" />
+                                {formikPasswordReset.errors.confirmPassword && formikPasswordReset.touched.confirmPassword && (
+                                  <p style={{ color: "red" }}>{formikPasswordReset.errors.confirmPassword}</p>
+                                )}
+                                <Button fullWidth id="send-code-button" color="primary" type="submit" isLoading={onLoading} style={{ marginTop: "2vh", marginBottom: "2vh" }}>
+                                  Tiếp tục
+                                </Button>
+                                <Button onClick={() => handleCancel()}>Quay lại đăng nhập</Button>
+                              </form>
+                            </>
+                          ) : (
+                            <>
+                              <p>Nhập email để đặt lại mật khẩu</p>
+                              <form onSubmit={formikEnterMailReset.handleSubmit}>
+                                <Input name="email" label="Email" value={formikEnterMailReset.values.email} onChange={formikEnterMailReset.handleChange} placeholder="Nhập email" />
+                                {formikEnterMailReset.errors.email && formikEnterMailReset.touched.email && (
+                                  <p style={{ color: "red" }}>{formikEnterMailReset.errors.email}</p>
+                                )}
+                                <Button fullWidth id="send-code-button" color="primary" type="submit" isLoading={onLoading} style={{ marginTop: "2vh", marginBottom: "2vh" }}>
+                                  Tiếp tục
+                                </Button>
+                                <Button onClick={() => handleCancel()}>Quay lại đăng nhập</Button>
+                              </form>
+                            </>
+                          )}
+                        </>
+                      )}
+                    </>
+                  )}
                 </ModalBody>
               </>
             )}
