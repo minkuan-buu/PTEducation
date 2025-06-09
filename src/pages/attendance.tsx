@@ -39,7 +39,7 @@ export default function AttendancePage() {
 
   useEffect(() => {
     const checkServer = async () => {
-      if(localStorage.getItem("token") == null) return;
+      if (localStorage.getItem("token") == null) return;
       var token = localStorage.getItem("token");
       const { isSuccess, res } = await CHECKSERVER(token);
       if (!isSuccess) {
@@ -47,7 +47,7 @@ export default function AttendancePage() {
       }
     }
 
-    const checkMonth = async() => {
+    const checkMonth = async () => {
       if (localStorage.getItem("token") == null) return;
       if (
         localStorage.getItem("role") == "Admin" ||
@@ -71,7 +71,7 @@ export default function AttendancePage() {
 
   useEffect(() => {
     setIsLoading(true);
-    const loadScore = async() => {
+    const loadScore = async () => {
       if (localStorage.getItem("token") == null) return;
       var token = localStorage.getItem("token");
 
@@ -142,8 +142,8 @@ export default function AttendancePage() {
             <div className="flex flex-col justify-between items-center min-w-96">
               <Select
                 items={monthYearData}
-                label="Tra điểm theo tháng"
-                placeholder="Chọn tháng kiểm tra"
+                label="Tra điểm danh theo tháng"
+                placeholder="Chọn tháng và năm"
                 className="min-w-full mt-3"
                 defaultSelectedKeys={[currentKey]} // Đặt giá trị mặc định
                 onChange={(keys) => {
@@ -219,11 +219,11 @@ export default function AttendancePage() {
                           </TableHeader>
                           <TableBody items={AttendanceData} emptyContent={"Chưa có dữ liệu"}>
                             {AttendanceData.attendances && AttendanceData.attendances.map((row, index) => (
-                                <TableRow key={index}>
-                                  <TableCell>{`Tuần ${formatAttendanceDate(row.startDate)} - ${formatAttendanceDate(row.endDate)}`}</TableCell>
-                                  <TableCell>{row.isPresent ? <Chip color="success">Có mặt</Chip> : <Chip color="danger">Vắng</Chip>}</TableCell>
-                                </TableRow>
-                              ))}
+                              <TableRow key={index}>
+                                <TableCell>{`Tuần ${formatAttendanceDate(row.startDate)} - ${formatAttendanceDate(row.endDate)}`}</TableCell>
+                                <TableCell>{row.isPresent ? <Chip color="success">Có mặt</Chip> : <Chip color="danger">Vắng</Chip>}</TableCell>
+                              </TableRow>
+                            ))}
                           </TableBody>
                         </Table>
                       </div>
@@ -235,19 +235,19 @@ export default function AttendancePage() {
           )}
         </div>
         {localStorage.getItem("token") == null || localStorage.getItem("role") != "Student" ? (
-        <div className="flex gap-3">
-          <Link
-            isExternal
-            className={buttonStyles({
-              color: "primary",
-              radius: "full",
-              variant: "shadow",
-            })}
-            href={siteConfig.links.pteducation}
-          >
-            Truy cập E-Learning
-          </Link>
-          {/* <Link
+          <div className="flex gap-3">
+            <Link
+              isExternal
+              className={buttonStyles({
+                color: "primary",
+                radius: "full",
+                variant: "shadow",
+              })}
+              href={siteConfig.links.pteducation}
+            >
+              Truy cập E-Learning
+            </Link>
+            {/* <Link
             isExternal
             className={buttonStyles({ variant: "bordered", radius: "full" })}
             href={siteConfig.links.github}
@@ -255,7 +255,7 @@ export default function AttendancePage() {
             <GithubIcon size={20} />
             GitHub
           </Link> */}
-        </div>
+          </div>
         ) : null}
         {/* <div className="mt-8">
           <Snippet hideCopyButton hideSymbol variant="bordered">
