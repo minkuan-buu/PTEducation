@@ -19,6 +19,7 @@ import { format, set } from "date-fns";
 import { MdOutlineSettingsBackupRestore } from "react-icons/md";
 import { Workbook } from 'exceljs';
 import { Logout } from "../pages/logout";
+import { FaTrash } from "react-icons/fa";
 
 export default function ManageClassesPage() {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
@@ -64,11 +65,13 @@ export default function ManageClassesPage() {
       name: "",
       startAt: "",
       endAt: "",
+      defaultPassword: "",
     },
     validationSchema: Yup.object({
       name: Yup.string().required("Required"),
       startAt: Yup.date().required("Required"),
       endAt: Yup.date().required("Required"),
+      defaultPassword: Yup.string(),
     }),
     onSubmit: async (values) => {
       setHandling(true);
@@ -77,6 +80,7 @@ export default function ManageClassesPage() {
         name: values.name,
         startAt: values.startAt,
         endAt: values.endAt,
+        defaultPassword: values.defaultPassword.length > 0 ? values.defaultPassword : null,
         students: [],
       };
 
@@ -85,7 +89,7 @@ export default function ManageClassesPage() {
           id: `${studentData.id}`,
           name: studentData.name,
           email: studentData.email,
-          phone: studentData.phone,
+          phone: studentData.phone.toString().length > 0 ? studentData.phone.toString() : "-",
         };
         body.students.push(student);
       });
@@ -287,56 +291,68 @@ export default function ManageClassesPage() {
     setTableData([]);
   }
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  const [file, setFile] = useState < File | null > (null);
+
+  const clearFileInput = () => {
+    setFile(null);
     setTableData([]);
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = async (e: ProgressEvent<FileReader>) => {
-        const arrayBuffer = e.target?.result as ArrayBuffer;
+    const fileInput = document.getElementById("fileUpload") as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = ""; // reset giá trị input file
+    }
+  };
 
-        const workbook = new Workbook();
-        await workbook.xlsx.load(arrayBuffer);
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const uploadedFile = event.target.files?.[0];
+    setTableData([]);
 
-        // Lấy worksheet theo tên 'ImportStudents'
-        const worksheet = workbook.getWorksheet('ImportStudents');
+    if (!uploadedFile) return;
 
-        if (worksheet) {
-          const jsonData: any[] = [];
-          let headers: string[] = [];
+    setFile(uploadedFile);
 
-          worksheet.eachRow({ includeEmpty: true }, (row, rowNumber) => {
-            if (rowNumber === 1) {
-              // Lấy hàng đầu tiên làm tiêu đề và chuyển đổi thành chữ thường
-              headers = row.values.slice(1).map(header => header?.toString().toLowerCase()) as string[];
+    const reader = new FileReader();
+    reader.onload = async (e: ProgressEvent<FileReader>) => {
+      const arrayBuffer = e.target?.result as ArrayBuffer;
+
+      const workbook = new Workbook();
+      await workbook.xlsx.load(arrayBuffer);
+
+      const worksheet = workbook.getWorksheet("ImportStudents");
+
+      if (!worksheet) {
+        console.error('Worksheet "ImportStudents" không tồn tại.');
+        return;
+      }
+
+      const jsonData: any[] = [];
+      let headers: string[] = [];
+
+      worksheet.eachRow({ includeEmpty: true }, (row, rowNumber) => {
+        if (rowNumber === 1) {
+          headers = row.values.slice(1).map(header => header?.toString().toLowerCase()) as string[];
+        } else {
+          const rowData: any = {};
+          const rowValues = row.values.slice(1);
+
+          headers.forEach((header, index) => {
+            if (index === 2) {
+              rowData[header] = row.getCell(index + 1).text;
             } else {
-              const rowData: any = {};
-              const rowValues = row.values.slice(1); // Bỏ qua chỉ số hàng
-
-              headers.forEach((header, index) => {
-                if (index === 2) {
-                  // Xử lý cột Email: loại bỏ hyperlink và chỉ lấy text
-                  rowData[header] = row.getCell(index + 1).text; // `index + 1` vì chỉ số cột bắt đầu từ 1
-                } else {
-                  rowData[header] = rowValues[index] || null; // Gán giá trị vào đối tượng JSON
-                }
-              });
-
-              jsonData.push(rowData);
+              rowData[header] = rowValues[index] || null;
             }
           });
 
-          console.log(jsonData); // Xem dữ liệu JSON đã xử lý
-          setTableData(jsonData);
-          // Xử lý dữ liệu JSON theo nhu cầu
-          // setTableData(jsonData); // Ví dụ, set dữ liệu cho bảng
-        } else {
-          console.error('Worksheet "ImportStudents" không tồn tại.');
+          jsonData.push(rowData);
         }
-      };
-      reader.readAsArrayBuffer(file);
-    }
+      });
+
+      console.log(jsonData);
+      setTableData(jsonData);
+    };
+
+    reader.readAsArrayBuffer(uploadedFile);
   };
+
 
   return (
     <DefaultLayout>
@@ -372,9 +388,40 @@ export default function ManageClassesPage() {
                             <p style={{ color: "red" }}>{formikCreate.errors.endAt}</p>
                           )}
                         </div>
+                        <Input name="defaultPassword" label="Mật khẩu mặc định" type="password" value={formikCreate.values.defaultPassword} onChange={formikCreate.handleChange} placeholder="Nhập mật khẩu mặc định (không bắt buộc)" className="mt-3" />
+                        {formikCreate.errors.defaultPassword && formikCreate.touched.defaultPassword && (
+                          <p style={{ color: "red" }}>{formikCreate.errors.defaultPassword}</p>
+                        )}
                         <div className="flex justify-between gap-1 min-w-full mt-3">
-                          <Button color="success" variant="bordered" style={{ width: "420px" }} onPress={() => handleDownloadTemplate()}>Tải mẫu nhập dữ liệu</Button>
-                          <Input color="primary" variant="bordered" type="file" accept=".xlsx" style={{ width: "420px" }} onChange={handleFileUpload}>Upload template</Input>
+                          <Button
+                            color="success"
+                            variant="bordered"
+                            style={{ width: "420px" }}
+                            onPress={handleDownloadTemplate}
+                          >
+                            Tải mẫu nhập dữ liệu
+                          </Button>
+
+                          <Input
+                            id="fileUpload"
+                            color="primary"
+                            variant="bordered"
+                            type="file"
+                            accept=".xlsx"
+                            style={{ width: "420px" }}
+                            onChange={handleFileUpload}
+                          />
+
+                          {file && (
+                            <Button
+                              color="danger"
+                              variant="bordered"
+                              style={{ width: "50px" }}
+                              onPress={clearFileInput}
+                            >
+                              <FaTrash />
+                            </Button>
+                          )}
                         </div>
                         <Table selectionMode="multiple" selectionBehavior="replace" aria-label="Example table with dynamic content" className="mt-7 max-h-[300px]" fullWidth>
                           <TableHeader>

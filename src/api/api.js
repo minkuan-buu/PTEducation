@@ -114,8 +114,8 @@ export async function GETTEMPLATEIMPORTSCORESTUDENT(token, classId) {
     return { isSuccess: res.ok, res }
 }
 
-export async function GETTEMPLATEIMPORTATTENDANCESTUDENT(token) {
-    const res = await fetch(API_URL + `template/import-attendance`, {
+export async function GETTEMPLATEIMPORTATTENDANCESTUDENT(token, classId) {
+    const res = await fetch(API_URL + `template/import-attendance?ClassId=${classId}`, {
         method: "GET",
         headers: {
             "Content-Type": "application/json",

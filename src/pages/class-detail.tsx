@@ -21,9 +21,11 @@ import { GrScorecard } from "react-icons/gr";
 import { FaCalendarCheck } from "react-icons/fa6";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import { Workbook } from 'exceljs';
+// import { Workbook } from 'exceljs';
+import ExcelJS from "exceljs";
 import moment from "moment";
 import { useLocation } from "react-router-dom";
+import { FaTrash } from "react-icons/fa";
 
 interface ClassDetail {
   id: string;
@@ -50,7 +52,7 @@ export default function ClassDetail() {
     onOpen: onOpenAttendance,
     onOpenChange: onOpenChangeAttendance,
   } = useDisclosure();
-  const [classDetail, setClassDetail] = useState<ClassDetail>();
+  const [classDetail, setClassDetail] = useState < ClassDetail > ();
   const [classListScore, setClassListScore] = useState([]);
   const [classListAttendance, setClassListAttendance] = useState([]);
   const [classListSelect, setClassListSelect] = useState([]);
@@ -58,11 +60,11 @@ export default function ClassDetail() {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
   const [sortConfigScore, setSortConfigScore] = useState({ key: null, direction: 'ascending' });
   const [sortConfigAttendance, setSortConfigAttendance] = useState({ key: null, direction: 'ascending' });
-  const [onLoading, setOnLoading] = useState<Boolean>(true);
+  const [onLoading, setOnLoading] = useState < Boolean > (true);
   const [tableData, setTableData] = useState([]);
   const [tableDataAttendance, setTableDataAttendance] = useState([]);
   const [loadForm, setloadForm] = useState(false);
-  const [handling, setHandling] = useState<boolean>(false);
+  const [handling, setHandling] = useState < boolean > (false);
   const { id } = useParams();
   // const [handling, setHandling] = useState(false);
 
@@ -189,7 +191,7 @@ export default function ClassDetail() {
         if (key == "diem") {
           callback = await GETTEMPLATEIMPORTSCORESTUDENT(token, id);
         } else if (key == "diemdanh") {
-          callback = await GETTEMPLATEIMPORTATTENDANCESTUDENT(token);
+          callback = await GETTEMPLATEIMPORTATTENDANCESTUDENT(token, id);
         }
         if (callback == null) return;
 
@@ -223,12 +225,14 @@ export default function ClassDetail() {
   function CloseModal() {
     onOpenChange();
     formikCreate.resetForm();
+    setFile(null);
     setTableData([]);
   }
 
   function CloseModalAttendance() {
     onOpenChangeAttendance();
     formikCreateAttendance.resetForm();
+    setFile(null);
     setTableDataAttendance([]);
   }
 
@@ -401,6 +405,7 @@ export default function ClassDetail() {
     setTableData([]);
     if (file) {
       const reader = new FileReader();
+      setFile(file);
 
       reader.onload = async (e: ProgressEvent<FileReader>) => {
         try {
@@ -452,60 +457,106 @@ export default function ClassDetail() {
     }
   };
 
+  const [file, setFile] = useState < File | null > (null);
+
+  const clearFileScoreInput = () => {
+    setFile(null);
+    setTableData([]);
+    const fileInput = document.getElementById("fileScoreUpload") as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = ""; // reset giá trị input file
+    }
+  };
+
+  const clearFileAttendanceInput = () => {
+    setFile(null);
+    setTableDataAttendance([]);
+    const fileInput = document.getElementById("fileAttendanceUpload") as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = ""; // reset giá trị input file
+    }
+  };
+
   const handleFileUploadAttendance = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     setTableData([]);
-    if (file) {
-      const reader = new FileReader();
+    if (!file) return;
 
-      reader.onload = async (e: ProgressEvent<FileReader>) => {
-        try {
-          const arrayBuffer = e.target?.result as ArrayBuffer;
-
-          if (!arrayBuffer) {
-            console.error("arrayBuffer không tồn tại.");
-            return;
-          }
-
-          const workbook = new Workbook();
-
-          await workbook.xlsx.load(arrayBuffer);
-
-          // Kiểm tra workbook
-          if (!workbook || !workbook.worksheets) {
-            console.error("Workbook không tải đúng hoặc không có worksheets.");
-            return;
-          }
-
-          // Kiểm tra worksheet
-          const worksheet = workbook.getWorksheet("ImportAttendance");
-          if (!worksheet) {
-            console.error('Worksheet "ScoreStudents" không tồn tại.');
-            return;
-          }
-
-          const data: any[] = [];
-          let headers: string[] = [];
-
-          worksheet.eachRow({ includeEmpty: true }, (row, rowNumber) => {
-            if (rowNumber === 1) {
-              headers = row.values.slice(1).map(header => header?.toString().toLowerCase()) as string[];
-            } else {
-              const rowData: any = {};
-              row.values.slice(1).forEach((cellValue, index) => {
-                rowData[headers[index]] = cellValue;
-              });
-              data.push(rowData);
-            }
-          });
-          setTableDataAttendance(data);
-        } catch (error) {
-          console.error('Lỗi khi tải workbook hoặc worksheet:', error);
-        }
-      };
-      reader.readAsArrayBuffer(file);
+    if (!file.name.endsWith(".xlsx")) {
+      console.error("File không phải định dạng .xlsx hợp lệ");
+      return;
     }
+
+    setFile(file);
+    const reader = new FileReader();
+
+    reader.onload = async (e: ProgressEvent<FileReader>) => {
+      try {
+        const result = e.target?.result;
+        if (!(result instanceof ArrayBuffer)) {
+          console.error("FileReader không trả về ArrayBuffer");
+          return;
+        }
+
+        const workbook = new ExcelJS.Workbook();
+        const arrayBuffer = await file.arrayBuffer(); // Chuyển sang ArrayBuffer
+        await workbook.xlsx.load(arrayBuffer);
+
+        console.log("Sheet trong file:", workbook.worksheets.map(ws => ws.name));
+
+        const worksheet = workbook.getWorksheet("ImportAttendance");
+        if (!worksheet) {
+          console.error('Worksheet "ImportAttendance" không tồn tại.');
+          return;
+        }
+
+        const mappingsheet = workbook.getWorksheet("MappingStudents");
+        if (!mappingsheet) {
+          console.error('Worksheet "MappingStudents" không tồn tại.');
+          return;
+        }
+
+        // Tạo map ID -> Name
+        const idToNameMap: Record<string, string> = {};
+        mappingsheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+          if (rowNumber > 1) {
+            const id = row.getCell(1).text;
+            const name = row.getCell(2).text;
+            if (id) idToNameMap[id] = name;
+          }
+        });
+
+        // Đọc ImportAttendance
+        const data: any[] = [];
+        let headers: string[] = [];
+
+        worksheet.eachRow({ includeEmpty: true }, (row, rowNumber) => {
+          if (rowNumber === 1) {
+            headers = row.values.slice(1).map(h => h?.toString().toLowerCase()) as string[];
+          } else {
+            const rowData: any = {};
+            row.values.slice(1).forEach((value, idx) => {
+              if (headers[idx] === "id") {
+                const id = value?.toString();
+                rowData["ID"] = id;
+                rowData["Name"] = idToNameMap[id] || "";
+              } else {
+                rowData[headers[idx]] = value;
+              }
+            });
+            data.push(rowData);
+          }
+        });
+        console.log("Dữ liệu điểm danh:", data);
+        setTableDataAttendance(data);
+      } catch (error) {
+        console.error("Lỗi khi tải workbook hoặc worksheet:", error);
+      }
+    };
+
+    reader.readAsArrayBuffer(file);
   };
+
 
   const handleRowClick = (scoreId) => {
     window.location.href = `/class/${id}/score/${scoreId}`;
@@ -658,7 +709,17 @@ export default function ClassDetail() {
                                   </Select>
                                   <div className="flex justify-between gap-1 min-w-full mt-4">
                                     <Button color="success" variant="bordered" style={{ width: "420px" }} onPress={() => handleDownloadTemplate("diem")}>Tải mẫu nhập dữ liệu</Button>
-                                    <Input color="primary" variant="bordered" type="file" accept=".xlsx" style={{ width: "420px" }} onChange={handleFileUpload}>Upload template</Input>
+                                    <Input id="fileScoreUpload" color="primary" variant="bordered" type="file" accept=".xlsx" style={{ width: "420px" }} onChange={handleFileUpload}>Upload template</Input>
+                                    {file && (
+                                      <Button
+                                        color="danger"
+                                        variant="bordered"
+                                        style={{ width: "50px" }}
+                                        onPress={clearFileScoreInput}
+                                      >
+                                        <FaTrash />
+                                      </Button>
+                                    )}
                                   </div>
                                   <Table selectionMode="multiple" selectionBehavior="replace" aria-label="Example table with dynamic content" className="mt-7 max-h-[300px]" fullWidth>
                                     <TableHeader>
@@ -767,17 +828,29 @@ export default function ClassDetail() {
                                   </Select>
                                   <div className="flex justify-between gap-1 min-w-full mt-4">
                                     <Button color="success" variant="bordered" style={{ width: "420px" }} onPress={() => handleDownloadTemplate("diemdanh")}>Tải mẫu nhập dữ liệu</Button>
-                                    <Input color="primary" variant="bordered" type="file" accept=".xlsx" style={{ width: "420px" }} onChange={handleFileUploadAttendance}>Upload template</Input>
+                                    <Input id="fileAttendanceUpload" color="primary" variant="bordered" type="file" accept=".xlsx" style={{ width: "420px" }} onChange={handleFileUploadAttendance}>Upload template</Input>
+                                    {file && (
+                                      <Button
+                                        color="danger"
+                                        variant="bordered"
+                                        style={{ width: "50px" }}
+                                        onPress={clearFileAttendanceInput}
+                                      >
+                                        <FaTrash />
+                                      </Button>
+                                    )}
                                   </div>
                                   <Table selectionMode="multiple" selectionBehavior="replace" aria-label="Example table with dynamic content" className="mt-7 max-h-[300px]" fullWidth>
                                     <TableHeader>
                                       <TableColumn key="1" width="70px">Id</TableColumn>
-                                      <TableColumn key="4" width="200px">Hành động</TableColumn>
+                                      <TableColumn key="2" width="70px">Tên</TableColumn>
+                                      <TableColumn key="3" width="200px">Hành động</TableColumn>
                                     </TableHeader>
                                     <TableBody items={tableDataAttendance} emptyContent={"Chưa có dữ liệu"}>
                                       {tableDataAttendance.map((row, index) => (
-                                        <TableRow key={row.id}>
-                                          <TableCell>{row.id}</TableCell>
+                                        <TableRow key={row.ID}>
+                                          <TableCell>{row.ID}</TableCell>
+                                          <TableCell>{row.Name}</TableCell>
                                           <TableCell></TableCell>
                                         </TableRow>
                                       ))}
