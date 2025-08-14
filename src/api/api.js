@@ -1,5 +1,5 @@
-// export const API_URL = "https://api.pteducation.edu.vn/api/";
-export const API_URL = "http://localhost:5083/api/";
+export const API_URL = "https://api.pteducation.edu.vn/api/";
+// export const API_URL = "http://localhost:5083/api/";
 
 export async function LOGIN(body) {
     const res = await fetch(API_URL + "authentication/login", {
