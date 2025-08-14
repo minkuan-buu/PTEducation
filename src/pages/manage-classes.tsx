@@ -7,8 +7,9 @@ import {
   RESTORECLASS,
   CREATECLASS,
   GETTEMPLATEIMPORTSTUDENT,
+  HARDDELETECLASS
 } from "../api/api";
-import { Button, CalendarDate, DatePicker, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Popover, PopoverContent, PopoverTrigger, Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, Tooltip, useDisclosure } from "@nextui-org/react";
+import { Button, CalendarDate, DatePicker, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Popover, PopoverContent, PopoverTrigger, Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, Tooltip, useDisclosure } from "@heroui/react";
 import { useLocation, useNavigate } from "react-router-dom";
 import * as Yup from "yup";
 import { Field, useFormik } from "formik";
@@ -20,6 +21,7 @@ import { MdOutlineSettingsBackupRestore } from "react-icons/md";
 import { Workbook } from 'exceljs';
 import { Logout } from "../pages/logout";
 import { FaTrash } from "react-icons/fa";
+import { GrStatusDisabledSmall } from "react-icons/gr";
 
 export default function ManageClassesPage() {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
@@ -223,6 +225,35 @@ export default function ManageClassesPage() {
     fetchData();
   }
 
+  function handleHardDelete(id: string) {
+    setHandling(true);
+    var token = localStorage.getItem("token");
+    const fetchData = async () => {
+      try {
+        const { isSuccess, res } = await HARDDELETECLASS(token, id);
+
+        if (!isSuccess) {
+          if (res.status === 401) {
+            Logout();
+          }
+          let result = await res.json();
+
+          alert(result.message);
+        } else {
+          let result = await res.json();
+
+        }
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setloadForm(false);
+        setIsLoading(true);
+        setHandling(false);
+      }
+    };
+    fetchData();
+  }
+
   function handleRestore(id: string) {
     setHandling(true);
     var token = localStorage.getItem("token");
@@ -372,9 +403,9 @@ export default function ManageClassesPage() {
                 {(onClose) => (
                   <>
                     <ModalHeader>Tạo lớp học</ModalHeader>
-                    <ModalBody>
-                      <p>Tạo lớp học mới</p>
-                      <form onSubmit={formikCreate.handleSubmit}>
+                    <form onSubmit={formikCreate.handleSubmit}>
+                      <ModalBody>
+                        <p>Tạo lớp học mới</p>
                         <Input name="name" label="Tên lớp" value={formikCreate.values.name} onChange={formikCreate.handleChange} placeholder="Nhập tên lớp" />
                         {formikCreate.errors.name && formikCreate.touched.name && (
                           <p style={{ color: "red" }}>{formikCreate.errors.name}</p>
@@ -447,13 +478,13 @@ export default function ManageClassesPage() {
                             ))}
                           </TableBody>
                         </Table>
-                      </form>
-                    </ModalBody>
-                    <ModalFooter>
-                      <Button fullWidth id="send-code-button" color="primary" type="submit" isLoading={handling} style={{ marginTop: "2vh", marginBottom: "2vh" }}>
-                        Tạo
-                      </Button>
-                    </ModalFooter>
+                      </ModalBody>
+                      <ModalFooter>
+                        <Button fullWidth id="send-code-button" color="primary" type="submit" isLoading={handling} style={{ marginTop: "2vh", marginBottom: "2vh" }}>
+                          Tạo
+                        </Button>
+                      </ModalFooter>
+                    </form>
                   </>
                 )}
               </ModalContent>
@@ -517,9 +548,9 @@ export default function ManageClassesPage() {
                     <TableCell>
                       <div className="relative flex items-center gap-2">
                         {row.status === "Active" ? (
-                          <Tooltip color="danger" content="Xóa" placement="right">
-                            <Button className="text-lg text-danger cursor-pointer active:opacity-100 bg-danger-200" onClick={() => handleDelete(row.id)} isDisabled={handling} isLoading={handling}>
-                              <DeleteIcon />
+                          <Tooltip color="primary" content="Vô hiệu hóa" placement="right">
+                            <Button className="text-lg text-primary cursor-pointer active:opacity-100 bg-primary-200" onClick={() => handleDelete(row.id)} isDisabled={handling} isLoading={handling}>
+                              <GrStatusDisabledSmall />
                             </Button>
                           </Tooltip>
                         ) : (
@@ -529,6 +560,11 @@ export default function ManageClassesPage() {
                             </Button>
                           </Tooltip>
                         )}
+                        <Tooltip color="danger" content="Xóa" placement="right">
+                          <Button className="text-lg text-danger cursor-pointer active:opacity-100 bg-danger-200" onClick={() => handleHardDelete(row.id)} isDisabled={handling} isLoading={handling}>
+                            <DeleteIcon />
+                          </Button>
+                        </Tooltip>
                       </div>
                     </TableCell>
                   </TableRow>

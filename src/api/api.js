@@ -57,6 +57,18 @@ export async function DELETECLASS(token, id) {
     return { isSuccess: res.ok, res }
 }
 
+export async function HARDDELETECLASS(token, id) {
+    const res = await fetch(API_URL + `class/delete`, {
+        method: "DELETE",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
+        },
+        body: JSON.stringify(id)
+    })
+    return { isSuccess: res.ok, res }
+}
+
 export async function RESTORECLASS(token, id) {
     const res = await fetch(API_URL + `class/restore`, {
         method: "PUT",
@@ -309,6 +321,18 @@ export async function VERIFYOTP(body) {
 
 export async function RESETPASSWORD(token, body) {
     const res = await fetch(API_URL + `authentication/reset-password`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
+        },
+        body: JSON.stringify(body)
+    })
+    return { isSuccess: res.ok, res }
+}
+
+export async function ADDSTUDENTSINTOCLASS(token, body) {
+    const res = await fetch(API_URL + `class/add-student`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",

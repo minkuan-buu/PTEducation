@@ -1,4 +1,4 @@
-import { Button, Input, Modal, ModalBody, ModalContent, ModalHeader } from "@nextui-org/react"
+import { Button, Input, Modal, ModalBody, ModalContent, ModalHeader } from "@heroui/react"
 import { CHANGEPASSWORD } from "../api/api";
 import { useFormik } from "formik";
 import * as Yup from "yup";

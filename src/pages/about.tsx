@@ -1,6 +1,6 @@
 import { title } from "@/components/primitives";
 import DefaultLayout from "@/layouts/default";
-import { Button, Card, CardBody, Input, Modal, ModalBody, ModalContent, ModalHeader, useDisclosure } from "@nextui-org/react";
+import { Button, Card, CardBody, Input, Modal, ModalBody, ModalContent, ModalHeader, useDisclosure } from "@heroui/react";
 import { useEffect, useState } from "react";
 import { GETMYPROFILE } from "../api/api";
 import { useFormik } from "formik";

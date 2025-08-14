@@ -1,7 +1,7 @@
-import { Link } from "@nextui-org/link";
-import { Snippet } from "@nextui-org/snippet";
-import { Code } from "@nextui-org/code";
-import { button as buttonStyles } from "@nextui-org/theme";
+import { Link } from "@heroui/link";
+import { Snippet } from "@heroui/snippet";
+import { Code } from "@heroui/code";
+import { button as buttonStyles } from "@heroui/theme";
 
 import { siteConfig } from "@/config/site";
 import { title, subtitle } from "@/components/primitives";
@@ -10,7 +10,7 @@ import { useEffect, useRef, useState } from "react";
 import DefaultLayout from "@/layouts/default";
 import { CHECKSERVER, GETMONTHATTENDANCE, GETATTENDANCESTUDENT } from "../api/api";
 import { Logout } from "./logout";
-import { Card, CardBody, Chip, Select, SelectItem, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@nextui-org/react";
+import { Card, CardBody, Chip, Select, SelectItem, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react";
 import { format, set } from "date-fns";
 
 export default function AttendancePage() {

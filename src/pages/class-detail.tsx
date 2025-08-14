@@ -12,9 +12,9 @@ import {
   GETALLATTENDANCES,
   GETTEMPLATEIMPORTATTENDANCESTUDENT,
   GETTEMPLATEIMPORTSTUDENT,
-  ADDSTUDENTS,
+  ADDSTUDENTSINTOCLASS,
 } from "../api/api";
-import { BreadcrumbItem, Breadcrumbs, Button, Card, CardBody, Chip, Image, Input, Link, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, RadioGroup, Select, SelectItem, Slider, Tab, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, Tabs, useDisclosure } from "@nextui-org/react";
+import { BreadcrumbItem, Breadcrumbs, Button, Card, CardBody, Chip, Image, Input, Link, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, RadioGroup, Select, SelectItem, Slider, Tab, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, Tabs, useDisclosure, Radio } from "@heroui/react";
 import { HeartFilledIcon } from "@/components/icons";
 import { format, set } from "date-fns";
 import { Logout } from "./logout";
@@ -242,9 +242,10 @@ export default function ClassDetail() {
 
   function CloseAddStudentsModal() {
     onOpenChangeAddStudents();
-    formikCreate.resetForm();
+    formikAddStudent.resetForm();
     setFile(null);
     setTableStudents([]);
+    setSelected("personal");
   }
 
   const clearFileInput = () => {
@@ -309,12 +310,20 @@ export default function ClassDetail() {
 
   const formikAddStudent = useFormik({
     initialValues: {
-      id: "",
+      id: id || "",
       defaultPassword: "",
+      studentId: "",
+      studentName: "",
+      studentEmail: "",
+      studentPhone: "",
     },
     validationSchema: Yup.object({
-      id: Yup.string().required("Required"),
-      defaultPassword: Yup.string(),
+      // id: Yup.string().required("Required"),
+      // defaultPassword: Yup.string(),
+      // studentId: Yup.string().required("Required"),
+      // studentName: Yup.string().required("Required"),
+      // studentEmail: Yup.string().email("Invalid email").required("Required"),
+      // studentPhone: Yup.string(),
     }),
     onSubmit: async (values) => {
       setHandling(true);
@@ -324,18 +333,27 @@ export default function ClassDetail() {
         defaultPassword: values.defaultPassword.length > 0 ? values.defaultPassword : null,
         students: [],
       };
-
-      tableData.forEach((studentData) => {
+      if (selected === "list") {
+        tableStudents.forEach((studentData) => {
+          var student = {
+            id: `${studentData.id}`,
+            name: studentData.name,
+            email: studentData.email,
+            phone: studentData.phone.toString().length > 0 ? studentData.phone.toString() : "-",
+          };
+          body.students.push(student);
+        });
+      } else {
         var student = {
-          id: `${studentData.id}`,
-          name: studentData.name,
-          email: studentData.email,
-          phone: studentData.phone.toString().length > 0 ? studentData.phone.toString() : "-",
+          id: `${formikAddStudent.values.studentId}`,
+          name: formikAddStudent.values.studentName,
+          email: formikAddStudent.values.studentEmail,
+          phone: formikAddStudent.values.studentPhone.toString().length > 0 ? formikAddStudent.values.studentPhone.toString() : "-",
         };
         body.students.push(student);
-      });
+      }
       try {
-        const { isSuccess, res } = await CREATECLASS(token, body);
+        const { isSuccess, res } = await ADDSTUDENTSINTOCLASS(token, body);
 
         if (!isSuccess) {
           if (res.status === 401) {
@@ -344,9 +362,9 @@ export default function ClassDetail() {
           let result = await res.json();
           alert(result.message);
         } else {
-          CloseModal();
+          CloseAddStudentsModal();
           setloadForm(false);
-          setIsLoading(true);
+          setOnLoading(true);
           let result = await res.json();
           alert(result.message);
         }
@@ -776,8 +794,8 @@ export default function ClassDetail() {
                           {(onClose) => (
                             <>
                               <ModalHeader>Thêm học sinh</ModalHeader>
-                              <ModalBody>
-                                <form onSubmit={formikAddStudent.handleSubmit}>
+                              <form onSubmit={formikAddStudent.handleSubmit}>
+                                <ModalBody>
                                   <Select
                                     items={classListSelect}
                                     label="Lớp"
@@ -799,71 +817,113 @@ export default function ClassDetail() {
                                   {formikAddStudent.errors.defaultPassword && formikAddStudent.touched.defaultPassword && (
                                     <p style={{ color: "red" }}>{formikAddStudent.errors.defaultPassword}</p>
                                   )}
-                                  {/* <RadioGroup label="Chọn kiểu thêm" orientation="horizontal" value={selected} onValueChange={setSelected}>
-                                    <RadioGroup.Item value="personal">Cá nhân</RadioGroup.Item>
-                                    <RadioGroup.Item value="list">Danh sách</RadioGroup.Item>
-                                  </RadioGroup> */}
-                                  <div className="flex justify-between gap-1 min-w-full mt-3">
-                                    <Button
-                                      color="success"
-                                      variant="bordered"
-                                      style={{ width: "420px" }}
-                                      onPress={() => handleDownloadTemplate("themhocsinh")}
-                                    >
-                                      Tải mẫu nhập dữ liệu
-                                    </Button>
+                                  <RadioGroup className="my-4" label="Chọn kiểu thêm" orientation="horizontal" value={selected} onValueChange={setSelected}>
+                                    <Radio value="personal">Cá nhân</Radio>
+                                    <Radio value="list">Danh sách</Radio>
+                                  </RadioGroup>
+                                  {selected === "list" ? (
+                                    <>
+                                      <div className="flex justify-between gap-1 min-w-full mt-3">
+                                        <Button
+                                          color="success"
+                                          variant="bordered"
+                                          style={{ width: "420px" }}
+                                          onPress={() => handleDownloadTemplate("themhocsinh")}
+                                        >
+                                          Tải mẫu nhập dữ liệu
+                                        </Button>
 
-                                    <Input
-                                      id="fileUpload"
-                                      color="primary"
-                                      variant="bordered"
-                                      type="file"
-                                      accept=".xlsx"
-                                      style={{ width: "420px" }}
-                                      onChange={handleFileAddStudentsUpload}
-                                    />
+                                        <Input
+                                          id="fileUpload"
+                                          color="primary"
+                                          variant="bordered"
+                                          type="file"
+                                          accept=".xlsx"
+                                          style={{ width: "420px" }}
+                                          onChange={handleFileAddStudentsUpload}
+                                        />
 
-                                    {file && (
-                                      <Button
-                                        color="danger"
-                                        variant="bordered"
-                                        style={{ width: "50px" }}
-                                        onPress={clearFileInput}
-                                      >
-                                        <FaTrash />
-                                      </Button>
-                                    )}
-                                  </div>
-                                  <Table selectionMode="multiple" selectionBehavior="replace" aria-label="Example table with dynamic content" className="mt-7 max-h-[300px]" fullWidth>
-                                    <TableHeader>
-                                      <TableColumn key="1" width="70px">Id</TableColumn>
-                                      <TableColumn key="2" width="300px" allowsSorting onClick={() => requestSort('name')}>
-                                        Tên
-                                        {sortConfig.key === 'totalStudent' && (sortConfig.direction === 'ascending' ? ' ▲' : ' ▼')}
-                                      </TableColumn>
-                                      <TableColumn key="3" width="300px">Email</TableColumn>
-                                      <TableColumn key="4" width="300px">Số điện thoại</TableColumn>
-                                      <TableColumn key="5" width="200px">Hành động</TableColumn>
-                                    </TableHeader>
-                                    <TableBody items={tableData} emptyContent={"Chưa có dữ liệu"}>
-                                      {tableStudents.map((row, index) => (
-                                        <TableRow key={row.id}>
-                                          <TableCell>{row.id}</TableCell>
-                                          <TableCell>{row.name}</TableCell>
-                                          <TableCell>{row.email}</TableCell>
-                                          <TableCell>{row.phone}</TableCell>
-                                          <TableCell></TableCell>
-                                        </TableRow>
-                                      ))}
-                                    </TableBody>
-                                  </Table>
-                                </form>
-                              </ModalBody>
-                              <ModalFooter>
-                                <Button fullWidth id="send-code-button" color="primary" type="submit" isLoading={handling} style={{ marginTop: "2vh", marginBottom: "2vh" }}>
-                                  Thêm
-                                </Button>
-                              </ModalFooter>
+                                        {file && (
+                                          <Button
+                                            color="danger"
+                                            variant="bordered"
+                                            style={{ width: "50px" }}
+                                            onPress={clearFileInput}
+                                          >
+                                            <FaTrash />
+                                          </Button>
+                                        )}
+                                      </div>
+                                      <Table selectionMode="multiple" selectionBehavior="replace" aria-label="Example table with dynamic content" className="mt-7 max-h-[300px]" fullWidth>
+                                        <TableHeader>
+                                          <TableColumn key="1" width="70px">Id</TableColumn>
+                                          <TableColumn key="2" width="300px" allowsSorting onClick={() => requestSort('name')}>
+                                            Tên
+                                            {sortConfig.key === 'totalStudent' && (sortConfig.direction === 'ascending' ? ' ▲' : ' ▼')}
+                                          </TableColumn>
+                                          <TableColumn key="3" width="300px">Email</TableColumn>
+                                          <TableColumn key="4" width="300px">Số điện thoại</TableColumn>
+                                          <TableColumn key="5" width="200px">Hành động</TableColumn>
+                                        </TableHeader>
+                                        <TableBody items={tableData} emptyContent={"Chưa có dữ liệu"}>
+                                          {tableStudents.map((row, index) => (
+                                            <TableRow key={row.id}>
+                                              <TableCell>{row.id}</TableCell>
+                                              <TableCell>{row.name}</TableCell>
+                                              <TableCell>{row.email}</TableCell>
+                                              <TableCell>{row.phone}</TableCell>
+                                              <TableCell></TableCell>
+                                            </TableRow>
+                                          ))}
+                                        </TableBody>
+                                      </Table>
+                                    </>
+                                  ) : (
+                                    <div className="flex flex-col gap-4">
+                                      <Input
+                                        name="studentId"
+                                        type="text"
+                                        label="ID học sinh"
+                                        placeholder="Nhập ID học sinh"
+                                        value={formikAddStudent.values.studentId}
+                                        onChange={formikAddStudent.handleChange}
+                                        required
+                                      />
+                                      <Input
+                                        name="studentName"
+                                        type="text"
+                                        label="Tên học sinh"
+                                        placeholder="Nhập tên học sinh"
+                                        value={formikAddStudent.values.studentName}
+                                        onChange={formikAddStudent.handleChange}
+                                        required
+                                      />
+                                      <Input
+                                        name="studentEmail"
+                                        type="text"
+                                        label="Email học sinh"
+                                        placeholder="Nhập email học sinh"
+                                        value={formikAddStudent.values.studentEmail}
+                                        onChange={formikAddStudent.handleChange}
+                                        required
+                                      />
+                                      <Input
+                                        name="studentPhone"
+                                        type="text"
+                                        label="Số điện thoại"
+                                        placeholder="Nhập số điện thoại"
+                                        value={formikAddStudent.values.studentPhone}
+                                        onChange={formikAddStudent.handleChange}
+                                      />
+                                    </div>
+                                  )}
+                                </ModalBody>
+                                <ModalFooter>
+                                  <Button fullWidth color="primary" type="submit" isLoading={handling} style={{ marginTop: "2vh", marginBottom: "2vh" }}>
+                                    Thêm
+                                  </Button>
+                                </ModalFooter>
+                              </form>
                             </>
                           )}
                         </ModalContent>
@@ -916,10 +976,9 @@ export default function ClassDetail() {
                           className="max-h-screen overflow-auto">
                           {(onClose) => (
                             <>
-                              <ModalHeader>Tạo điểm</ModalHeader>
-                              <ModalBody>
-                                <p>Tạo điểm mới</p>
-                                <form onSubmit={formikCreate.handleSubmit}>
+                              <ModalHeader>Tạo điểm mới</ModalHeader>
+                              <form onSubmit={formikCreate.handleSubmit}>
+                                <ModalBody>
                                   <Input name="testDateAt" label="Ngày kiểm tra" type="date" value={formikCreate.values.testDateAt} onChange={formikCreate.handleChange} placeholder="Nhập ngày kiểm tra" />
                                   {formikCreate.errors.testDateAt && formikCreate.touched.testDateAt && (
                                     <p style={{ color: "red" }}>{formikCreate.errors.testDateAt}</p>
@@ -973,13 +1032,13 @@ export default function ClassDetail() {
                                       ))}
                                     </TableBody>
                                   </Table>
-                                </form>
-                              </ModalBody>
-                              <ModalFooter>
-                                <Button fullWidth id="send-code-button" color="primary" type="submit" isLoading={handling} style={{ marginTop: "2vh", marginBottom: "2vh" }}>
-                                  Tạo
-                                </Button>
-                              </ModalFooter>
+                                </ModalBody>
+                                <ModalFooter>
+                                  <Button fullWidth id="send-code-button" color="primary" type="submit" isLoading={handling} style={{ marginTop: "2vh", marginBottom: "2vh" }}>
+                                    Tạo
+                                  </Button>
+                                </ModalFooter>
+                              </form>
                             </>
                           )}
                         </ModalContent>
@@ -1035,9 +1094,9 @@ export default function ClassDetail() {
                           {(onClose) => (
                             <>
                               <ModalHeader>Tạo điểm danh</ModalHeader>
-                              <ModalBody>
-                                <p>Tạo điểm danh mới</p>
-                                <form onSubmit={formikCreateAttendance.handleSubmit}>
+                              <form onSubmit={formikCreateAttendance.handleSubmit}>
+                                <ModalBody>
+                                  <p>Tạo điểm danh mới</p>
                                   <Input name="startDate" label="Ngày bắt đầu điểm danh" type="date" value={formikCreateAttendance.values.startDate} onChange={formikCreateAttendance.handleChange} placeholder="Nhập ngày bắt đầu" />
                                   {formikCreateAttendance.errors.startDate && formikCreateAttendance.touched.startDate && (
                                     <p style={{ color: "red" }}>{formikCreateAttendance.errors.startDate}</p>
@@ -1093,13 +1152,13 @@ export default function ClassDetail() {
                                       ))}
                                     </TableBody>
                                   </Table>
-                                </form>
-                              </ModalBody>
-                              <ModalFooter>
-                                <Button fullWidth id="send-code-button" color="primary" type="submit" isLoading={handling} style={{ marginTop: "2vh", marginBottom: "2vh" }}>
-                                  Tạo
-                                </Button>
-                              </ModalFooter>
+                                </ModalBody>
+                                <ModalFooter>
+                                  <Button fullWidth id="send-code-button" color="primary" type="submit" isLoading={handling} style={{ marginTop: "2vh", marginBottom: "2vh" }}>
+                                    Tạo
+                                  </Button>
+                                </ModalFooter>
+                              </form>
                             </>
                           )}
                         </ModalContent>

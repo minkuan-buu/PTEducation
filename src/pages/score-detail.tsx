@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { GETSCORE, UPDATESCOREDETAIL } from "../api/api";
 import { format, set } from "date-fns";
-import { BreadcrumbItem, Breadcrumbs, Button, Card, CardBody, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, Link } from "@nextui-org/react";
-import { Input } from "@nextui-org/react";
+import { BreadcrumbItem, Breadcrumbs, Button, Card, CardBody, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, Link } from "@heroui/react";
+import { Input } from "@heroui/react";
 
 export default function ScoreDetail() {
   const [scoreDetail, setScoreDetail] = useState({});
