@@ -8,7 +8,7 @@ import {
   CREATECLASS,
   GETTEMPLATEIMPORTSTUDENT,
 } from "../api/api";
-import { Button, CalendarDate, DatePicker, Input, Modal, ModalBody, ModalContent, ModalHeader, Popover, PopoverContent, PopoverTrigger, Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, Tooltip, useDisclosure } from "@nextui-org/react";
+import { Button, CalendarDate, DatePicker, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Popover, PopoverContent, PopoverTrigger, Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, Tooltip, useDisclosure } from "@nextui-org/react";
 import { useLocation, useNavigate } from "react-router-dom";
 import * as Yup from "yup";
 import { Field, useFormik } from "formik";
@@ -367,7 +367,8 @@ export default function ManageClassesPage() {
               onOpenChange={CloseModal}
               size="4xl"
             >
-              <ModalContent>
+              <ModalContent
+                className="max-h-screen overflow-auto">
                 {(onClose) => (
                   <>
                     <ModalHeader>Tạo lớp học</ModalHeader>
@@ -446,11 +447,13 @@ export default function ManageClassesPage() {
                             ))}
                           </TableBody>
                         </Table>
-                        <Button fullWidth id="send-code-button" color="primary" type="submit" isLoading={handling} style={{ marginTop: "2vh", marginBottom: "2vh" }}>
-                          Tạo
-                        </Button>
                       </form>
                     </ModalBody>
+                    <ModalFooter>
+                      <Button fullWidth id="send-code-button" color="primary" type="submit" isLoading={handling} style={{ marginTop: "2vh", marginBottom: "2vh" }}>
+                        Tạo
+                      </Button>
+                    </ModalFooter>
                   </>
                 )}
               </ModalContent>

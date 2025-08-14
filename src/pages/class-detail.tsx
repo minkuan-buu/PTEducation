@@ -10,9 +10,11 @@ import {
   CREATESCORE,
   CREATEATTENDANCE,
   GETALLATTENDANCES,
-  GETTEMPLATEIMPORTATTENDANCESTUDENT
+  GETTEMPLATEIMPORTATTENDANCESTUDENT,
+  GETTEMPLATEIMPORTSTUDENT,
+  ADDSTUDENTS,
 } from "../api/api";
-import { BreadcrumbItem, Breadcrumbs, Button, Card, CardBody, Chip, Image, Input, Link, Modal, ModalBody, ModalContent, ModalHeader, Select, SelectItem, Slider, Tab, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, Tabs, useDisclosure } from "@nextui-org/react";
+import { BreadcrumbItem, Breadcrumbs, Button, Card, CardBody, Chip, Image, Input, Link, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, RadioGroup, Select, SelectItem, Slider, Tab, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, Tabs, useDisclosure } from "@nextui-org/react";
 import { HeartFilledIcon } from "@/components/icons";
 import { format, set } from "date-fns";
 import { Logout } from "./logout";
@@ -22,7 +24,7 @@ import { FaCalendarCheck } from "react-icons/fa6";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 // import { Workbook } from 'exceljs';
-import ExcelJS from "exceljs";
+import ExcelJS, { Workbook } from "exceljs";
 import moment from "moment";
 import { useLocation } from "react-router-dom";
 import { FaTrash } from "react-icons/fa";
@@ -52,6 +54,11 @@ export default function ClassDetail() {
     onOpen: onOpenAttendance,
     onOpenChange: onOpenChangeAttendance,
   } = useDisclosure();
+  const {
+    isOpen: isOpenAddStudents,
+    onOpen: onOpenAddStudents,
+    onOpenChange: onOpenChangeAddStudents,
+  } = useDisclosure();
   const [classDetail, setClassDetail] = useState < ClassDetail > ();
   const [classListScore, setClassListScore] = useState([]);
   const [classListAttendance, setClassListAttendance] = useState([]);
@@ -63,9 +70,11 @@ export default function ClassDetail() {
   const [onLoading, setOnLoading] = useState < Boolean > (true);
   const [tableData, setTableData] = useState([]);
   const [tableDataAttendance, setTableDataAttendance] = useState([]);
+  const [tableStudents, setTableStudents] = useState([]);
   const [loadForm, setloadForm] = useState(false);
   const [handling, setHandling] = useState < boolean > (false);
   const { id } = useParams();
+  const [selected, setSelected] = React.useState("personal");
   // const [handling, setHandling] = useState(false);
 
   useEffect(() => {
@@ -192,6 +201,8 @@ export default function ClassDetail() {
           callback = await GETTEMPLATEIMPORTSCORESTUDENT(token, id);
         } else if (key == "diemdanh") {
           callback = await GETTEMPLATEIMPORTATTENDANCESTUDENT(token, id);
+        } else if (key == "themhocsinh") {
+          callback = await GETTEMPLATEIMPORTSTUDENT(token, id);
         }
         if (callback == null) return;
 
@@ -228,6 +239,124 @@ export default function ClassDetail() {
     setFile(null);
     setTableData([]);
   }
+
+  function CloseAddStudentsModal() {
+    onOpenChangeAddStudents();
+    formikCreate.resetForm();
+    setFile(null);
+    setTableStudents([]);
+  }
+
+  const clearFileInput = () => {
+    setFile(null);
+    setTableStudents([]);
+    const fileInput = document.getElementById("fileUpload") as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = ""; // reset giá trị input file
+    }
+  };
+
+  const handleFileAddStudentsUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const uploadedFile = event.target.files?.[0];
+    setTableStudents([]);
+
+    if (!uploadedFile) return;
+
+    setFile(uploadedFile);
+
+    const reader = new FileReader();
+    reader.onload = async (e: ProgressEvent<FileReader>) => {
+      const arrayBuffer = e.target?.result as ArrayBuffer;
+
+      const workbook = new Workbook();
+      await workbook.xlsx.load(arrayBuffer);
+
+      const worksheet = workbook.getWorksheet("ImportStudents");
+
+      if (!worksheet) {
+        console.error('Worksheet "ImportStudents" không tồn tại.');
+        return;
+      }
+
+      const jsonData: any[] = [];
+      let headers: string[] = [];
+
+      worksheet.eachRow({ includeEmpty: true }, (row, rowNumber) => {
+        if (rowNumber === 1) {
+          headers = row.values.slice(1).map(header => header?.toString().toLowerCase()) as string[];
+        } else {
+          const rowData: any = {};
+          const rowValues = row.values.slice(1);
+
+          headers.forEach((header, index) => {
+            if (index === 2) {
+              rowData[header] = row.getCell(index + 1).text;
+            } else {
+              rowData[header] = rowValues[index] || null;
+            }
+          });
+
+          jsonData.push(rowData);
+        }
+      });
+
+      console.log(jsonData);
+      setTableStudents(jsonData);
+    };
+
+    reader.readAsArrayBuffer(uploadedFile);
+  };
+
+  const formikAddStudent = useFormik({
+    initialValues: {
+      id: "",
+      defaultPassword: "",
+    },
+    validationSchema: Yup.object({
+      id: Yup.string().required("Required"),
+      defaultPassword: Yup.string(),
+    }),
+    onSubmit: async (values) => {
+      setHandling(true);
+      var token = localStorage.getItem("token");
+      var body = {
+        id: values.id,
+        defaultPassword: values.defaultPassword.length > 0 ? values.defaultPassword : null,
+        students: [],
+      };
+
+      tableData.forEach((studentData) => {
+        var student = {
+          id: `${studentData.id}`,
+          name: studentData.name,
+          email: studentData.email,
+          phone: studentData.phone.toString().length > 0 ? studentData.phone.toString() : "-",
+        };
+        body.students.push(student);
+      });
+      try {
+        const { isSuccess, res } = await CREATECLASS(token, body);
+
+        if (!isSuccess) {
+          if (res.status === 401) {
+            Logout();
+          }
+          let result = await res.json();
+          alert(result.message);
+        } else {
+          CloseModal();
+          setloadForm(false);
+          setIsLoading(true);
+          let result = await res.json();
+          alert(result.message);
+        }
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setHandling(false);
+      }
+    },
+  });
 
   function CloseModalAttendance() {
     onOpenChangeAttendance();
@@ -635,7 +764,111 @@ export default function ClassDetail() {
                     </Card>
                     <div className="flex justify-between items-center">
                       <strong><h2 className={"mt-10 text-xl mb-3"}>Thông tin học viên</h2></strong>
-                      <Button className="text-white" variant="bordered" color="success">Thêm học sinh</Button>
+                      <Modal
+                        isDismissable={false}
+                        isKeyboardDismissDisabled={true}
+                        isOpen={isOpenAddStudents}
+                        onOpenChange={CloseAddStudentsModal}
+                        size="4xl"
+                      >
+                        <ModalContent
+                          className="max-h-screen overflow-auto">
+                          {(onClose) => (
+                            <>
+                              <ModalHeader>Thêm học sinh</ModalHeader>
+                              <ModalBody>
+                                <form onSubmit={formikAddStudent.handleSubmit}>
+                                  <Select
+                                    items={classListSelect}
+                                    label="Lớp"
+                                    placeholder="Chọn lớp"
+                                    className="max-w-full mt-3"
+                                    isDisabled={true}
+                                    defaultSelectedKeys={[id]}
+                                    onChange={(value) => {
+                                      formikAddStudent.setFieldValue("id", value.target.value);
+                                    }}
+                                  >
+                                    {classListSelect.map((item) => (
+                                      <SelectItem key={item.id} value={item.id}>
+                                        {item.name}
+                                      </SelectItem>
+                                    ))}
+                                  </Select>
+                                  <Input name="defaultPassword" label="Mật khẩu mặc định" type="password" value={formikAddStudent.values.defaultPassword} onChange={formikAddStudent.handleChange} placeholder="Nhập mật khẩu mặc định (không bắt buộc)" className="mt-3" />
+                                  {formikAddStudent.errors.defaultPassword && formikAddStudent.touched.defaultPassword && (
+                                    <p style={{ color: "red" }}>{formikAddStudent.errors.defaultPassword}</p>
+                                  )}
+                                  {/* <RadioGroup label="Chọn kiểu thêm" orientation="horizontal" value={selected} onValueChange={setSelected}>
+                                    <RadioGroup.Item value="personal">Cá nhân</RadioGroup.Item>
+                                    <RadioGroup.Item value="list">Danh sách</RadioGroup.Item>
+                                  </RadioGroup> */}
+                                  <div className="flex justify-between gap-1 min-w-full mt-3">
+                                    <Button
+                                      color="success"
+                                      variant="bordered"
+                                      style={{ width: "420px" }}
+                                      onPress={() => handleDownloadTemplate("themhocsinh")}
+                                    >
+                                      Tải mẫu nhập dữ liệu
+                                    </Button>
+
+                                    <Input
+                                      id="fileUpload"
+                                      color="primary"
+                                      variant="bordered"
+                                      type="file"
+                                      accept=".xlsx"
+                                      style={{ width: "420px" }}
+                                      onChange={handleFileAddStudentsUpload}
+                                    />
+
+                                    {file && (
+                                      <Button
+                                        color="danger"
+                                        variant="bordered"
+                                        style={{ width: "50px" }}
+                                        onPress={clearFileInput}
+                                      >
+                                        <FaTrash />
+                                      </Button>
+                                    )}
+                                  </div>
+                                  <Table selectionMode="multiple" selectionBehavior="replace" aria-label="Example table with dynamic content" className="mt-7 max-h-[300px]" fullWidth>
+                                    <TableHeader>
+                                      <TableColumn key="1" width="70px">Id</TableColumn>
+                                      <TableColumn key="2" width="300px" allowsSorting onClick={() => requestSort('name')}>
+                                        Tên
+                                        {sortConfig.key === 'totalStudent' && (sortConfig.direction === 'ascending' ? ' ▲' : ' ▼')}
+                                      </TableColumn>
+                                      <TableColumn key="3" width="300px">Email</TableColumn>
+                                      <TableColumn key="4" width="300px">Số điện thoại</TableColumn>
+                                      <TableColumn key="5" width="200px">Hành động</TableColumn>
+                                    </TableHeader>
+                                    <TableBody items={tableData} emptyContent={"Chưa có dữ liệu"}>
+                                      {tableStudents.map((row, index) => (
+                                        <TableRow key={row.id}>
+                                          <TableCell>{row.id}</TableCell>
+                                          <TableCell>{row.name}</TableCell>
+                                          <TableCell>{row.email}</TableCell>
+                                          <TableCell>{row.phone}</TableCell>
+                                          <TableCell></TableCell>
+                                        </TableRow>
+                                      ))}
+                                    </TableBody>
+                                  </Table>
+                                </form>
+                              </ModalBody>
+                              <ModalFooter>
+                                <Button fullWidth id="send-code-button" color="primary" type="submit" isLoading={handling} style={{ marginTop: "2vh", marginBottom: "2vh" }}>
+                                  Thêm
+                                </Button>
+                              </ModalFooter>
+                            </>
+                          )}
+                        </ModalContent>
+                      </Modal>
+                      <Button variant="bordered" color="success" onClick={onOpenAddStudents}>Thêm học sinh</Button>
                     </div>
                     <Table selectionMode="multiple" selectionBehavior="replace" aria-label="Example table with dynamic content" className="mt-7" fullWidth>
                       <TableHeader>
@@ -679,7 +912,8 @@ export default function ClassDetail() {
                         onOpenChange={CloseModal}
                         size="4xl"
                       >
-                        <ModalContent>
+                        <ModalContent
+                          className="max-h-screen overflow-auto">
                           {(onClose) => (
                             <>
                               <ModalHeader>Tạo điểm</ModalHeader>
@@ -739,11 +973,13 @@ export default function ClassDetail() {
                                       ))}
                                     </TableBody>
                                   </Table>
-                                  <Button fullWidth id="send-code-button" color="primary" type="submit" isLoading={handling} style={{ marginTop: "2vh", marginBottom: "2vh" }}>
-                                    Tạo
-                                  </Button>
                                 </form>
                               </ModalBody>
+                              <ModalFooter>
+                                <Button fullWidth id="send-code-button" color="primary" type="submit" isLoading={handling} style={{ marginTop: "2vh", marginBottom: "2vh" }}>
+                                  Tạo
+                                </Button>
+                              </ModalFooter>
                             </>
                           )}
                         </ModalContent>
@@ -794,7 +1030,8 @@ export default function ClassDetail() {
                         onOpenChange={CloseModalAttendance}
                         size="4xl"
                       >
-                        <ModalContent>
+                        <ModalContent
+                          className="max-h-screen overflow-auto">
                           {(onClose) => (
                             <>
                               <ModalHeader>Tạo điểm danh</ModalHeader>
@@ -856,11 +1093,13 @@ export default function ClassDetail() {
                                       ))}
                                     </TableBody>
                                   </Table>
-                                  <Button fullWidth id="send-code-button" color="primary" type="submit" isLoading={handling} style={{ marginTop: "2vh", marginBottom: "2vh" }}>
-                                    Tạo
-                                  </Button>
                                 </form>
                               </ModalBody>
+                              <ModalFooter>
+                                <Button fullWidth id="send-code-button" color="primary" type="submit" isLoading={handling} style={{ marginTop: "2vh", marginBottom: "2vh" }}>
+                                  Tạo
+                                </Button>
+                              </ModalFooter>
                             </>
                           )}
                         </ModalContent>
