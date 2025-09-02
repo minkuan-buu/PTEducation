@@ -34,6 +34,86 @@ export async function GETCLASSES(token, query) {
     return { isSuccess: res.ok, res }
 }
 
+export async function GETMANAGERS(token, query) {
+    const res = await fetch(API_URL + `admin/managers?${query}`, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
+        },
+    })
+    return { isSuccess: res.ok, res }
+}
+
+export async function ADDMANAGERS(token, body) {
+    const res = await fetch(API_URL + `admin/managers`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
+        },
+        body: JSON.stringify(body)
+    })
+    return { isSuccess: res.ok, res }
+}
+
+export async function DEACTIVATEMANAGERS(token, id) {
+    const res = await fetch(API_URL + `admin/manager/deactivate/${id}`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
+        },
+    })
+    return { isSuccess: res.ok, res }
+}
+
+export async function REACTIVATEMANAGERS(token, id) {
+    const res = await fetch(API_URL + `admin/manager/reactivate/${id}`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
+        },
+    })
+    return { isSuccess: res.ok, res }
+}
+
+export async function UPDATECLASSINFO(token, body) {
+    const res = await fetch(API_URL + `class/update`, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
+        },
+        body: JSON.stringify(body)
+    })
+    return { isSuccess: res.ok, res }
+}
+
+export async function UPDATESTUDENTINFO(token, body, id) {
+    const res = await fetch(API_URL + `admin/student/${id}`, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
+        },
+        body: JSON.stringify(body)
+    })
+    return { isSuccess: res.ok, res }
+}
+
+export async function DELETESTUDENT(token, id) {
+    const res = await fetch(API_URL + `admin/student/${id}`, {
+        method: "DELETE",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
+        },
+    })
+    return { isSuccess: res.ok, res }
+}
+
 export async function CLASSDETAIL(token, id) {
     const res = await fetch(API_URL + `class/${id}`, {
         method: "GET",
@@ -107,6 +187,17 @@ export async function CREATESCORE(token, body) {
 
 export async function GETTEMPLATEIMPORTSTUDENT(token) {
     const res = await fetch(API_URL + "template/import-student", {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
+        },
+    })
+    return { isSuccess: res.ok, res }
+}
+
+export async function GETTEMPLATEIMPORTMANAGER(token) {
+    const res = await fetch(API_URL + "template/import-manager", {
         method: "GET",
         headers: {
             "Content-Type": "application/json",
@@ -334,6 +425,18 @@ export async function RESETPASSWORD(token, body) {
 export async function ADDSTUDENTSINTOCLASS(token, body) {
     const res = await fetch(API_URL + `class/add-student`, {
         method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
+        },
+        body: JSON.stringify(body)
+    })
+    return { isSuccess: res.ok, res }
+}
+
+export async function MOVEOUTSTUDENT(token, body) {
+    const res = await fetch(API_URL + `class/move-out`, {
+        method: "PUT",
         headers: {
             "Content-Type": "application/json",
             "Authorization": "Bearer " + token

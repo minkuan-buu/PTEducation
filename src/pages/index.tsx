@@ -16,8 +16,8 @@ import { ChangePassword } from "@/components/changePassword";
 
 export default function IndexPage() {
   const [now, setNow] = useState(new Date());
-  const [nowKey, setNowKey] = useState<string>("");
-  const [monthYearData, setMonthYearData] = useState<MonthYearData[]>([]);
+  const [nowKey, setNowKey] = useState < string > ("");
+  const [monthYearData, setMonthYearData] = useState < MonthYearData[] > ([]);
   const currentMonth = now.getMonth() + 1; // Tháng trong JavaScript bắt đầu từ 0
   const currentYear = now.getFullYear();
   const currentKey = `${currentMonth}/${currentYear}`; // Định dạng giá trị theo {tháng}/{năm}
@@ -182,7 +182,7 @@ export default function IndexPage() {
                           <TableColumn key="1" width="70px">Id</TableColumn>
                           <TableColumn key="2" width="500px">Tên</TableColumn>
                           {ScoreData.scores.map((score) => (
-                            <TableColumn key={score.testDateAt} width="300px">{`Ngày ${formatScoreDate(score.testDateAt)}`}</TableColumn>
+                            <TableColumn key={score.testDateAt} width="300px">{`Ngày ${formatScoreDate(score.testDateAt)} ${score.shift != null ? `(${score.shift})` : ''}`}</TableColumn>
                           ))}
                         </TableHeader>
                         <TableBody items={ScoreData} emptyContent={"Chưa có dữ liệu"}>
@@ -231,7 +231,7 @@ export default function IndexPage() {
                           <TableBody items={ScoreData} emptyContent={"Chưa có dữ liệu"}>
                             {ScoreData.scores && ScoreData.scores.map((row, index) => (
                               <TableRow key={index}>
-                                <TableCell>{`Ngày ${formatScoreDate(row.testDateAt)}`}</TableCell>
+                                <TableCell>{`Ngày ${formatScoreDate(row.testDateAt)} ${row.shift != null ? `(${row.shift})` : ''}`}</TableCell>
                                 <TableCell>{row.score}</TableCell>
                               </TableRow>
                             ))}
@@ -242,6 +242,7 @@ export default function IndexPage() {
                   )}
                 </>
               ) : null}
+              <div className="mt-5 mb-3 text-md italic text-gray-300"><strong>*Lưu ý: </strong>{"Điểm ca A >5 là đạt, còn ca B là >6"}</div>
             </div>
           )}
         </div>

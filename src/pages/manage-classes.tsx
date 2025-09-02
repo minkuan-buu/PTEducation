@@ -9,7 +9,7 @@ import {
   GETTEMPLATEIMPORTSTUDENT,
   HARDDELETECLASS
 } from "../api/api";
-import { Button, CalendarDate, DatePicker, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Popover, PopoverContent, PopoverTrigger, Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, Tooltip, useDisclosure } from "@heroui/react";
+import { Button, CalendarDate, DatePicker, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Pagination, Popover, PopoverContent, PopoverTrigger, Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, Tooltip, useDisclosure } from "@heroui/react";
 import { useLocation, useNavigate } from "react-router-dom";
 import * as Yup from "yup";
 import { Field, useFormik } from "formik";
@@ -25,6 +25,7 @@ import { GrStatusDisabledSmall } from "react-icons/gr";
 
 export default function ManageClassesPage() {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const [rawData, setRawData] = useState({});
   const [classes, setClasses] = useState([]);
   const location = useLocation();
   const filterParams = new URLSearchParams(location.search);
@@ -38,7 +39,7 @@ export default function ManageClassesPage() {
   const [tableData, setTableData] = useState([]);
 
   useEffect(() => {
-    if (localStorage.getItem("role") !== "Admin") {
+    if (localStorage.getItem("role") !== "Admin" && localStorage.getItem("role") !== "Manager") {
       window.location.href = "/";
     }
   }, []);
@@ -157,9 +158,9 @@ export default function ManageClassesPage() {
   useEffect(() => {
     let request = "";
     if (Object.keys(filterParams.toString()).length !== 0) {
-      request = filterParams.toString() + `&page=${currentPage}`;
+      request = filterParams.toString() + `&pageIndex=${currentPage}`;
     } else {
-      request = `page=${currentPage}`;
+      request = `pageIndex=${currentPage}`;
     }
     var token = localStorage.getItem("token");
     const fetchData = async () => {
@@ -175,6 +176,7 @@ export default function ManageClassesPage() {
           let result = await res.json();
           setloadForm(true);
           setClasses(result.data);
+          setRawData(result);
         }
       }
       catch (error) {
@@ -187,7 +189,8 @@ export default function ManageClassesPage() {
   // Hàm xử lý khi click vào một hàng
   const handleRowClick = (id) => {
     if (!handling) {
-      window.location.href = `/class/${id}`;
+      // window.location.href = `/class/${id}`;
+      navigate(`/class/${id}`);
     }
   };
 
@@ -513,6 +516,21 @@ export default function ManageClassesPage() {
               aria-label="Example table with dynamic content"
               className="mt-7"
               fullWidth
+              bottomContent={
+                rawData && rawData.totalPages > 0 ? (
+                  <div className="flex w-full justify-center">
+                    <Pagination
+                      isCompact
+                      showControls
+                      showShadow
+                      color="primary"
+                      page={currentPage}
+                      total={rawData.totalPages}
+                      onChange={(page) => setCurrentPage(page)}
+                    />
+                  </div>
+                ) : null
+              }
             >
               <TableHeader>
                 <TableColumn key="1" width="100px">Lớp</TableColumn>
@@ -524,7 +542,7 @@ export default function ManageClassesPage() {
                   Tổng số học sinh
                   {sortConfig.key === 'totalStudent' && (sortConfig.direction === 'ascending' ? ' ▲' : ' ▼')}
                 </TableColumn>
-                <TableColumn key="5" width="250px" >Hành động</TableColumn>
+                <TableColumn key="6" width="250px" >Hành động</TableColumn>
               </TableHeader>
               <TableBody
                 items={sortedClasses}
@@ -539,7 +557,7 @@ export default function ManageClassesPage() {
                 loadingState={!loadForm ? "loading" : "idle"}
               >
                 {sortedClasses.map((row, index) => (
-                  <TableRow key={index} onClick={() => handleRowClick(row.id)}>
+                  <TableRow key={row.id} onClick={() => handleRowClick(row.id)}>
                     <TableCell>{row.name}</TableCell>
                     <TableCell>{formatDate(new Date(row.startAt))}</TableCell>
                     <TableCell>{formatDate(new Date(row.endAt))}</TableCell>

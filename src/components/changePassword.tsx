@@ -2,6 +2,8 @@ import { Button, Input, Modal, ModalBody, ModalContent, ModalHeader } from "@her
 import { CHANGEPASSWORD } from "../api/api";
 import { useFormik } from "formik";
 import * as Yup from "yup";
+import { useState } from "react";
+import { IoEyeOffOutline, IoEyeOutline } from "react-icons/io5";
 
 export const ChangePassword = ({
     isOpen,
@@ -16,6 +18,10 @@ export const ChangePassword = ({
     handling: boolean;
     onOpenChange: () => void;
 }) => {
+    const [showOldPassword, setShowOldPassword] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
     function CloseModal() {
         onOpenChange();
         formikChangePassword.resetForm();
@@ -74,9 +80,19 @@ export const ChangePassword = ({
                                     label="Mật khẩu cũ"
                                     name="oldPassword"
                                     placeholder="Nhập mật khẩu cũ"
-                                    type="password"
+                                    type={showOldPassword ? "text" : "password"}
                                     value={formikChangePassword.values.oldPassword}
                                     onChange={formikChangePassword.handleChange}
+                                    endContent={
+                                        <div
+                                            className="w-12 h-10 flex items-center justify-center cursor-pointer 
+                                                                rounded-full transition-colors duration-200 ease-in-out 
+                                                                hover:bg-slate-400"
+                                            onClick={() => setShowOldPassword(!showOldPassword)}
+                                        >
+                                            {showOldPassword ? <IoEyeOffOutline /> : <IoEyeOutline />}
+                                        </div>
+                                    }
                                 />
                                 {formikChangePassword.errors.oldPassword &&
                                     formikChangePassword.touched.oldPassword && (
@@ -89,9 +105,19 @@ export const ChangePassword = ({
                                     label="Mật khẩu mới"
                                     name="newPassword"
                                     placeholder="Nhập mật khẩu mới"
-                                    type="password"
+                                    type={showNewPassword ? "text" : "password"}
                                     value={formikChangePassword.values.newPassword}
                                     onChange={formikChangePassword.handleChange}
+                                    endContent={
+                                        <div
+                                            className="w-12 h-10 flex items-center justify-center cursor-pointer 
+                                                                rounded-full transition-colors duration-200 ease-in-out 
+                                                                hover:bg-slate-400"
+                                            onClick={() => setShowNewPassword(!showNewPassword)}
+                                        >
+                                            {showNewPassword ? <IoEyeOffOutline /> : <IoEyeOutline />}
+                                        </div>
+                                    }
                                 />
                                 {formikChangePassword.errors.newPassword &&
                                     formikChangePassword.touched.newPassword && (
@@ -104,9 +130,19 @@ export const ChangePassword = ({
                                     label="Xác nhận mật khẩu"
                                     name="confirmPassword"
                                     placeholder="Nhập lại mật khẩu mới"
-                                    type="password"
+                                    type={showConfirmPassword ? "text" : "password"}
                                     value={formikChangePassword.values.confirmPassword}
                                     onChange={formikChangePassword.handleChange}
+                                    endContent={
+                                        <div
+                                            className="w-12 h-10 flex items-center justify-center cursor-pointer 
+                                                            rounded-full transition-colors duration-200 ease-in-out 
+                                                            hover:bg-slate-400"
+                                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                        >
+                                            {showConfirmPassword ? <IoEyeOffOutline /> : <IoEyeOutline />}
+                                        </div>
+                                    }
                                 />
                                 {formikChangePassword.errors.confirmPassword &&
                                     formikChangePassword.touched.confirmPassword && (

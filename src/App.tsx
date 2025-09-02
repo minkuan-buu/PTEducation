@@ -8,6 +8,7 @@ import AttendanceDetail from "@/pages/attendance-detail";
 import ManageClassesPage from "@/pages/manage-classes";
 import ComingSoonPage from "@/pages/coming-soon";
 import AttendancePage from "@/pages/attendance";
+import ManageAssistantsPage from "./pages/manage-assistants";
 
 function App() {
   return (
@@ -17,7 +18,7 @@ function App() {
       <Route element={<ScoreDetail />} path="/class/:id/score/:scoreId" />
       <Route element={<ClassDetail />} path="/class/:id" />
       <Route element={<MyProfile />} path="/user/me" />
-      <Route element={<ComingSoonPage />} path="/manage-students" />
+      <Route element={<ManageAssistantsPage />} path="/manage-assistants" />
       <Route element={<ComingSoonPage />} path="/user/:id" />
       <Route element={<AttendancePage />} path="/attendance" />
       <Route

@@ -31,8 +31,8 @@ export const siteConfig = {
       href: "/manage-classes",
     },
     {
-      label: "Quản lý học sinh",
-      href: "/manage-students",
+      label: "Quản lý trợ giảng",
+      href: "/manage-assistants",
     },
   ],
   navMenuItemsAdmin: [
@@ -41,8 +41,8 @@ export const siteConfig = {
       href: "/manage-classes",
     },
     {
-      label: "Quản lý học sinh",
-      href: "/manage-students",
+      label: "Quản lý trợ giảng",
+      href: "/manage-assistants",
     },
     // {
     //   label: "Logout",

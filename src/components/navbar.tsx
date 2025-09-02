@@ -39,6 +39,7 @@ import {
 } from "../api/api";
 import { Logout, LogoutResetPassword } from "@/pages/logout";
 import { set } from "date-fns";
+import { IoEyeOffOutline, IoEyeOutline } from "react-icons/io5";
 
 export const Navbar = () => {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
@@ -47,7 +48,9 @@ export const Navbar = () => {
   const [isResetingPassword, setIsResetingPassword] = useState(false);
   const [isOTPTyping, setIsOTPTyping] = useState(false);
   const [isTypingPassword, setTypingPassword] = useState(false);
-  const [OTPCreateAt, setOTPCreateAt] = useState<Date>(null);
+  const [OTPCreateAt, setOTPCreateAt] = useState < Date > (null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
 
   const handleResize = () => {
     setIsMobile(window.innerWidth <= 640);
@@ -100,6 +103,11 @@ export const Navbar = () => {
       }
     },
   });
+
+  const ChangeOption = () => {
+    setIsResetingPassword(!isResetingPassword);
+    setShowPassword(false);
+  }
 
   const formikEnterMailReset = useFormik({
     initialValues: {
@@ -286,6 +294,7 @@ export const Navbar = () => {
     setIsOTPTyping(false);
     setTypingPassword(false);
     setIsResetingPassword(false);
+    setShowPassword(false);
   }
 
   function handleCancel() {
@@ -375,14 +384,30 @@ export const Navbar = () => {
                         {formik.errors.username && formik.touched.username && (
                           <p style={{ color: "red" }}>{formik.errors.username}</p>
                         )}
-                        <Input name="password" label="Mật khẩu" type="password" value={formik.values.password} onChange={formik.handleChange} placeholder="Nhập mật khẩu" className="mt-3" />
+                        <Input
+                          name="password"
+                          label="Mật khẩu"
+                          type={showPassword ? "text" : "password"}
+                          value={formik.values.password}
+                          onChange={formik.handleChange}
+                          placeholder="Nhập mật khẩu"
+                          className="mt-3"
+                          endContent={<div
+                            className="w-12 h-10 flex items-center justify-center cursor-pointer 
+                            rounded-full transition-colors duration-200 ease-in-out 
+                            hover:bg-slate-400"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            {showPassword ? <IoEyeOffOutline /> : <IoEyeOutline />}
+                          </div>}
+                        />
                         {formik.errors.password && formik.touched.password && (
                           <p style={{ color: "red" }}>{formik.errors.password}</p>
                         )}
                         <Button fullWidth id="send-code-button" color="primary" type="submit" isLoading={onLoading} style={{ marginTop: "2vh", marginBottom: "2vh" }}>
                           Tiếp tục
                         </Button>
-                        <Button onClick={() => setIsResetingPassword(!isResetingPassword)}>Quên mật khẩu?</Button>
+                        <Button onClick={() => ChangeOption()}>Quên mật khẩu?</Button>
                       </form>
                     </>
                   ) : (
@@ -408,11 +433,25 @@ export const Navbar = () => {
                             <>
                               <p>Nhập mật khẩu mới</p>
                               <form onSubmit={formikPasswordReset.handleSubmit}>
-                                <Input name="newPassword" label="Mật khẩu mới" type="password" value={formikPasswordReset.values.newPassword} onChange={formikPasswordReset.handleChange} placeholder="Nhập mật khẩu mới" />
+                                <Input name="newPassword" label="Mật khẩu mới" type={showPassword ? "text" : "password"} value={formikPasswordReset.values.newPassword} onChange={formikPasswordReset.handleChange} placeholder="Nhập mật khẩu mới" endContent={<div
+                                  className="w-12 h-10 flex items-center justify-center cursor-pointer 
+                            rounded-full transition-colors duration-200 ease-in-out 
+                            hover:bg-slate-400"
+                                  onClick={() => setShowPassword(!showPassword)}
+                                >
+                                  {showPassword ? <IoEyeOffOutline /> : <IoEyeOutline />}
+                                </div>} />
                                 {formikPasswordReset.errors.newPassword && formikPasswordReset.touched.newPassword && (
                                   <p style={{ color: "red" }}>{formikPasswordReset.errors.newPassword}</p>
                                 )}
-                                <Input name="confirmPassword" label="Nhập lại mật khẩu mới" type="password" className="mt-3" value={formikPasswordReset.values.confirmPassword} onChange={formikPasswordReset.handleChange} placeholder="Nhập lại mật khẩu mới" />
+                                <Input name="confirmPassword" label="Nhập lại mật khẩu mới" type={showPasswordConfirm ? "text" : "password"} className="mt-3" value={formikPasswordReset.values.confirmPassword} onChange={formikPasswordReset.handleChange} placeholder="Nhập lại mật khẩu mới" endContent={<div
+                                  className="w-12 h-10 flex items-center justify-center cursor-pointer 
+                            rounded-full transition-colors duration-200 ease-in-out 
+                            hover:bg-slate-400"
+                                  onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}
+                                >
+                                  {showPasswordConfirm ? <IoEyeOffOutline /> : <IoEyeOutline />}
+                                </div>} />
                                 {formikPasswordReset.errors.confirmPassword && formikPasswordReset.touched.confirmPassword && (
                                   <p style={{ color: "red" }}>{formikPasswordReset.errors.confirmPassword}</p>
                                 )}

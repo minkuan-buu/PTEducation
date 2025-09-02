@@ -1,7 +1,7 @@
 import { title } from "@/components/primitives";
 import DefaultLayout from "@/layouts/default";
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   CLASSDETAIL,
   GETALLSCORES,
@@ -13,21 +13,27 @@ import {
   GETTEMPLATEIMPORTATTENDANCESTUDENT,
   GETTEMPLATEIMPORTSTUDENT,
   ADDSTUDENTSINTOCLASS,
+  UPDATECLASSINFO
 } from "../api/api";
-import { BreadcrumbItem, Breadcrumbs, Button, Card, CardBody, Chip, Image, Input, Link, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, RadioGroup, Select, SelectItem, Slider, Tab, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, Tabs, useDisclosure, Radio } from "@heroui/react";
-import { HeartFilledIcon } from "@/components/icons";
+import { BreadcrumbItem, Breadcrumbs, Button, Card, CardBody, Chip, Image, Input, Link, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, RadioGroup, Select, SelectItem, Slider, Tab, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, Tabs, useDisclosure, Radio, Tooltip } from "@heroui/react";
+import { HeartFilledIcon, SearchIcon } from "@/components/icons";
 import { format, set } from "date-fns";
 import { Logout } from "./logout";
 import { IoIosInformationCircle } from "react-icons/io";
 import { GrScorecard } from "react-icons/gr";
-import { FaCalendarCheck } from "react-icons/fa6";
+import { FaCalendarCheck, FaCheck } from "react-icons/fa6";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 // import { Workbook } from 'exceljs';
 import ExcelJS, { Workbook } from "exceljs";
 import moment from "moment";
 import { useLocation } from "react-router-dom";
-import { FaTrash } from "react-icons/fa";
+import { FaRegEdit, FaTrash, FaUserEdit, FaUserTimes } from "react-icons/fa";
+import { MoveOutClassModal } from "@/components/moveOutClassModal";
+import { PiHockey } from "react-icons/pi";
+import { BiPhone, BiTransferAlt } from "react-icons/bi";
+import { UpdateInfoModal } from "@/components/updateInfoModal";
+import { DeleteStudentModal } from "@/components/deleteModal";
 
 interface ClassDetail {
   id: string;
@@ -59,12 +65,28 @@ export default function ClassDetail() {
     onOpen: onOpenAddStudents,
     onOpenChange: onOpenChangeAddStudents,
   } = useDisclosure();
+  const {
+    isOpen: isOpenMoveOutClass,
+    onOpen: onOpenMoveOutClass,
+    onOpenChange: onOpenChangeMoveOutClass,
+  } = useDisclosure();
+  const {
+    isOpen: isOpenUpdateStudentInfo,
+    onOpen: onOpenUpdateStudentInfo,
+    onOpenChange: onOpenChangeUpdateStudentInfo,
+  } = useDisclosure();
+  const {
+    isOpen: isOpenDeleteStudent,
+    onOpen: onOpenDeleteStudent,
+    onOpenChange: onOpenChangeDeleteStudent,
+  } = useDisclosure();
   const [classDetail, setClassDetail] = useState < ClassDetail > ();
   const [classListScore, setClassListScore] = useState([]);
   const [classListAttendance, setClassListAttendance] = useState([]);
   const [classListSelect, setClassListSelect] = useState([]);
   const [classStudents, setClassStudents] = useState([]);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
+  const [sortFilterConfig, setSortFilterConfig] = useState({ key: null, direction: 'ascending' });
   const [sortConfigScore, setSortConfigScore] = useState({ key: null, direction: 'ascending' });
   const [sortConfigAttendance, setSortConfigAttendance] = useState({ key: null, direction: 'ascending' });
   const [onLoading, setOnLoading] = useState < Boolean > (true);
@@ -73,12 +95,18 @@ export default function ClassDetail() {
   const [tableStudents, setTableStudents] = useState([]);
   const [loadForm, setloadForm] = useState(false);
   const [handling, setHandling] = useState < boolean > (false);
+  const [EditMode, setEditMode] = useState(false);
   const { id } = useParams();
   const [selected, setSelected] = React.useState("personal");
+  const [selectedMoveOutStudentId, setSelectedMoveOutStudentId] = React.useState(null);
+  const [isFilter, setIsFilter] = React.useState(false);
+  const [filteredStudents, setFilteredStudents] = React.useState < { id: string; name: string; email: string; phone: string; }[] > ([]);
+  const [selectedStudentInfo, setSelectedStudentInfo] = React.useState < { studentClassId: string; name: string; email: string; phone: string; } | null > (null);
+  const [selectedStudentDelete, setSelectedStudentDelete] = React.useState < { studentClassId: string; name: string } | null > (null);
   // const [handling, setHandling] = useState(false);
 
   useEffect(() => {
-    if (localStorage.getItem("role") !== "Admin") {
+    if (localStorage.getItem("role") !== "Admin" && localStorage.getItem("role") !== "Manager") {
       window.location.href = "/";
     }
   }, []);
@@ -156,6 +184,21 @@ export default function ClassDetail() {
       setOnLoading(false);
     }
   };
+
+  const handleMoveOut = async (selectedStudentId) => {
+    setSelectedMoveOutStudentId(selectedStudentId);
+    onOpenMoveOutClass();
+  }
+
+  const handleUpdateStudentInfo = async (name, email, phone, studentClassId) => {
+    setSelectedStudentInfo({ studentClassId, name, email, phone });
+    onOpenUpdateStudentInfo();
+  }
+
+  const handleDeleteStudent = async (studentId, name) => {
+    setSelectedStudentDelete({ studentClassId: studentId, name });
+    onOpenDeleteStudent();
+  }
 
   const fetchClassSelectData = async (token) => {
     try {
@@ -308,6 +351,53 @@ export default function ClassDetail() {
     reader.readAsArrayBuffer(uploadedFile);
   };
 
+  const formikUpadateClassInfo = useFormik({
+    enableReinitialize: true,
+    initialValues: {
+      id: id || "",
+      name: classDetail?.name || "",
+      startAt: classDetail ? classDetail.startAt : "",
+      endAt: classDetail ? classDetail.endAt : "",
+    },
+    validationSchema: Yup.object({
+      id: Yup.string().required("Required"),
+      name: Yup.string().required("Required"),
+      startAt: Yup.date().required("Required"),
+      endAt: Yup.date().required("Required"),
+    }),
+    onSubmit: async (values) => {
+      setHandling(true);
+      var token = localStorage.getItem("token");
+      var body = {
+        id: values.id,
+        name: values.name,
+        startAt: values.startAt,
+        endAt: values.endAt,
+      };
+      try {
+        const { isSuccess, res } = await UPDATECLASSINFO(token, body);
+
+        if (!isSuccess) {
+          if (res.status === 401) {
+            Logout();
+          }
+          let result = await res.json();
+          alert(result.message);
+        } else {
+          setloadForm(false);
+          setOnLoading(true);
+          let result = await res.json();
+          alert(result.message);
+        }
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setEditMode(false);
+        setHandling(false);
+      }
+    },
+  });
+
   const formikAddStudent = useFormik({
     initialValues: {
       id: id || "",
@@ -384,12 +474,15 @@ export default function ClassDetail() {
   }
 
   const formikCreate = useFormik({
+    enableReinitialize: true,
     initialValues: {
       testDateAt: "",
+      shift: "",
       classId: id || "",
     },
     validationSchema: Yup.object({
       testDateAt: Yup.date().required("Required"),
+      shift: Yup.string().required("Required"),
       classId: Yup.string().required("Required"),
     }),
     onSubmit: async (values) => {
@@ -398,6 +491,7 @@ export default function ClassDetail() {
       var body = {
         testDateAt: values.testDateAt,
         classId: values.classId,
+        shift: values.shift,
         scoreReqList: [],
       };
       tableData.map((item) => {
@@ -408,6 +502,7 @@ export default function ClassDetail() {
         body.scoreReqList.push(scoreReq);
       });
       try {
+        // console.log(body);
         const { isSuccess, res } = await CREATESCORE(token, body);
 
         if (!isSuccess) {
@@ -490,16 +585,50 @@ export default function ClassDetail() {
     },
   });
 
+  const formikFilter = useFormik({
+    initialValues: {
+      Keyword: "",
+    },
+    onSubmit: async (values) => {
+      try {
+        if (values.Keyword.trim() === "") {
+          setFilteredStudents([]);
+          setIsFilter(false);
+        } else {
+          setIsFilter(true);
+          const filteredStudents =
+            classDetail && classDetail.students
+              ? classDetail.students.filter((student) =>
+                student.name.toLowerCase().includes(values.Keyword.toLowerCase())
+              )
+              : [];
+          setFilteredStudents(filteredStudents);
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    },
+  });
+
   // Hàm xử lý sắp xếp
-  const sortedClasses = [...classStudents].sort((a, b) => {
+  const sortedClasses = [...(isFilter ? filteredStudents : classStudents)].sort((a, b) => {
     if (sortConfig.key) {
       const sortOrder = sortConfig.direction === 'ascending' ? 1 : -1;
-      if (a[sortConfig.key] < b[sortConfig.key]) return -1 * sortOrder;
-      if (a[sortConfig.key] > b[sortConfig.key]) return 1 * sortOrder;
+
+      const aValue = a[sortConfig.key];
+      const bValue = b[sortConfig.key];
+
+      if (typeof aValue === "string" && typeof bValue === "string") {
+        return aValue.localeCompare(bValue, 'vi', { sensitivity: 'base' }) * sortOrder;
+      }
+
+      if (aValue < bValue) return -1 * sortOrder;
+      if (aValue > bValue) return 1 * sortOrder;
       return 0;
     }
-    return 0; // Không sắp xếp nếu không có cột được chọn
+    return 0;
   });
+
 
   const sortedScore = [...classListScore].sort((a, b) => {
     if (sortConfigScore.key) {
@@ -530,7 +659,7 @@ export default function ClassDetail() {
     setSortConfig({ key, direction });
   };
 
-  // Hàm thay đổi cột sắp xếp và thứ tự sắp xếp
+  // Hàm thay đổi cột sắp xếp và thứ tự sắp xếp            
   const requestSortScore = (key) => {
     let direction = 'ascending';
     if (sortConfigScore.key === key && sortConfigScore.direction === 'ascending') {
@@ -703,14 +832,28 @@ export default function ClassDetail() {
 
     reader.readAsArrayBuffer(file);
   };
-
+  const navigate = useNavigate();
 
   const handleRowClick = (scoreId) => {
-    window.location.href = `/class/${id}/score/${scoreId}`;
+    navigate(`/class/${id}/score/${scoreId}`);
   };
 
   const handleRowAttendanceClick = (attendanceId) => {
-    window.location.href = `/class/${id}/attendance/${attendanceId}`;
+    navigate(`/class/${id}/attendance/${attendanceId}`);
+  };
+
+  const EditStudentCloseModal = () => {
+    onOpenChangeUpdateStudentInfo();
+    setSelectedStudentInfo(null);
+    setloadForm(false);
+    setOnLoading(true);
+  };
+
+  const DeleteStudentCloseModal = () => {
+    onOpenChangeDeleteStudent();
+    setSelectedStudentDelete(null);
+    setloadForm(false);
+    setOnLoading(true);
   };
 
   return (
@@ -721,9 +864,24 @@ export default function ClassDetail() {
             <>
               <Breadcrumbs className="mb-5">
                 <BreadcrumbItem href="/manage-classes">Tất cả lớp</BreadcrumbItem>
-                <BreadcrumbItem href={`/class/${id}`}>{classDetail.name}</BreadcrumbItem>
+                <BreadcrumbItem href={`/class/${id}`}>Lớp {classDetail.name}</BreadcrumbItem>
               </Breadcrumbs>
-              <h1 className={title()}>Lớp {classDetail.name}</h1>
+              <div className="flex items-center gap-8">
+                {EditMode ? (
+                  <Input
+                    name="name"
+                    value={formikUpadateClassInfo.values.name}
+                    onChange={formikUpadateClassInfo.handleChange}
+                  />
+                ) : (
+                  <h1 className={title()}>Lớp {classDetail.name}</h1>
+                )}
+                {EditMode ? (
+                  <Button color="success" onClick={() => formikUpadateClassInfo.handleSubmit()}><FaCheck /></Button>
+                ) : (
+                  <Button onClick={() => setEditMode(true)}><FaRegEdit /></Button>
+                )}
+              </div>
               <div className="mt-10">
                 <Tabs aria-label="Options" color="primary" selectedKey={location.hash.split("#")[1]} onSelectionChange={(e: React.Key) => {
                   location.hash = e.toString();
@@ -865,14 +1023,15 @@ export default function ClassDetail() {
                                           <TableColumn key="4" width="300px">Số điện thoại</TableColumn>
                                           <TableColumn key="5" width="200px">Hành động</TableColumn>
                                         </TableHeader>
-                                        <TableBody items={tableData} emptyContent={"Chưa có dữ liệu"}>
+                                        <TableBody items={tableStudents} emptyContent={"Chưa có dữ liệu"}>
                                           {tableStudents.map((row, index) => (
                                             <TableRow key={row.id}>
                                               <TableCell>{row.id}</TableCell>
                                               <TableCell>{row.name}</TableCell>
                                               <TableCell>{row.email}</TableCell>
                                               <TableCell>{row.phone}</TableCell>
-                                              <TableCell></TableCell>
+                                              <TableCell>
+                                              </TableCell>
                                             </TableRow>
                                           ))}
                                         </TableBody>
@@ -930,6 +1089,18 @@ export default function ClassDetail() {
                       </Modal>
                       <Button variant="bordered" color="success" onClick={onOpenAddStudents}>Thêm học sinh</Button>
                     </div>
+                    <form onSubmit={formikFilter.handleSubmit} className="mt-4">
+                      <Input
+                        name="Keyword"
+                        type="text"
+                        placeholder="Tìm kiếm..."
+                        value={formikFilter.values.Keyword}
+                        onChange={formikFilter.handleChange}
+                        size="md"
+                        endContent={<SearchIcon />}
+                      />
+                    </form>
+                    <MoveOutClassModal isOpen={isOpenMoveOutClass} onOpenChange={onOpenChangeMoveOutClass} studentId={selectedMoveOutStudentId} />
                     <Table selectionMode="multiple" selectionBehavior="replace" aria-label="Example table with dynamic content" className="mt-7" fullWidth>
                       <TableHeader>
                         <TableColumn key="1" width="70px">No.</TableColumn>
@@ -938,8 +1109,8 @@ export default function ClassDetail() {
                           {sortConfig.key === 'totalStudent' && (sortConfig.direction === 'ascending' ? ' ▲' : ' ▼')}
                         </TableColumn>
                         <TableColumn key="3" width="300px">Email</TableColumn>
-                        <TableColumn key="4" width="300px">Số điện thoại</TableColumn>
-                        <TableColumn key="5" width="200px">Hành động</TableColumn>
+                        <TableColumn key="4" width="250px">Số điện thoại</TableColumn>
+                        <TableColumn key="5" width="400px">Hành động</TableColumn>
                       </TableHeader>
                       <TableBody items={sortedClasses} emptyContent={"Chưa có dữ liệu"}>
                         {sortedClasses.map((row, index) => (
@@ -948,7 +1119,32 @@ export default function ClassDetail() {
                             <TableCell>{row.name}</TableCell>
                             <TableCell>{row.email}</TableCell>
                             <TableCell>{row.phone}</TableCell>
-                            <TableCell></TableCell>
+                            <TableCell>
+                              <Tooltip content="Chuyển lớp" color="warning">
+                                <Button className="mr-2 text-white text-lg" color="warning" onClick={() => handleMoveOut(row.id)}><BiTransferAlt /></Button>
+                              </Tooltip>
+                              {selectedStudentInfo && (
+                                <UpdateInfoModal
+                                  isOpen={isOpenUpdateStudentInfo}
+                                  closeModal={EditStudentCloseModal}
+                                  selectedStudentInfo={selectedStudentInfo}
+                                />
+                              )}
+                              {selectedStudentDelete && (
+                                <DeleteStudentModal
+                                  isOpen={isOpenDeleteStudent}
+                                  closeModal={DeleteStudentCloseModal}
+                                  studentClassId={selectedStudentDelete.studentClassId}
+                                  studentName={selectedStudentDelete.name}
+                                />
+                              )}
+                              <Tooltip content="Chỉnh sửa thông tin" color="warning">
+                                <Button className="mr-2 text-white text-lg" color="warning" onClick={() => handleUpdateStudentInfo(row.name, row.email, row.phone, row.id)}><FaUserEdit /></Button>
+                              </Tooltip>
+                              <Tooltip content="Xóa học sinh" color="danger">
+                                <Button className="mr-2 text-white text-lg" color="danger" onClick={() => handleDeleteStudent(row.id, row.name)}><FaUserTimes /></Button>
+                              </Tooltip>
+                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -1000,6 +1196,10 @@ export default function ClassDetail() {
                                       </SelectItem>
                                     ))}
                                   </Select>
+                                  <Input name="shift" label="Nhập ca học" type="text" value={formikCreate.values.shift} onChange={formikCreate.handleChange} placeholder="Nhập ca học (không bắt buộc)" />
+                                  {formikCreate.errors.shift && formikCreate.touched.shift && (
+                                    <p style={{ color: "red" }}>{formikCreate.errors.shift}</p>
+                                  )}
                                   <div className="flex justify-between gap-1 min-w-full mt-4">
                                     <Button color="success" variant="bordered" style={{ width: "420px" }} onPress={() => handleDownloadTemplate("diem")}>Tải mẫu nhập dữ liệu</Button>
                                     <Input id="fileScoreUpload" color="primary" variant="bordered" type="file" accept=".xlsx" style={{ width: "420px" }} onChange={handleFileUpload}>Upload template</Input>
@@ -1064,7 +1264,7 @@ export default function ClassDetail() {
                             <TableCell>{index + 1}</TableCell>
                             <TableCell>Ngày {row.testDateAt ? formatScoreDate(row.testDateAt) : null}</TableCell>
                             <TableCell>{row.createBy.name}</TableCell>
-                            <TableCell>{row.averageScore}</TableCell>
+                            <TableCell>{row.averageScore.toFixed(2)}</TableCell>
                             <TableCell></TableCell>
                           </TableRow>
                         ))}

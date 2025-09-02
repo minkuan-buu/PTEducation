@@ -9,7 +9,7 @@ import { Input } from "@heroui/react";
 
 export default function AttendanceDetail() {
   const [attendanceDetail, setAttendanceDetail] = useState({});
-  const [listAttendanceDetail, setListAttendanceDetail] = useState<{ studentClassId: string, id: string, name: string, attendanceStatus: string }[]>([]);
+  const [listAttendanceDetail, setListAttendanceDetail] = useState < { studentClassId: string, id: string, name: string, attendanceStatus: string }[] > ([]);
   const [loading, setLoading] = useState(true);
   const [handling, setHandling] = useState(false);
   const { id, attendanceId } = useParams();
@@ -106,7 +106,7 @@ export default function AttendanceDetail() {
             <>
               <Breadcrumbs className="mb-5">
                 <BreadcrumbItem href="/manage-classes">Tất cả lớp</BreadcrumbItem>
-                <BreadcrumbItem href={`/class/${id}#attendance`}>{attendanceDetail.className}</BreadcrumbItem>
+                <BreadcrumbItem href={`/class/${id}#attendance`}>Lớp {attendanceDetail.className}</BreadcrumbItem>
                 <BreadcrumbItem href={`/class/${id}/attendance/${attendanceId}`}>Điểm danh "{`Tuần ${formatAttendanceDate(attendanceDetail.startDate)} - ${formatScoreDate(attendanceDetail.endDate)}`}"</BreadcrumbItem>
               </Breadcrumbs>
               <h1 className={title()}>Lớp {attendanceDetail.className} - Điểm danh "{`Tuần ${formatAttendanceDate(attendanceDetail.startDate)} - ${formatScoreDate(attendanceDetail.endDate)}`}"</h1>

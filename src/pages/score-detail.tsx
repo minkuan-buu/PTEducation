@@ -9,7 +9,7 @@ import { Input } from "@heroui/react";
 
 export default function ScoreDetail() {
   const [scoreDetail, setScoreDetail] = useState({});
-  const [listScoreDetail, setListScoreDetail] = useState<{ studentClassId: string, id: number, name: string, score: number }[]>([]);
+  const [listScoreDetail, setListScoreDetail] = useState < { studentClassId: string, id: number, name: string, score: number }[] > ([]);
   const [loading, setLoading] = useState(true);
   const [handling, setHandling] = useState(false);
   const { id, scoreId } = useParams();
@@ -102,7 +102,7 @@ export default function ScoreDetail() {
             <>
               <Breadcrumbs className="mb-5">
                 <BreadcrumbItem href="/manage-classes">Tất cả lớp</BreadcrumbItem>
-                <BreadcrumbItem href={`/class/${id}#score`}>{scoreDetail.className}</BreadcrumbItem>
+                <BreadcrumbItem href={`/class/${id}#score`}>Lớp {scoreDetail.className}</BreadcrumbItem>
                 <BreadcrumbItem href={`/class/${id}/score/${scoreId}`}>Điểm "{`Ngày ${formatScoreDate(scoreDetail.testDateAt)}`}"</BreadcrumbItem>
               </Breadcrumbs>
               <h1 className={title()}>Lớp {scoreDetail.className} - Điểm "{`Ngày ${formatScoreDate(scoreDetail.testDateAt)}`}"</h1>
