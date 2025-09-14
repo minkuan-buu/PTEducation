@@ -1103,19 +1103,21 @@ export default function ClassDetail() {
                     <MoveOutClassModal isOpen={isOpenMoveOutClass} onOpenChange={onOpenChangeMoveOutClass} studentId={selectedMoveOutStudentId} />
                     <Table selectionMode="multiple" selectionBehavior="replace" aria-label="Example table with dynamic content" className="mt-7" fullWidth>
                       <TableHeader>
-                        <TableColumn key="1" width="70px">No.</TableColumn>
-                        <TableColumn key="2" width="300px" allowsSorting onClick={() => requestSort('name')}>
+                        <TableColumn key="0" width="70px">No.</TableColumn>
+                        <TableColumn key="1" width="70px">Mã học sinh</TableColumn>
+                        <TableColumn key="2" width="370px" allowsSorting onClick={() => requestSort('name')}>
                           Tên
                           {sortConfig.key === 'totalStudent' && (sortConfig.direction === 'ascending' ? ' ▲' : ' ▼')}
                         </TableColumn>
-                        <TableColumn key="3" width="300px">Email</TableColumn>
-                        <TableColumn key="4" width="250px">Số điện thoại</TableColumn>
-                        <TableColumn key="5" width="400px">Hành động</TableColumn>
+                        <TableColumn key="3" width="370px">Email</TableColumn>
+                        <TableColumn key="4" width="140px">Số điện thoại</TableColumn>
+                        <TableColumn key="5" width="380px">Hành động</TableColumn>
                       </TableHeader>
                       <TableBody items={sortedClasses} emptyContent={"Chưa có dữ liệu"}>
                         {sortedClasses.map((row, index) => (
                           <TableRow key={row.id}>
                             <TableCell>{index + 1}</TableCell>
+                            <TableCell>{row.studentCode}</TableCell>
                             <TableCell>{row.name}</TableCell>
                             <TableCell>{row.email}</TableCell>
                             <TableCell>{row.phone}</TableCell>

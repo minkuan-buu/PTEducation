@@ -550,7 +550,7 @@ export default function ManageClassesPage() {
                 loadingContent={
                   !loadForm ? (
                     <div className="flex w-full justify-center">
-                      <Spinner color="white" />
+                      <Spinner />
                     </div>
                   ) : null
                 }

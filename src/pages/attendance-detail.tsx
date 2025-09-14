@@ -154,7 +154,7 @@ export default function AttendanceDetail() {
               </div>
               <Table selectionMode={isEditMode ? "none" : "multiple"} selectionBehavior="replace" aria-label="Example table with dynamic content" className="mt-7" fullWidth>
                 <TableHeader>
-                  <TableColumn key="1" width="70px">Id</TableColumn>
+                  <TableColumn key="1" width="70px">Mã học sinh</TableColumn>
                   <TableColumn key="2" width="300px" allowsSorting onClick={() => requestSort('name')}>
                     Tên
                     {sortConfig.key === 'totalStudent' && (sortConfig.direction === 'ascending' ? ' ▲' : ' ▼')}

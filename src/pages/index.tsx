@@ -10,7 +10,7 @@ import { useEffect, useRef, useState } from "react";
 import DefaultLayout from "@/layouts/default";
 import { CHECKSERVER, GETMONTHTEST, GETSCORESTUDENT } from "../api/api";
 import { Logout } from "./logout";
-import { Card, CardBody, Select, SelectItem, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, useDisclosure } from "@heroui/react";
+import { Card, CardBody, CircularProgress, Select, SelectItem, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, useDisclosure } from "@heroui/react";
 import { format, set } from "date-fns";
 import { ChangePassword } from "@/components/changePassword";
 
@@ -190,7 +190,7 @@ export default function IndexPage() {
                             <TableCell>{ScoreData.id}</TableCell>
                             <TableCell>{ScoreData.name}</TableCell>
                             {ScoreData.scores && ScoreData.scores.map((row, index) => (
-                              <TableCell>{row.score}</TableCell>
+                              <TableCell>{row.score} <span className="text-muted text-[#909097]">({row.note})</span></TableCell>
                             ))}
                           </TableRow>
                         </TableBody>
@@ -241,7 +241,11 @@ export default function IndexPage() {
                     </>
                   )}
                 </>
-              ) : null}
+              ) : (
+                <div className="flex justify-center items-center mt-7">
+                  <CircularProgress label="Đang tải..." />
+                </div>
+              )}
               <div className="mt-5 mb-3 text-md italic text-gray-300"><strong>*Lưu ý: </strong>{"Điểm ca A >5 là đạt, còn ca B là >6"}</div>
             </div>
           )}

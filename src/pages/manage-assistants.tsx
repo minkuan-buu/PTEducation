@@ -164,7 +164,7 @@ export default function ManageAssistantsPage() {
         },
     });
 
-    document.title = "Quản lý lớp học";
+    document.title = "Quản lý trợ giảng";
 
     useEffect(() => {
         let request = "";
@@ -561,7 +561,7 @@ export default function ManageAssistantsPage() {
                                 loadingContent={
                                     isLoading ? (
                                         <div className="flex w-full justify-center">
-                                            <Spinner color="white" />
+                                            <Spinner />
                                         </div>
                                     ) : null
                                 }
