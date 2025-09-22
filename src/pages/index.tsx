@@ -5,14 +5,15 @@ import { button as buttonStyles } from "@heroui/theme";
 
 import { siteConfig } from "@/config/site";
 import { title, subtitle } from "@/components/primitives";
-import { GithubIcon } from "@/components/icons";
+import { GithubIcon, UserIcon } from "@/components/icons";
 import { useEffect, useRef, useState } from "react";
 import DefaultLayout from "@/layouts/default";
 import { CHECKSERVER, GETMONTHTEST, GETSCORESTUDENT } from "../api/api";
 import { Logout } from "./logout";
-import { Card, CardBody, CircularProgress, Select, SelectItem, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, useDisclosure } from "@heroui/react";
+import { Button, Card, CardBody, CircularProgress, Select, SelectItem, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, useDisclosure } from "@heroui/react";
 import { format, set } from "date-fns";
 import { ChangePassword } from "@/components/changePassword";
+import { LoginModal } from "@/components/loginModal";
 
 export default function IndexPage() {
   const [now, setNow] = useState(new Date());
@@ -26,6 +27,8 @@ export default function IndexPage() {
   const [isMobile, setIsMobile] = useState(false);
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [handling, setHandling] = useState(false);
+  const { isOpen: loginModalIsOpen, onOpen: loginModalOnOpen, onOpenChange: loginModalOnOpenChange } = useDisclosure();
+  const [onLoading, setOnLoading] = useState(false);
 
   const handleResize = () => {
     setIsMobile(window.innerWidth <= 640);
@@ -204,8 +207,8 @@ export default function IndexPage() {
                           className="border-none bg-background/60 dark:bg-default-100/50 max-w-full mt-5"
                           shadow="sm"
                         >
-                          <CardBody>
-                            <div className="grid grid-cols-2 gap-2 pl-6 pt-1 pb-1 shadow-md">
+                          <CardBody className="shadow-md">
+                            <div className="grid grid-cols-2 gap-2 pl-6 pt-1 pb-1">
                               <div>
                                 <div>
                                   <strong>Id</strong>
@@ -252,17 +255,43 @@ export default function IndexPage() {
         </div>
         {localStorage.getItem("token") == null || localStorage.getItem("role") != "Student" ? (
           <div className="flex gap-3">
-            <Link
-              isExternal
-              className={buttonStyles({
-                color: "primary",
-                radius: "full",
-                variant: "shadow",
-              })}
-              href={siteConfig.links.pteducation}
-            >
-              Truy cập E-Learning
-            </Link>
+            {isMobile && localStorage.getItem("token") == null ? (
+              <>
+                <LoginModal isOpen={loginModalIsOpen} onOpenChange={loginModalOnOpenChange} onLoading={onLoading} setOnLoading={setOnLoading} />
+                <Button
+                  isExternal
+                  as={Link}
+                  startContent={<UserIcon />}
+                  className={
+                    buttonStyles({
+                      color: "primary",
+                      radius: "full",
+                      variant: "shadow",
+                    })
+                  }
+                  // href={siteConfig.links.sponsor}
+                  onPress={loginModalOnOpen}
+                  variant="flat"
+                >
+                  Đăng nhập
+                </Button>
+              </>
+            ) : (
+              <Link
+                isExternal
+                className={
+                  buttonStyles({
+                    color: "primary",
+                    radius: "full",
+                    variant: "shadow",
+                  })
+                }
+                href={siteConfig.links.pteducation}
+              >
+                Truy cập E-Learning
+              </Link>
+            )}
+
             {/* <Link
             isExternal
             className={buttonStyles({ variant: "bordered", radius: "full" })}

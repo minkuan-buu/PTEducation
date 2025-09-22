@@ -71,7 +71,7 @@ export default function MyProfile() {
                 shadow="sm"
               >
                 <CardBody>
-                  <div className="grid grid-cols-1 gap-3 pl-6 pt-1 pb-1 shadow-md">
+                  <div className="grid grid-cols-1 gap-3 pl-6 pt-1 pb-1">
                     <div>
                       <div>
                         <strong>Id</strong>
@@ -123,7 +123,7 @@ export default function MyProfile() {
               shadow="sm"
             >
               <CardBody>
-                <div className="grid grid-cols-4 gap-6 pl-12 pt-1 pb-1 shadow-md">
+                <div className="grid grid-cols-4 gap-6 pl-12 pt-1 pb-1">
                   <div>
                     <div>
                       <strong>Id</strong>
