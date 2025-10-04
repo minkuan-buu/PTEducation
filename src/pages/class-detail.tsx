@@ -33,7 +33,8 @@ import { MoveOutClassModal } from "@/components/moveOutClassModal";
 import { PiHockey } from "react-icons/pi";
 import { BiPhone, BiTransferAlt } from "react-icons/bi";
 import { UpdateInfoModal } from "@/components/updateInfoModal";
-import { DeleteStudentModal } from "@/components/deleteModal";
+import { DeleteScoreModal, DeleteStudentModal } from "@/components/deleteModal";
+import { MdDeleteForever } from "react-icons/md";
 
 interface ClassDetail {
   id: string;
@@ -80,6 +81,11 @@ export default function ClassDetail() {
     onOpen: onOpenDeleteStudent,
     onOpenChange: onOpenChangeDeleteStudent,
   } = useDisclosure();
+  const {
+    isOpen: isOpenDeleteScore,
+    onOpen: onOpenDeleteScore,
+    onOpenChange: onOpenChangeDeleteScore,
+  } = useDisclosure();
   const [classDetail, setClassDetail] = useState < ClassDetail > ();
   const [classListScore, setClassListScore] = useState([]);
   const [classListAttendance, setClassListAttendance] = useState([]);
@@ -103,6 +109,7 @@ export default function ClassDetail() {
   const [filteredStudents, setFilteredStudents] = React.useState < { id: string; name: string; email: string; phone: string; }[] > ([]);
   const [selectedStudentInfo, setSelectedStudentInfo] = React.useState < { studentClassId: string; name: string; email: string; phone: string; } | null > (null);
   const [selectedStudentDelete, setSelectedStudentDelete] = React.useState < { studentClassId: string; name: string } | null > (null);
+  const [selectedScoreDelete, setSelectedScoreDelete] = React.useState < { scoreId: string; name: string } | null > (null);
   // const [handling, setHandling] = useState(false);
 
   useEffect(() => {
@@ -198,6 +205,11 @@ export default function ClassDetail() {
   const handleDeleteStudent = async (studentId, name) => {
     setSelectedStudentDelete({ studentClassId: studentId, name });
     onOpenDeleteStudent();
+  }
+
+  const handleDeleteScore = async (scoreId, name) => {
+    setSelectedScoreDelete({ scoreId, name });
+    onOpenDeleteScore();
   }
 
   const fetchClassSelectData = async (token) => {
@@ -482,7 +494,7 @@ export default function ClassDetail() {
     },
     validationSchema: Yup.object({
       testDateAt: Yup.date().required("Required"),
-      shift: Yup.string().required("Required"),
+      shift: Yup.string(),
       classId: Yup.string().required("Required"),
     }),
     onSubmit: async (values) => {
@@ -856,6 +868,13 @@ export default function ClassDetail() {
     setOnLoading(true);
   };
 
+  const DeleteScoreCloseModal = () => {
+    onOpenChangeDeleteScore();
+    setSelectedScoreDelete(null);
+    setloadForm(false);
+    setOnLoading(true);
+  };
+
   return (
     <DefaultLayout>
       <section className="flex flex-col gap-4 py-8 md:py-10">
@@ -1125,21 +1144,6 @@ export default function ClassDetail() {
                               <Tooltip content="Chuyển lớp" color="warning">
                                 <Button className="mr-2 text-white text-lg" color="warning" onClick={() => handleMoveOut(row.id)}><BiTransferAlt /></Button>
                               </Tooltip>
-                              {selectedStudentInfo && (
-                                <UpdateInfoModal
-                                  isOpen={isOpenUpdateStudentInfo}
-                                  closeModal={EditStudentCloseModal}
-                                  selectedStudentInfo={selectedStudentInfo}
-                                />
-                              )}
-                              {selectedStudentDelete && (
-                                <DeleteStudentModal
-                                  isOpen={isOpenDeleteStudent}
-                                  closeModal={DeleteStudentCloseModal}
-                                  studentClassId={selectedStudentDelete.studentClassId}
-                                  studentName={selectedStudentDelete.name}
-                                />
-                              )}
                               <Tooltip content="Chỉnh sửa thông tin" color="warning">
                                 <Button className="mr-2 text-white text-lg" color="warning" onClick={() => handleUpdateStudentInfo(row.name, row.email, row.phone, row.id)}><FaUserEdit /></Button>
                               </Tooltip>
@@ -1151,6 +1155,21 @@ export default function ClassDetail() {
                         ))}
                       </TableBody>
                     </Table>
+                    {selectedStudentInfo && (
+                      <UpdateInfoModal
+                        isOpen={isOpenUpdateStudentInfo}
+                        closeModal={EditStudentCloseModal}
+                        selectedStudentInfo={selectedStudentInfo}
+                      />
+                    )}
+                    {selectedStudentDelete && (
+                      <DeleteStudentModal
+                        isOpen={isOpenDeleteStudent}
+                        closeModal={DeleteStudentCloseModal}
+                        studentClassId={selectedStudentDelete.studentClassId}
+                        studentName={selectedStudentDelete.name}
+                      />
+                    )}
                   </Tab>
                   <Tab
                     key="score"
@@ -1267,11 +1286,23 @@ export default function ClassDetail() {
                             <TableCell>Ngày {row.testDateAt ? formatScoreDate(row.testDateAt) : null}</TableCell>
                             <TableCell>{row.createBy.name}</TableCell>
                             <TableCell>{row.averageScore.toFixed(2)}</TableCell>
-                            <TableCell></TableCell>
+                            <TableCell>
+                              <Tooltip content="Xóa điểm" color="danger">
+                                <Button className="mr-2 text-white text-lg" color="danger" onClick={() => handleDeleteScore(row.id, `Ngày ${row.testDateAt ? formatScoreDate(row.testDateAt) : null}`)}><MdDeleteForever /></Button>
+                              </Tooltip>
+                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
                     </Table>
+                    {selectedScoreDelete && (
+                      <DeleteScoreModal
+                        isOpen={isOpenDeleteScore}
+                        closeModal={DeleteScoreCloseModal}
+                        ScoreId={selectedScoreDelete.scoreId}
+                        ScoreName={selectedScoreDelete.name}
+                      />
+                    )}
                   </Tab>
                   <Tab
                     key="attendance"

@@ -9,7 +9,7 @@ import {
     Checkbox
 } from "@heroui/react";
 import { useEffect, useState } from "react";
-import { DELETESTUDENT } from "../api/api";
+import { DELETESTUDENT, DELETESCORE } from "../api/api";
 import { Logout } from "@/pages/logout";
 import { useFormik } from "formik";
 import * as Yup from "yup";
@@ -57,9 +57,71 @@ export function DeleteStudentModal({
             <ModalContent className="h-fit overflow-auto">
                 {(onClose) => (
                     <>
-                        <ModalHeader>Cập nhật thông tin học sinh</ModalHeader>
+                        <ModalHeader>Xóa học sinh</ModalHeader>
                         <ModalBody>
                             <p>Bạn đang thao tác xóa học sinh <strong>{studentName}</strong> ra khỏi hệ thống. Mọi thông tin và dữ liệu liên quan như <strong>Điểm</strong> và <strong>Điểm danh</strong> sẽ bị xóa vĩnh viễn. Tiếp tục?</p>
+                        </ModalBody>
+                        <ModalFooter>
+                            <Button onClick={onClose}>Hủy</Button>
+                            <form onSubmit={formikDelete.handleSubmit}>
+                                <Button type="submit" color="danger" isDisabled={onLoading}>
+                                    {onLoading ? "Đang xử lý..." : "Xóa"}
+                                </Button>
+                            </form>
+                        </ModalFooter>
+                    </>
+                )}
+            </ModalContent>
+        </Modal>
+    );
+}
+
+export function DeleteScoreModal({
+    isOpen,
+    closeModal,
+    ScoreId,
+    ScoreName
+}) {
+    const [onLoading, setOnLoading] = useState(false);
+
+    const formikDelete = useFormik({
+        initialValues: {},
+        onSubmit: async (values) => {
+            setOnLoading(true);
+
+            try {
+                const { isSuccess, res } = await DELETESCORE(
+                    localStorage.getItem("token"),
+                    ScoreId
+                );
+
+                if (!isSuccess) {
+                    if (res.status === 401) {
+                        Logout();
+                    }
+                    let result = await res.json();
+                    alert(result.message);
+                } else {
+                    alert("Xóa điểm thành công!");
+                    formikDelete.resetForm();
+                    closeModal();
+                }
+            } catch (error) {
+                console.log(error);
+            } finally {
+                setOnLoading(false);
+            }
+        }
+    });
+
+    return (
+        <Modal isOpen={isOpen} size="xl" onOpenChange={closeModal}>
+            <ModalContent className="h-fit overflow-auto">
+                {(onClose) => (
+                    <>
+                        <ModalHeader>Xóa điểm</ModalHeader>
+                        <ModalBody>
+                            <p>Bạn đang thao tác xóa điểm <strong>{ScoreName}</strong> ra khỏi hệ thống. Mọi thao tác sẽ không thể hoàn tác. Tiếp tục?</p>
                         </ModalBody>
                         <ModalFooter>
                             <Button onClick={onClose}>Hủy</Button>

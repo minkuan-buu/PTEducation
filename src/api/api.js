@@ -114,6 +114,17 @@ export async function DELETESTUDENT(token, id) {
     return { isSuccess: res.ok, res }
 }
 
+export async function DELETESCORE(token, id) {
+    const res = await fetch(API_URL + `score/delete/${id}`, {
+        method: "DELETE",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
+        },
+    })
+    return { isSuccess: res.ok, res }
+}
+
 export async function CLASSDETAIL(token, id) {
     const res = await fetch(API_URL + `class/${id}`, {
         method: "GET",
