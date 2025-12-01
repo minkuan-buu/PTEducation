@@ -92,7 +92,7 @@ export default function ManageClassesPage() {
           id: `${studentData.id}`,
           name: studentData.name,
           email: studentData.email,
-          phone: studentData.phone.toString().length > 0 ? studentData.phone.toString() : "-",
+          phone: studentData.phone === null ? "-" : studentData.phone.toString().length > 0 ? studentData.phone.toString() : "-",
         };
         body.students.push(student);
       });

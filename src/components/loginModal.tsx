@@ -90,7 +90,7 @@ export const LoginModal = ({ isOpen, onOpenChange, onLoading, setOnLoading }) =>
             email: "",
         },
         validationSchema: Yup.object({
-            email: Yup.string().email().min(5, "Must be at least 5 characters").required("Required"),
+            email: Yup.string().email().min(5, "Ít nhất 5 kí tự").required("Bắt buộc"),
         }),
         onSubmit: async (values) => {
             setOnLoading(true);
@@ -122,7 +122,7 @@ export const LoginModal = ({ isOpen, onOpenChange, onLoading, setOnLoading }) =>
             otpCode: "",
         },
         validationSchema: Yup.object({
-            otpCode: Yup.string().length(6, "OTP code must be exactly 6 digits").required("Required"),
+            otpCode: Yup.string().length(6, "Mã OTP phải có đúng 6 chữ số").required("Bắt buộc"),
         }),
         onSubmit: async (values) => {
             values.email = localStorage.getItem("email_reset");
@@ -154,8 +154,8 @@ export const LoginModal = ({ isOpen, onOpenChange, onLoading, setOnLoading }) =>
             confirmPassword: "",
         },
         validationSchema: Yup.object({
-            newPassword: Yup.string().min(6, "Must be at least 6 characters").required("Required"),
-            confirmPassword: Yup.string().oneOf([Yup.ref("newPassword"), null], "Passwords must match").required("Required"),
+            newPassword: Yup.string().min(6, "Ít nhất 6 kí tự").required("Bắt buộc"),
+            confirmPassword: Yup.string().oneOf([Yup.ref("newPassword"), null], "Mật khẩu không khớp").required("Bắt buộc"),
         }),
         onSubmit: async (values) => {
             console.log(values);
@@ -221,8 +221,8 @@ export const LoginModal = ({ isOpen, onOpenChange, onLoading, setOnLoading }) =>
             password: "",
         },
         validationSchema: Yup.object({
-            username: Yup.string().min(5, "Must be at least 5 characters").required("Required"),
-            password: Yup.string().min(6, "Must be at least 6 characters").required("Required"),
+            username: Yup.string().min(3, "Ít nhất 3 kí tự").required("Required"),
+            password: Yup.string().min(6, "Ít nhất 6 kí tự").required("Required"),
         }),
         onSubmit: async (values) => {
             setOnLoading(true);
