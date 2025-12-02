@@ -509,7 +509,8 @@ export default function ClassDetail() {
       tableData.map((item) => {
         var scoreReq = {
           studentClassId: item.studentclassid,
-          score: item.score,
+          score: item.score.toString().toLowerCase() === "trễ" ? 0 : Number(item.score),
+          note: item.score.toString().toLowerCase() === "trễ" ? "Trễ" : null,
         }
         body.scoreReqList.push(scoreReq);
       });
