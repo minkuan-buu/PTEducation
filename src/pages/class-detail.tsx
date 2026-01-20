@@ -35,6 +35,7 @@ import { BiPhone, BiTransferAlt } from "react-icons/bi";
 import { UpdateInfoModal } from "@/components/updateInfoModal";
 import { DeleteScoreModal, DeleteStudentModal } from "@/components/deleteModal";
 import { MdDeleteForever } from "react-icons/md";
+import { ExportReportModal } from "@/components/export-report-modal";
 
 interface ClassDetail {
   id: string;
@@ -56,6 +57,11 @@ interface ClassDetail {
 
 export default function ClassDetail() {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const {
+    isOpen: isOpenExportReport,
+    onOpen: onOpenExportReport,
+    onOpenChange: onOpenChangeExportReport
+  } = useDisclosure();
   const {
     isOpen: isOpenAttendance,
     onOpen: onOpenAttendance,
@@ -86,7 +92,7 @@ export default function ClassDetail() {
     onOpen: onOpenDeleteScore,
     onOpenChange: onOpenChangeDeleteScore,
   } = useDisclosure();
-  const [classDetail, setClassDetail] = useState < ClassDetail > ();
+  const [classDetail, setClassDetail] = useState<ClassDetail>();
   const [classListScore, setClassListScore] = useState([]);
   const [classListAttendance, setClassListAttendance] = useState([]);
   const [classListSelect, setClassListSelect] = useState([]);
@@ -95,21 +101,21 @@ export default function ClassDetail() {
   const [sortFilterConfig, setSortFilterConfig] = useState({ key: null, direction: 'ascending' });
   const [sortConfigScore, setSortConfigScore] = useState({ key: null, direction: 'ascending' });
   const [sortConfigAttendance, setSortConfigAttendance] = useState({ key: null, direction: 'ascending' });
-  const [onLoading, setOnLoading] = useState < Boolean > (true);
+  const [onLoading, setOnLoading] = useState<Boolean>(true);
   const [tableData, setTableData] = useState([]);
   const [tableDataAttendance, setTableDataAttendance] = useState([]);
   const [tableStudents, setTableStudents] = useState([]);
   const [loadForm, setloadForm] = useState(false);
-  const [handling, setHandling] = useState < boolean > (false);
+  const [handling, setHandling] = useState<boolean>(false);
   const [EditMode, setEditMode] = useState(false);
   const { id } = useParams();
   const [selected, setSelected] = React.useState("personal");
   const [selectedMoveOutStudentId, setSelectedMoveOutStudentId] = React.useState(null);
   const [isFilter, setIsFilter] = React.useState(false);
-  const [filteredStudents, setFilteredStudents] = React.useState < { id: string; name: string; email: string; phone: string; }[] > ([]);
-  const [selectedStudentInfo, setSelectedStudentInfo] = React.useState < { studentClassId: string; name: string; email: string; phone: string; } | null > (null);
-  const [selectedStudentDelete, setSelectedStudentDelete] = React.useState < { studentClassId: string; name: string } | null > (null);
-  const [selectedScoreDelete, setSelectedScoreDelete] = React.useState < { scoreId: string; name: string } | null > (null);
+  const [filteredStudents, setFilteredStudents] = React.useState<{ id: string; name: string; email: string; phone: string; }[]>([]);
+  const [selectedStudentInfo, setSelectedStudentInfo] = React.useState<{ studentClassId: string; name: string; email: string; phone: string; } | null>(null);
+  const [selectedStudentDelete, setSelectedStudentDelete] = React.useState<{ studentClassId: string; name: string } | null>(null);
+  const [selectedScoreDelete, setSelectedScoreDelete] = React.useState<{ scoreId: string; name: string } | null>(null);
   // const [handling, setHandling] = useState(false);
 
   useEffect(() => {
@@ -746,7 +752,7 @@ export default function ClassDetail() {
     }
   };
 
-  const [file, setFile] = useState < File | null > (null);
+  const [file, setFile] = useState<File | null>(null);
 
   const clearFileScoreInput = () => {
     setFile(null);
@@ -1183,6 +1189,7 @@ export default function ClassDetail() {
                   >
                     <div className="flex justify-between items-center">
                       <strong><h2 className={"mt-10 text-xl mb-3"}>Thông tin điểm</h2></strong>
+                      <ExportReportModal classId={id ?? ""} isOpen={isOpenExportReport} onOpenChange={onOpenChangeExportReport} />
                       <Modal
                         isDismissable={false}
                         isKeyboardDismissDisabled={true}
@@ -1265,9 +1272,14 @@ export default function ClassDetail() {
                           )}
                         </ModalContent>
                       </Modal>
-                      <Button className="text-md" color="success" variant="bordered" onPress={onOpen}>
-                        Tạo điểm mới
-                      </Button>
+                      <div className="flex gap-4">
+                        <Button className="text-md" color="secondary" variant="bordered" onPress={onOpenExportReport}>
+                          Xuất phiếu liên lạc
+                        </Button>
+                        <Button className="text-md" color="success" variant="bordered" onPress={onOpen}>
+                          Tạo điểm mới
+                        </Button>
+                      </div>
                     </div>
                     <Table selectionMode="multiple" selectionBehavior="replace" aria-label="Example table with dynamic content" className="mt-7" fullWidth>
                       <TableHeader>
