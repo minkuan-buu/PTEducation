@@ -41,6 +41,7 @@ import { Logout, LogoutResetPassword } from "@/pages/logout";
 import { set } from "date-fns";
 import { IoEyeOffOutline, IoEyeOutline } from "react-icons/io5";
 import { LoginModal } from "./loginModal";
+import { FaUserPlus } from "react-icons/fa6";
 
 export const Navbar = () => {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
@@ -156,17 +157,30 @@ export const Navbar = () => {
         <LoginModal isOpen={isOpen} onOpenChange={onOpenChange} onLoading={onLoading} setOnLoading={setOnLoading} />
         <NavbarItem className="hidden md:flex">
           {localStorage.getItem("token") == null ? (
-            <Button
-              isExternal
-              as={Link}
-              className="text-sm font-normal text-default-600 bg-default-100"
-              // href={siteConfig.links.sponsor}
-              onPress={onOpen}
-              startContent={<UserIcon />}
-              variant="flat"
-            >
-              Đăng nhập
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                isExternal
+                as={Link}
+                className="text-sm font-normal text-default-600 bg-default-100"
+                // href={siteConfig.links.sponsor}
+                onPress={onOpen}
+                startContent={<UserIcon />}
+                variant="flat"
+              >
+                Đăng nhập
+              </Button>
+              <Button
+                isExternal
+                as={Link}
+                className="text-sm font-normal text-default-600 bg-default-100"
+                // href={siteConfig.links.sponsor}
+                onPress={onOpen}
+                startContent={<FaUserPlus className="text-xl" />}
+                variant="flat"
+              >
+                Đăng ký
+              </Button>
+            </div>
           ) : (
             <Dropdown>
               <DropdownTrigger>
@@ -220,17 +234,30 @@ export const Navbar = () => {
       <NavbarMenu>
         {/* {searchInput} */}
         {localStorage.getItem("token") == null ? (
-          <Button
-            isExternal
-            as={Link}
-            className="text-sm font-normal text-default-600 bg-default-100"
-            // href={siteConfig.links.sponsor}
-            onPress={onOpen}
-            startContent={<UserIcon />}
-            variant="flat"
-          >
-            Đăng nhập
-          </Button>
+          <>
+            <Button
+              isExternal
+              as={Link}
+              className="text-sm font-normal text-default-600 bg-default-100"
+              // href={siteConfig.links.sponsor}
+              onPress={onOpen}
+              startContent={<UserIcon />}
+              variant="flat"
+            >
+              Đăng nhập
+            </Button>
+            <Button
+              isExternal
+              as={Link}
+              className="text-sm font-normal text-default-600 bg-default-100"
+              // href={siteConfig.links.sponsor}
+              onPress={onOpen}
+              startContent={<FaUserPlus />}
+              variant="flat"
+            >
+              Đăng ký
+            </Button>
+          </>
         ) : (
           <Dropdown>
             <DropdownTrigger>

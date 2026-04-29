@@ -15,7 +15,7 @@ export const LoginModal = ({ isOpen, onOpenChange, onLoading, setOnLoading }) =>
     const [isResetingPassword, setIsResetingPassword] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
-    const [OTPCreateAt, setOTPCreateAt] = useState < Date > (null);
+    const [OTPCreateAt, setOTPCreateAt] = useState<Date>(null);
     const [isOTPTyping, setIsOTPTyping] = useState(false);
     const [isTypingPassword, setTypingPassword] = useState(false);
 
@@ -228,6 +228,7 @@ export const LoginModal = ({ isOpen, onOpenChange, onLoading, setOnLoading }) =>
             setOnLoading(true);
             try {
                 const { isSuccess, res } = await LOGIN(values);
+                console.log(res);
 
                 if (!isSuccess) {
                     let result = await res.json();

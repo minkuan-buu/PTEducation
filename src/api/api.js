@@ -1,483 +1,294 @@
-export const API_URL = "https://api.pteducation.edu.vn/api/";
-// export const API_URL = "http://localhost:5083/api/";
+// export const API_URL = "https://api.pteducation.edu.vn/api/";
+export const API_URL = "http://localhost:5083/api/";
+
+const API_V0_URL = API_URL;
+const API_V2_URL = `${API_URL}v2/`;
+const API_V1_URL = `${API_URL}v1/`;
+
+function buildApiUrl(version, path) {
+  const baseUrl =
+    version === "v2" ? API_V2_URL : version === "v1" ? API_V1_URL : API_V0_URL;
+  return `${baseUrl}${path}`;
+}
+
+async function requestApi(path, options = {}) {
+  const { version = "v0", method = "GET", token, body } = options;
+  const headers = {
+    "Content-Type": "application/json",
+  };
+
+  if (token) {
+    headers.Authorization = "Bearer " + token;
+  }
+
+  const fetchOptions = {
+    method,
+    headers,
+  };
+
+  if (body !== undefined) {
+    fetchOptions.body = JSON.stringify(body);
+  }
+
+  const res = await fetch(buildApiUrl(version, path), fetchOptions);
+  return { isSuccess: res.ok, res };
+}
 
 export async function LOGIN(body) {
-  const res = await fetch(API_URL + "authentication/login", {
+  return requestApi("authentication/login", {
+    version: "v2",
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
+    body,
   });
-  return { isSuccess: res.ok, res };
 }
 
 export async function CHECKSERVER(token) {
-  const res = await fetch(API_URL + "authentication/check-server", {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token,
-    },
+  return requestApi("authentication/check-server", {
+    version: "v1",
+    token,
   });
-  return { isSuccess: res.ok, res };
 }
 
 export async function GETCLASSES(token, query) {
-  const res = await fetch(API_URL + `class/all?${query}`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token,
-    },
-  });
-  return { isSuccess: res.ok, res };
+  return requestApi(`class/all?${query}`, { token });
 }
 
 export async function GETMANAGERS(token, query) {
-  const res = await fetch(API_URL + `admin/managers?${query}`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token,
-    },
-  });
-  return { isSuccess: res.ok, res };
+  return requestApi(`admin/managers?${query}`, { token });
 }
 
 export async function ADDMANAGERS(token, body) {
-  const res = await fetch(API_URL + `admin/managers`, {
+  return requestApi("admin/managers", {
+    token,
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token,
-    },
-    body: JSON.stringify(body),
+    body,
   });
-  return { isSuccess: res.ok, res };
 }
 
 export async function DEACTIVATEMANAGERS(token, id) {
-  const res = await fetch(API_URL + `admin/manager/deactivate/${id}`, {
+  return requestApi(`admin/manager/deactivate/${id}`, {
+    token,
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token,
-    },
   });
-  return { isSuccess: res.ok, res };
 }
 
 export async function REACTIVATEMANAGERS(token, id) {
-  const res = await fetch(API_URL + `admin/manager/reactivate/${id}`, {
+  return requestApi(`admin/manager/reactivate/${id}`, {
+    token,
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token,
-    },
   });
-  return { isSuccess: res.ok, res };
 }
 
 export async function UPDATECLASSINFO(token, body) {
-  const res = await fetch(API_URL + `class/update`, {
+  return requestApi("class/update", {
+    token,
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token,
-    },
-    body: JSON.stringify(body),
+    body,
   });
-  return { isSuccess: res.ok, res };
 }
 
 export async function UPDATESTUDENTINFO(token, body, id) {
-  const res = await fetch(API_URL + `admin/student/${id}`, {
+  return requestApi(`admin/student/${id}`, {
+    token,
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token,
-    },
-    body: JSON.stringify(body),
+    body,
   });
-  return { isSuccess: res.ok, res };
 }
 
 export async function DELETESTUDENT(token, id) {
-  const res = await fetch(API_URL + `admin/student/${id}`, {
+  return requestApi(`admin/student/${id}`, {
+    token,
     method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token,
-    },
   });
-  return { isSuccess: res.ok, res };
 }
 
 export async function DELETESCORE(token, id) {
-  const res = await fetch(API_URL + `score/delete/${id}`, {
+  return requestApi(`score/delete/${id}`, {
+    token,
     method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token,
-    },
   });
-  return { isSuccess: res.ok, res };
 }
 
 export async function CLASSDETAIL(token, id) {
-  const res = await fetch(API_URL + `class/${id}`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token,
-    },
-  });
-  return { isSuccess: res.ok, res };
+  return requestApi(`class/${id}`, { token });
 }
 
 export async function DELETECLASS(token, id) {
-  const res = await fetch(API_URL + `class/delete`, {
+  return requestApi("class/delete", {
+    token,
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token,
-    },
-    body: JSON.stringify(id),
+    body: id,
   });
-  return { isSuccess: res.ok, res };
 }
 
 export async function HARDDELETECLASS(token, id) {
-  const res = await fetch(API_URL + `class/delete`, {
+  return requestApi("class/delete", {
+    token,
     method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token,
-    },
-    body: JSON.stringify(id),
+    body: id,
   });
-  return { isSuccess: res.ok, res };
 }
 
 export async function RESTORECLASS(token, id) {
-  const res = await fetch(API_URL + `class/restore`, {
+  return requestApi("class/restore", {
+    token,
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token,
-    },
-    body: JSON.stringify(id),
+    body: id,
   });
-  return { isSuccess: res.ok, res };
 }
 
 export async function CREATECLASS(token, body) {
-  const res = await fetch(API_URL + "class/create", {
+  return requestApi("class/create", {
+    token,
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token,
-    },
-    body: JSON.stringify(body),
+    body,
   });
-  return { isSuccess: res.ok, res };
 }
 
 export async function CREATESCORE(token, body) {
-  const res = await fetch(API_URL + "score/create", {
+  return requestApi("score/create", {
+    token,
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token,
-    },
-    body: JSON.stringify(body),
+    body,
   });
-  return { isSuccess: res.ok, res };
 }
 
 export async function GETTEMPLATEIMPORTSTUDENT(token) {
-  const res = await fetch(API_URL + "template/import-student", {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token,
-    },
-  });
-  return { isSuccess: res.ok, res };
+  return requestApi("template/import-student", { token });
 }
 
 export async function GETEXPORTREPORT(token, classId, FromDate, ToDate) {
-  const res = await fetch(
-    API_URL + `class/${classId}/score?FromDate=${FromDate}&ToDate=${ToDate}`,
-    {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + token,
-      },
-    },
+  return requestApi(
+    `class/${classId}/score?FromDate=${FromDate}&ToDate=${ToDate}`,
+    { token },
   );
-  return { isSuccess: res.ok, res };
 }
 
 export async function GETTEMPLATEIMPORTMANAGER(token) {
-  const res = await fetch(API_URL + "template/import-manager", {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token,
-    },
-  });
-  return { isSuccess: res.ok, res };
+  return requestApi("template/import-manager", { token });
 }
 
 export async function GETTEMPLATEIMPORTSCORESTUDENT(token, classId) {
-  const res = await fetch(
-    API_URL + `template/import-score?ClassId=${classId}`,
-    {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + token,
-      },
-    },
-  );
-  return { isSuccess: res.ok, res };
+  return requestApi(`template/import-score?ClassId=${classId}`, { token });
 }
 
 export async function GETTEMPLATEIMPORTATTENDANCESTUDENT(token, classId) {
-  const res = await fetch(
-    API_URL + `template/import-attendance?ClassId=${classId}`,
-    {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + token,
-      },
-    },
-  );
-  return { isSuccess: res.ok, res };
+  return requestApi(`template/import-attendance?ClassId=${classId}`, {
+    token,
+  });
 }
 
 export async function GETLISTCLASSSELECT(token) {
-  const res = await fetch(API_URL + "class/select/all", {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token,
-    },
-  });
-  return { isSuccess: res.ok, res };
+  return requestApi("class/select/all", { token });
 }
 
 export async function GETALLSCORES(token, classId) {
-  const res = await fetch(API_URL + `score/all?ClassId=${classId}`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token,
-    },
-  });
-  return { isSuccess: res.ok, res };
+  return requestApi(`score/all?ClassId=${classId}`, { token });
 }
 
 export async function GETALLATTENDANCES(token, classId) {
-  const res = await fetch(API_URL + `attendance/all?ClassId=${classId}`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token,
-    },
-  });
-  return { isSuccess: res.ok, res };
+  return requestApi(`attendance/all?ClassId=${classId}`, { token });
 }
 
 export async function GETSCORE(token, scoreId) {
-  const res = await fetch(API_URL + `score/get?Id=${scoreId}`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token,
-    },
-  });
-  return { isSuccess: res.ok, res };
+  return requestApi(`score/get?Id=${scoreId}`, { token });
 }
 
 export async function GETATTENDANCE(token, attendanceId) {
-  const res = await fetch(API_URL + `attendance/get?Id=${attendanceId}`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token,
-    },
-  });
-  return { isSuccess: res.ok, res };
+  return requestApi(`attendance/get?Id=${attendanceId}`, { token });
 }
 
 export async function UPDATESCOREDETAIL(token, body) {
-  const res = await fetch(API_URL + `score-detail/update`, {
+  return requestApi("score-detail/update", {
+    token,
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token,
-    },
-    body: JSON.stringify(body),
+    body,
   });
-  return { isSuccess: res.ok, res };
 }
 
 export async function UPDATEATTENDANCEDETAIL(token, body) {
-  const res = await fetch(API_URL + `attendance-detail/update`, {
+  return requestApi("attendance-detail/update", {
+    token,
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token,
-    },
-    body: JSON.stringify(body),
+    body,
   });
-  return { isSuccess: res.ok, res };
 }
 
 export async function GETMONTHTEST(token) {
-  const res = await fetch(API_URL + `score-detail/month`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token,
-    },
-  });
-  return { isSuccess: res.ok, res };
+  return requestApi("score-detail/month", { token });
 }
 
 export async function GETMONTHATTENDANCE(token) {
-  const res = await fetch(API_URL + `attendance-detail/month`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token,
-    },
-  });
-  return { isSuccess: res.ok, res };
+  return requestApi("attendance-detail/month", { token });
 }
 
 export async function GETSCORESTUDENT(token, query) {
-  const res = await fetch(
-    API_URL + `score-detail?Month=${query.month}&Year=${query.year}`,
-    {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + token,
-      },
-    },
-  );
-  return { isSuccess: res.ok, res };
+  return requestApi(`score-detail?Month=${query.month}&Year=${query.year}`, {
+    token,
+  });
 }
 
 export async function GETATTENDANCESTUDENT(token, query) {
-  const res = await fetch(
-    API_URL + `attendance-detail?Month=${query.month}&Year=${query.year}`,
-    {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + token,
-      },
-    },
+  return requestApi(
+    `attendance-detail?Month=${query.month}&Year=${query.year}`,
+    { token },
   );
-  return { isSuccess: res.ok, res };
 }
 
 export async function GETMYPROFILE(token) {
-  const res = await fetch(API_URL + `user/me`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token,
-    },
-  });
-  return { isSuccess: res.ok, res };
+  return requestApi("user/me", { token });
 }
 
 export async function CHANGEPASSWORD(token, body) {
-  const res = await fetch(API_URL + `authentication/change-password`, {
+  return requestApi("authentication/change-password", {
+    token,
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token,
-    },
-    body: JSON.stringify(body),
+    body,
   });
-  return { isSuccess: res.ok, res };
 }
 
 export async function CREATEATTENDANCE(token, body) {
-  const res = await fetch(API_URL + `attendance/create`, {
+  return requestApi("attendance/create", {
+    token,
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token,
-    },
-    body: JSON.stringify(body),
+    body,
   });
-  return { isSuccess: res.ok, res };
 }
 
 export async function SENDOTP(body) {
-  const res = await fetch(API_URL + `otp/send`, {
+  return requestApi("otp/send", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
+    body,
   });
-  return { isSuccess: res.ok, res };
 }
 
 export async function VERIFYOTP(body) {
-  const res = await fetch(API_URL + `otp/verify`, {
+  return requestApi("otp/verify", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
+    body,
   });
-  return { isSuccess: res.ok, res };
 }
 
 export async function RESETPASSWORD(token, body) {
-  const res = await fetch(API_URL + `authentication/reset-password`, {
+  return requestApi("authentication/reset-password", {
+    token,
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token,
-    },
-    body: JSON.stringify(body),
+    body,
   });
-  return { isSuccess: res.ok, res };
 }
 
 export async function ADDSTUDENTSINTOCLASS(token, body) {
-  const res = await fetch(API_URL + `class/add-student`, {
+  return requestApi("class/add-student", {
+    token,
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token,
-    },
-    body: JSON.stringify(body),
+    body,
   });
-  return { isSuccess: res.ok, res };
 }
 
 export async function MOVEOUTSTUDENT(token, body) {
-  const res = await fetch(API_URL + `class/move-out`, {
+  return requestApi("class/move-out", {
+    token,
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token,
-    },
-    body: JSON.stringify(body),
+    body,
   });
-  return { isSuccess: res.ok, res };
 }
