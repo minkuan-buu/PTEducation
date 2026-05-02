@@ -207,15 +207,22 @@ export async function GETTEMPLATEIMPORTSTUDENT(token) {
   return { isSuccess: res.ok, res };
 }
 
-export async function GETEXPORTREPORT(token, classId, FromDate, ToDate) {
+export async function GETEXPORTREPORT(
+  token,
+  classId,
+  FromDate,
+  ToDate,
+  commentReqBody,
+) {
   const res = await fetch(
     API_URL + `class/${classId}/score?FromDate=${FromDate}&ToDate=${ToDate}`,
     {
-      method: "GET",
+      method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: "Bearer " + token,
       },
+      body: JSON.stringify(commentReqBody),
     },
   );
   return { isSuccess: res.ok, res };
