@@ -1,0 +1,88 @@
+@import "tailwindcss";
+@import "@heroui/styles";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --font-sans: "font", sans-serif;
+  --font-mono: "monospace", monospace;
+}
+
+:root {
+  --auth-page-bg: #eef1f7;
+  --auth-glow-left: radial-gradient(
+    circle,
+    rgba(165, 198, 255, 0.98) 0%,
+    rgba(165, 198, 255, 0.68) 24%,
+    rgba(165, 198, 255, 0.24) 45%,
+    transparent 72%
+  );
+  --auth-glow-right: radial-gradient(
+    circle,
+    rgba(214, 185, 255, 0.96) 0%,
+    rgba(214, 185, 255, 0.6) 24%,
+    rgba(214, 185, 255, 0.2) 46%,
+    transparent 74%
+  );
+  --auth-glow-bottom: radial-gradient(
+    ellipse at center,
+    rgba(188, 233, 231, 0.96) 0%,
+    rgba(188, 233, 231, 0.52) 22%,
+    rgba(188, 233, 231, 0.16) 44%,
+    transparent 74%
+  );
+  --auth-glow-top: radial-gradient(
+    ellipse at center,
+    rgba(255, 255, 255, 0.82) 0%,
+    rgba(255, 255, 255, 0.34) 30%,
+    transparent 72%
+  );
+}
+
+.dark {
+  --auth-page-bg: #0d1020;
+  --auth-glow-left: radial-gradient(
+    circle,
+    rgba(100, 180, 255, 0.6) 0%,
+    rgba(100, 180, 255, 0.3) 28%,
+    transparent 70%
+  );
+  --auth-glow-right: radial-gradient(
+    circle,
+    rgba(180, 140, 255, 0.55) 0%,
+    rgba(180, 140, 255, 0.25) 26%,
+    transparent 70%
+  );
+  --auth-glow-bottom: radial-gradient(
+    ellipse at center,
+    rgba(100, 220, 220, 0.5) 0%,
+    rgba(100, 220, 220, 0.2) 24%,
+    transparent 72%
+  );
+  --auth-glow-top: radial-gradient(
+    ellipse at center,
+    rgba(150, 150, 150, 0.4) 0%,
+    rgba(150, 150, 150, 0.1) 30%,
+    transparent 72%
+  );
+}
+
+.auth-page-bg {
+  background: var(--auth-page-bg);
+}
+
+.auth-glow-left {
+  background: var(--auth-glow-left);
+}
+
+.auth-glow-right {
+  background: var(--auth-glow-right);
+}
+
+.auth-glow-bottom {
+  background: var(--auth-glow-bottom);
+}
+
+.auth-glow-top {
+  background: var(--auth-glow-top);
+}
