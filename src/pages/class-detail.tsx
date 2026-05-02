@@ -833,8 +833,8 @@ export default function ClassDetail() {
             row.values.slice(1).forEach((value, idx) => {
               if (headers[idx] === "id") {
                 const id = value?.toString();
-                rowData["ID"] = id;
-                rowData["Name"] = idToNameMap[id] || "";
+                rowData.id = id;
+                rowData.name = idToNameMap[id] || "";
               } else {
                 rowData[headers[idx]] = value;
               }
@@ -1390,9 +1390,9 @@ export default function ClassDetail() {
                                     </TableHeader>
                                     <TableBody items={tableDataAttendance} emptyContent={"Chưa có dữ liệu"}>
                                       {tableDataAttendance.map((row, index) => (
-                                        <TableRow key={row.ID}>
-                                          <TableCell>{row.ID}</TableCell>
-                                          <TableCell>{row.Name}</TableCell>
+                                        <TableRow key={row.id}>
+                                          <TableCell>{row.id}</TableCell>
+                                          <TableCell>{row.name}</TableCell>
                                           <TableCell></TableCell>
                                         </TableRow>
                                       ))}

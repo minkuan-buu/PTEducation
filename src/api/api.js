@@ -1,5 +1,5 @@
-// export const API_URL = "https://api.pteducation.edu.vn/api/";
-export const API_URL = "http://localhost:5083/api/";
+export const API_URL = "https://api.pteducation.edu.vn/api/";
+// export const API_URL = "http://localhost:5083/api/";
 
 const API_V0_URL = API_URL;
 const API_V2_URL = `${API_URL}v2/`;
@@ -160,7 +160,7 @@ export async function GETTEMPLATEIMPORTSTUDENT(token) {
 export async function GETEXPORTREPORT(token, classId, FromDate, ToDate) {
   return requestApi(
     `class/${classId}/score?FromDate=${FromDate}&ToDate=${ToDate}`,
-    { token },
+    { token, method: "POST" },
   );
 }
 
@@ -271,6 +271,7 @@ export async function VERIFYOTP(body) {
 
 export async function RESETPASSWORD(token, body) {
   return requestApi("authentication/reset-password", {
+    version: "v1",
     token,
     method: "POST",
     body,
