@@ -17,8 +17,8 @@ import { LoginModal } from "@/components/loginModal";
 
 export default function IndexPage() {
   const [now, setNow] = useState(new Date());
-  const [nowKey, setNowKey] = useState < string > ("");
-  const [monthYearData, setMonthYearData] = useState < MonthYearData[] > ([]);
+  const [nowKey, setNowKey] = useState<string>("");
+  const [monthYearData, setMonthYearData] = useState<MonthYearData[]>([]);
   const currentMonth = now.getMonth() + 1; // Tháng trong JavaScript bắt đầu từ 0
   const currentYear = now.getFullYear();
   const currentKey = `${currentMonth}/${currentYear}`; // Định dạng giá trị theo {tháng}/{năm}
