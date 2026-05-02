@@ -157,10 +157,16 @@ export async function GETTEMPLATEIMPORTSTUDENT(token) {
   return requestApi("template/import-student", { token });
 }
 
-export async function GETEXPORTREPORT(token, classId, FromDate, ToDate) {
+export async function GETEXPORTREPORT(
+  token,
+  classId,
+  FromDate,
+  ToDate,
+  commentReqBody,
+) {
   return requestApi(
     `class/${classId}/score?FromDate=${FromDate}&ToDate=${ToDate}`,
-    { token, method: "POST" },
+    { token, method: "POST", body: commentReqBody },
   );
 }
 
