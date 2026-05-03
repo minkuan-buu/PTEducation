@@ -14,6 +14,23 @@ export type LoginUser = {
   token: string;
 };
 
+export type RegisterPayload = {
+  name: string;
+  classId: string;
+  email: string;
+  phone?: string;
+  school: string;
+  guardians: GuardianInfoReqModel[];
+};
+
+export type GuardianInfoReqModel = {
+  name: string;
+  email: string;
+  phone: string;
+  relationship: string;
+  isPrimary: boolean;
+};
+
 const api = createApiClient("v2");
 
 export async function login(payload: LoginPayload) {
@@ -30,6 +47,15 @@ export async function login(payload: LoginPayload) {
   }
 
   return result;
+}
+
+export async function register(payload: RegisterPayload) {
+  const response = await api.post<ApiResponse<null>>(
+    "/authentication/register",
+    payload,
+  );
+
+  return response.data;
 }
 
 export async function logout() {

@@ -1,16 +1,40 @@
-
 'use client';
 
-import { useState, useEffect } from "react";
-import { Button, Card, Description, FieldError, Fieldset, FieldsetLegend, Input, Label, Spinner, Switch, TextField, Select, ListBox } from "@heroui/react";
+import { useEffect, useState } from "react";
+import {
+    Button,
+    Card,
+    Description,
+    FieldError,
+    Fieldset,
+    FieldsetLegend,
+    Input,
+    Label,
+    ListBox,
+    Select,
+    Spinner,
+    Switch,
+    TextField,
+    toast
+} from "@heroui/react";
 import { motion } from "framer-motion";
 import { v2 } from "@/services/api";
 import { AxiosError } from "axios";
 import { useUser } from "@/context/user-context";
 import { useTheme } from "next-themes";
 import { useRouter, useSearchParams } from "next/navigation";
+import { RegisterPayload } from "@/services/api/v2";
 
-export default function Home() {
+type ClassOption = {
+    id: string;
+    name: string;
+};
+
+type AuthClientProps = {
+    classOptions: ClassOption[];
+};
+
+export default function AuthClient({ classOptions }: AuthClientProps) {
     const { resolvedTheme } = useTheme();
     const { setUser } = useUser();
     const router = useRouter();
@@ -21,7 +45,6 @@ export default function Home() {
     const [loginError, setLoginError] = useState<string | null>(null);
     const [registerStudent, setRegisterStudent] = useState<{ name: string; email: string; phone: string; class: string; school: string }>({ name: "", email: "", phone: "", class: "", school: "" });
     const [guardianList, setGuardianList] = useState<Array<{ id: string; name: string; email: string; phone: string; relation: string; isPrimary: boolean }>>([{ id: "g-0", name: "", email: "", phone: "", relation: "Ba", isPrimary: true }]);
-    // const [loginMessage, setLoginMessage] = useState<string | null>(null);
 
     useEffect(() => {
         setIsMounted(true);
@@ -86,7 +109,6 @@ export default function Home() {
     async function handleLoginSubmit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
         setLoginError(null);
-        // setLoginMessage(null);
         setIsSubmitting(true);
 
         try {
@@ -124,6 +146,32 @@ export default function Home() {
         event.preventDefault();
         console.log("Registering student:", registerStudent);
         console.log("Guardians:", guardianList);
+        var reqRegister: RegisterPayload = {
+            name: registerStudent.name,
+            email: registerStudent.email,
+            phone: registerStudent.phone,
+            school: registerStudent.school,
+            classId: registerStudent.class,
+            guardians: guardianList.map((g) => ({
+                name: g.name,
+                email: g.email,
+                phone: g.phone,
+                relationship: g.relation,
+                isPrimary: g.isPrimary,
+            })),
+        }
+        console.log("Register payload:", reqRegister);
+
+        try {
+            const result = await v2.register(reqRegister);
+            console.log("Registration success:", result);
+            toast.success("Đăng ký thành công! Vui lòng chờ xét duyệt và đăng nhập lại.");
+            // alert("Đăng ký thành công! Vui lòng chờ xét duyệt và đăng nhập lại.");
+            setIsRegistering(false);
+        } catch (error) {
+            console.error("Registration error:", error);
+            toast.danger("Đăng ký thất bại. Vui lòng thử lại.");
+        }
     }
 
     const guardianOptions = [
@@ -151,7 +199,7 @@ export default function Home() {
             </div>
 
             <div className="relative flex h-full w-full items-center justify-center">
-                <div className={`relative px-4 flex items-center justify-center ${!isRegistering ? 'w-full' : 'w-[85%]'}`}>
+                <div className={`relative px-4 flex items-center justify-center ${!isRegistering ? "w-full" : "w-[85%]"}`}>
                     {/* Login Card */}
                     {!isRegistering && (
                         <motion.div
@@ -318,17 +366,33 @@ export default function Home() {
                                                     <Label htmlFor="class" className="font-medium text-foreground/80">
                                                         Lớp học
                                                     </Label>
-                                                    <Input
-                                                        suppressHydrationWarning
+                                                    <Select
                                                         variant={getInputVariant()}
                                                         id="class"
-                                                        fullWidth
-                                                        name="class"
-                                                        value={registerStudent.class}
-                                                        onChange={(e) => setRegisterStudent({ ...registerStudent, class: e.target.value })}
+                                                        className="w-full"
                                                         placeholder="Chọn lớp học"
-                                                        type="text"
-                                                    />
+                                                        value={registerStudent.class}
+                                                        onChange={(value) => {
+                                                            if (value !== null) {
+                                                                setRegisterStudent({ ...registerStudent, class: String(value) });
+                                                            }
+                                                        }}
+                                                    >
+                                                        <Select.Trigger>
+                                                            <Select.Value />
+                                                            <Select.Indicator />
+                                                        </Select.Trigger>
+                                                        <Select.Popover>
+                                                            <ListBox>
+                                                                {classOptions.map((option) => (
+                                                                    <ListBox.Item key={option.id} id={option.id} textValue={option.name}>
+                                                                        {option.name}
+                                                                        <ListBox.ItemIndicator />
+                                                                    </ListBox.Item>
+                                                                ))}
+                                                            </ListBox>
+                                                        </Select.Popover>
+                                                    </Select>
                                                     <FieldError />
                                                 </TextField>
                                                 <TextField
@@ -547,6 +611,6 @@ export default function Home() {
                     )}
                 </div>
             </div>
-        </section >
+        </section>
     );
 }
