@@ -11,7 +11,7 @@ export type LoginUser = {
   id: string;
   username: string;
   email?: string;
-  accessToken: string;
+  token: string;
 };
 
 const api = createApiClient("v2");
@@ -25,8 +25,8 @@ export async function login(payload: LoginPayload) {
   const result = response.data;
   console.log(result);
 
-  if (result.data.accessToken) {
-    setAccessToken(result.data.accessToken);
+  if (result.data.token) {
+    setAccessToken(result.data.token);
   }
 
   return result;
