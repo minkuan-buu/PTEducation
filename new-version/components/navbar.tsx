@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Kbd, Link, TextField, InputGroup, Avatar } from "@heroui/react";
+import { Button, Kbd, Link, TextField, InputGroup, Avatar, Description, Label, Header, Dropdown, Separator } from "@heroui/react";
 import NextLink from "next/link";
 import clsx from "clsx";
 
@@ -15,9 +15,17 @@ import {
   SearchIcon,
   Logo,
 } from "@/components/icons";
+import { CiFloppyDisk, CiSquarePlus } from "react-icons/ci";
+import { BiFolderOpen } from "react-icons/bi";
+import { IoPerson, IoTrashBin } from "react-icons/io5";
+import { LuLogOut } from "react-icons/lu";
+import { IoMdSettings } from "react-icons/io";
+import { TbLogout } from "react-icons/tb";
+import { FiChevronDown } from "react-icons/fi";
 
 export const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   const searchInput = (
     <TextField aria-label="Search" type="search">
@@ -97,16 +105,66 @@ export const Navbar = () => {
               <HeartFilledIcon className="text-danger" />
               Sponsor
             </Button> */}
-            <div className="relative">
-              <Avatar>
-                <Avatar.Image
-                  alt="Blue"
-                  src="https://heroui-assets.nyc3.cdn.digitaloceanspaces.com/avatars/blue.jpg"
-                />
-                <Avatar.Fallback>ON</Avatar.Fallback>
-              </Avatar>
-              <span className="absolute right-0 bottom-0 size-3 rounded-full not-dark:bg-white dark:bg-black ring-2 ring-background" />
-            </div>
+            <Dropdown isOpen={isUserMenuOpen} onOpenChange={setIsUserMenuOpen}>
+              <Dropdown.Trigger className="rounded-full">
+                <div className="relative">
+                  <Avatar>
+                    <Avatar.Image
+                      alt="Blue"
+                      src="https://heroui-assets.nyc3.cdn.digitaloceanspaces.com/avatars/blue.jpg"
+                    />
+                    <Avatar.Fallback>ON</Avatar.Fallback>
+                  </Avatar>
+                  <span className="absolute right-0 bottom-0 grid size-4 place-items-center rounded-full not-dark:bg-white dark:bg-black ring-2 ring-background">
+                    <FiChevronDown
+                      className={clsx(
+                        "size-3 text-muted transition-transform",
+                        isUserMenuOpen && "rotate-180",
+                      )}
+                      aria-hidden="true"
+                    />
+                  </span>
+                </div>
+              </Dropdown.Trigger>
+              <Dropdown.Popover>
+                <div className="px-3 pt-3 pb-1">
+                  <div className="flex items-center gap-2">
+                    <Avatar size="sm">
+                      <Avatar.Image
+                        alt="Jane"
+                        src="https://heroui-assets.nyc3.cdn.digitaloceanspaces.com/avatars/blue.jpg"
+                      />
+                      <Avatar.Fallback delayMs={600}>JD</Avatar.Fallback>
+                    </Avatar>
+                    <div className="flex flex-col gap-0">
+                      <p className="text-sm leading-5 font-medium">Jane Doe</p>
+                      <p className="text-xs leading-none text-muted">jane@example.com</p>
+                    </div>
+                  </div>
+                </div>
+                <Dropdown.Menu>
+                  <Dropdown.Item id="profile" textValue="Profile">
+                    <div className="flex w-full items-center justify-between gap-2">
+                      <Label>Hồ sơ </Label>
+                      <IoPerson className="size-4 text-muted" />
+                    </div>
+                  </Dropdown.Item>
+                  <Dropdown.Item id="settings" textValue="Settings">
+                    <div className="flex w-full items-center justify-between gap-2">
+                      <Label>Cài đặt</Label>
+                      <IoMdSettings className="size-4 text-muted" />
+                    </div>
+                  </Dropdown.Item>
+                  <Dropdown.Item id="logout" textValue="Logout" variant="danger">
+                    <div className="flex w-full items-center justify-between gap-2">
+                      <Label>Đăng xuất</Label>
+                      <TbLogout className="size-4 text-danger" />
+                    </div>
+                  </Dropdown.Item>
+                </Dropdown.Menu>
+              </Dropdown.Popover>
+            </Dropdown>
+
           </div>
         </div>
 
