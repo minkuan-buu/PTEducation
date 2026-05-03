@@ -10,7 +10,7 @@ export default async function Home() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center">
+    <main className="min-h-screen pt-15 flex flex-col items-center justify-center">
       <div className="text-center p-8">
         <h1 className="text-2xl font-bold">PT Education</h1>
         <p className="text-muted mt-2">Bạn đã đăng nhập — đây là trang chủ.</p>

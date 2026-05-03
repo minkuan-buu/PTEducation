@@ -9,6 +9,7 @@ import {
     Fieldset,
     FieldsetLegend,
     Input,
+    InputGroup,
     Label,
     ListBox,
     Select,
@@ -24,6 +25,7 @@ import { useUser } from "@/context/user-context";
 import { useTheme } from "next-themes";
 import { useRouter, useSearchParams } from "next/navigation";
 import { RegisterPayload } from "@/services/api/v2";
+import { FaRegEye, FaRegEyeSlash } from "react-icons/fa";
 
 type ClassOption = {
     id: string;
@@ -43,6 +45,7 @@ export default function AuthClient({ classOptions }: AuthClientProps) {
     const [isRegistering, setIsRegistering] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [loginError, setLoginError] = useState<string | null>(null);
+    const [isShowPassword, setIsShowPassword] = useState(false);
     const [registerStudent, setRegisterStudent] = useState<{ name: string; email: string; phone: string; class: string; school: string }>({ name: "", email: "", phone: "", class: "", school: "" });
     const [guardianList, setGuardianList] = useState<Array<{ id: string; name: string; email: string; phone: string; relation: string; isPrimary: boolean }>>([{ id: "g-0", name: "", email: "", phone: "", relation: "Ba", isPrimary: true }]);
 
@@ -255,17 +258,32 @@ export default function AuthClient({ classOptions }: AuthClientProps) {
                                                 <Label htmlFor="password" className="font-medium text-foreground/80">
                                                     Mật khẩu
                                                 </Label>
-                                                <Input
-                                                    suppressHydrationWarning
-                                                    variant={getInputVariant()}
-                                                    autoComplete="current-password"
-                                                    id="password"
-                                                    fullWidth
-                                                    name="password"
-                                                    onChange={handleInputChange}
-                                                    placeholder="Nhập mật khẩu"
-                                                    type="password"
-                                                />
+
+                                                <InputGroup variant={getInputVariant()}>
+                                                    <InputGroup.Input
+                                                        suppressHydrationWarning
+                                                        autoComplete="current-password"
+                                                        id="password"
+                                                        name="password"
+                                                        onChange={handleInputChange}
+                                                        placeholder="Nhập mật khẩu"
+                                                        type={isShowPassword ? "text" : "password"}
+                                                    />
+                                                    <InputGroup.Suffix>
+                                                        <button
+                                                            className="focus:outline-none flex items-center justify-center"
+                                                            type="button"
+                                                            onClick={() => setIsShowPassword(!isShowPassword)} // Nhớ gắn hàm toggle của bạn vào đây
+                                                            aria-label="Toggle password visibility"
+                                                        >
+                                                            {isShowPassword ? (
+                                                                <FaRegEyeSlash className="text-xl text-default-400" />
+                                                            ) : (
+                                                                <FaRegEye className="text-xl text-default-400" />
+                                                            )}
+                                                        </button>
+                                                    </InputGroup.Suffix>
+                                                </InputGroup>
                                                 <FieldError />
                                             </TextField>
                                             {loginError ? (

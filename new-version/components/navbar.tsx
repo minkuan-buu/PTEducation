@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Kbd, Link, TextField, InputGroup } from "@heroui/react";
+import { Button, Kbd, Link, TextField, InputGroup, Avatar } from "@heroui/react";
 import NextLink from "next/link";
 import clsx from "clsx";
 
@@ -37,7 +37,7 @@ export const Navbar = () => {
   );
 
   return (
-    <nav className="sticky top-0 z-40 w-full border-b border-separator bg-background/70 backdrop-blur-lg">
+    <nav className="fixed top-0 z-40 w-full border-b border-separator bg-background/70 backdrop-blur-lg">
       <header className="mx-auto flex h-16 max-w-[1280px] items-center justify-between gap-4 px-6">
         <div className="flex items-center gap-4">
           <NextLink className="flex items-center gap-1" href="/">
@@ -45,7 +45,7 @@ export const Navbar = () => {
             <p className="font-bold text-inherit">ACME</p>
           </NextLink>
           <ul className="hidden lg:flex gap-4 ml-2">
-            {siteConfig.navItems.map((item) => (
+            {/* {siteConfig.navItems.map((item) => (
               <li key={item.href}>
                 <NextLink
                   className={clsx(
@@ -57,12 +57,12 @@ export const Navbar = () => {
                   {item.label}
                 </NextLink>
               </li>
-            ))}
+            ))} */}
           </ul>
         </div>
 
         <div className="hidden sm:flex items-center gap-2">
-          <Link
+          {/* <Link
             aria-label="Twitter"
             href={siteConfig.links.twitter}
             rel="noopener noreferrer"
@@ -85,18 +85,28 @@ export const Navbar = () => {
             target="_blank"
           >
             <GithubIcon className="text-muted" />
-          </Link>
-          <ThemeSwitch />
+          </Link> */}
+          {/* <ThemeSwitch /> */}
           <div className="hidden lg:flex">{searchInput}</div>
           <div className="hidden md:flex">
-            <Button
+            {/* <Button
               className="text-sm font-normal"
               variant="tertiary"
               onPress={() => window.open(siteConfig.links.sponsor, "_blank")}
             >
               <HeartFilledIcon className="text-danger" />
               Sponsor
-            </Button>
+            </Button> */}
+            <div className="relative">
+              <Avatar>
+                <Avatar.Image
+                  alt="Blue"
+                  src="https://heroui-assets.nyc3.cdn.digitaloceanspaces.com/avatars/blue.jpg"
+                />
+                <Avatar.Fallback>ON</Avatar.Fallback>
+              </Avatar>
+              <span className="absolute right-0 bottom-0 size-3 rounded-full not-dark:bg-white dark:bg-black ring-2 ring-background" />
+            </div>
           </div>
         </div>
 
@@ -109,7 +119,7 @@ export const Navbar = () => {
           >
             <GithubIcon className="text-muted" />
           </Link>
-          <ThemeSwitch />
+          {/* <ThemeSwitch /> */}
           <button
             aria-expanded={isMenuOpen}
             aria-label="Toggle menu"
@@ -146,7 +156,7 @@ export const Navbar = () => {
         <div className="border-t border-separator sm:hidden">
           <div className="p-4">{searchInput}</div>
           <ul className="flex flex-col gap-2 px-4 pb-4">
-            {siteConfig.navMenuItems.map((item, index) => (
+            {/* {siteConfig.navMenuItems.map((item, index) => (
               <li key={`${item.label}-${index}`}>
                 <Link
                   className={clsx(
@@ -162,7 +172,7 @@ export const Navbar = () => {
                   {item.label}
                 </Link>
               </li>
-            ))}
+            ))} */}
           </ul>
         </div>
       )}
