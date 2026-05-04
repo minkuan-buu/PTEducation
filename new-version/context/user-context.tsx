@@ -24,7 +24,35 @@ export interface UserProviderProps {
 }
 
 export function UserProvider({ children, initialUser = null }: UserProviderProps) {
-    const [user, setUser] = React.useState<UserProfile | null>(initialUser);
+    const storageKey = "pteducation.user";
+    const [user, setUser] = React.useState<UserProfile | null>(() => initialUser);
+
+    React.useEffect(() => {
+        if (initialUser) {
+            return;
+        }
+
+        const raw = window.localStorage.getItem(storageKey);
+
+        if (!raw) {
+            return;
+        }
+
+        try {
+            const parsed = JSON.parse(raw) as UserProfile;
+            setUser(parsed);
+        } catch {
+            window.localStorage.removeItem(storageKey);
+        }
+    }, [initialUser, storageKey]);
+
+    React.useEffect(() => {
+        if (user) {
+            window.localStorage.setItem(storageKey, JSON.stringify(user));
+        } else {
+            window.localStorage.removeItem(storageKey);
+        }
+    }, [user, storageKey]);
 
     const value = React.useMemo<UserContextValue>(
         () => ({
