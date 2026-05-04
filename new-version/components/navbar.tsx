@@ -23,7 +23,11 @@ import { IoMdSettings } from "react-icons/io";
 import { TbLogout } from "react-icons/tb";
 import { FiChevronDown } from "react-icons/fi";
 
-export const Navbar = () => {
+type NavbarProps = {
+  isSidebarOpen?: boolean;
+};
+
+export const Navbar = ({ isSidebarOpen = false }: NavbarProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
@@ -33,7 +37,12 @@ export const Navbar = () => {
         <InputGroup.Prefix>
           <SearchIcon className="text-base text-muted pointer-events-none flex-shrink-0" />
         </InputGroup.Prefix>
-        <InputGroup.Input className="text-sm" placeholder="Search..." />
+        <InputGroup.Input
+          className="text-sm"
+          id="nav-search-input"
+          name="nav-search"
+          placeholder="Search..."
+        />
         <InputGroup.Suffix>
           <Kbd className="hidden lg:inline-flex">
             <Kbd.Abbr keyValue="command" />
@@ -46,11 +55,13 @@ export const Navbar = () => {
 
   return (
     <nav className="fixed top-0 z-40 w-full border-b border-separator bg-background/70 backdrop-blur-lg">
-      <header className="mx-auto flex h-16 max-w-[1280px] items-center justify-between gap-4 px-6">
+      <header className="ml-auto flex h-16 max-w-[83vw] items-center justify-between gap-4 px-6">
         <div className="flex items-center gap-4">
-          <NextLink className="flex items-center gap-1" href="/">
-            <Logo />
-            <p className="font-bold text-inherit">ACME</p>
+          <NextLink className="flex items-center gap-1" href="https://pteducation.edu.vn/" target="_blank" rel="noopener noreferrer">
+            {/* <Logo /> */}
+            <Button variant="primary" size="lg" className="bg-gradient-to-tr from-[#48cae4] to-[#00b4d8] hover:scale-103 transition-transform">
+              Truy cập E-Learning
+            </Button>
           </NextLink>
           <ul className="hidden lg:flex gap-4 ml-2">
             {/* {siteConfig.navItems.map((item) => (

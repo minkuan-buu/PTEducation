@@ -6,6 +6,7 @@ export type UserProfile = {
     id: string;
     username: string;
     email?: string;
+    role?: "admin" | "student" | "guardian" | "manager";
 };
 
 type UserContextValue = {

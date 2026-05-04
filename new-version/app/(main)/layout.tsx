@@ -1,5 +1,4 @@
-import { FloatingThemeSwitch } from "@/components/floating-theme-switch";
-import { Navbar } from "@/components/navbar";
+import { MainShell } from "@/components/main-shell";
 
 export default function MainLayout({
     children,
@@ -7,11 +6,6 @@ export default function MainLayout({
     children: React.ReactNode;
 }) {
     return (
-        <div className="flex min-h-screen flex-col">
-            <Navbar />
-            <main className="flex-grow w-full">
-                {children}
-            </main>
-        </div>
+        <MainShell>{children}</MainShell>
     );
 }
