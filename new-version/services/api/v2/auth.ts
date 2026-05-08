@@ -9,8 +9,10 @@ export type LoginPayload = {
 
 export type LoginUser = {
   id: string;
-  username: string;
+  name: string;
   email?: string;
+  phoneNumber?: string;
+  role: "admin" | "student" | "guardian" | "manager";
   token: string;
 };
 

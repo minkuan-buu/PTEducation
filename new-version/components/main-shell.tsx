@@ -10,7 +10,7 @@ export const MainShell = ({ children }: MainShellProps) => {
         <div className="flex min-h-screen flex-col">
             <Sidebar />
             <Navbar isSidebarOpen />
-            <main className="flex-grow w-full">{children}</main>
+            <main className="flex-grow w-full pl-72">{children}</main>
         </div>
     );
 };

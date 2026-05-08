@@ -4,8 +4,9 @@ import * as React from "react";
 
 export type UserProfile = {
     id: string;
-    username: string;
+    name: string;
     email?: string;
+    phoneNumber?: string;
     role?: "admin" | "student" | "guardian" | "manager";
 };
 

@@ -39,6 +39,7 @@ export const Navbar = ({ isSidebarOpen = false }: NavbarProps) => {
         </InputGroup.Prefix>
         <InputGroup.Input
           className="text-sm"
+          aria-label="Search"
           id="nav-search-input"
           name="nav-search"
           placeholder="Search..."

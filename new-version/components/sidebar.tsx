@@ -21,24 +21,24 @@ export const Sidebar = () => {
     const pathname = usePathname();
     const { user, isAuthenticated } = useUser();
 
-    const role = user?.role ?? "student";
-    console.log(isAuthenticated);
+    const role = (user?.role ?? "null").toLowerCase();
+    console.log(user);
 
     const menuByRole: Record<string, MenuSection[]> = useMemo(
         () => ({
             admin: [
                 {
-                    title: "Overview",
+                    title: "",
                     items: [
-                        { label: "Dashboard", href: "/" },
+                        { label: "Trang tổng quan", href: "/" },
                     ],
                 },
                 {
-                    title: "Management",
+                    title: "Quản lý",
                     items: [
-                        { label: "Users", href: "/users" },
-                        { label: "Classes", href: "/classes" },
-                        { label: "Reports", href: "/reports" },
+                        { label: "Người dùng", href: "/users" },
+                        { label: "Lớp học", href: "/classes" },
+                        { label: "Báo cáo", href: "/reports" },
                     ],
                 },
             ],
@@ -85,11 +85,12 @@ export const Sidebar = () => {
                     ],
                 },
             ],
+            null: []
         }),
         [],
     );
 
-    const sections = menuByRole[role] ?? menuByRole.student;
+    const sections = menuByRole[role] ?? menuByRole.student ?? [];
     const firstItemHref = sections[0]?.items[0]?.href;
 
     useEffect(() => {

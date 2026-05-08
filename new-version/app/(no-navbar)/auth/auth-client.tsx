@@ -126,8 +126,10 @@ export default function AuthClient({ classOptions }: AuthClientProps) {
 
             setUser({
                 id: result.data.id,
-                username: result.data.username,
+                phoneNumber: result.data.phoneNumber,
+                name: result.data.name,
                 email: result.data.email,
+                role: result.data.role,
             });
 
             router.push(getSafeNextPath());

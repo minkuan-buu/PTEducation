@@ -1,4 +1,7 @@
 
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+
 import { buildApiBasePath } from "@/services/api";
 
 import AuthClient from "./auth-client";
@@ -26,7 +29,28 @@ async function fetchClassOptions(): Promise<ClassOption[]> {
     }
 }
 
-export default async function Home() {
+function getSafeNextPath(nextParam?: string | string[]) {
+    const nextValue = Array.isArray(nextParam) ? nextParam[0] : nextParam;
+
+    if (nextValue && nextValue.startsWith("/") && !nextValue.startsWith("//")) {
+        return nextValue;
+    }
+
+    return "/";
+}
+
+export default async function Home({
+    searchParams,
+}: {
+    searchParams?: { next?: string | string[] };
+}) {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("at")?.value;
+
+    if (token) {
+        redirect(getSafeNextPath(searchParams?.next));
+    }
+
     const classOptions = await fetchClassOptions();
 
     return <AuthClient classOptions={classOptions} />;
