@@ -1,32 +1,20 @@
 "use client";
 
-import { Button, cn, Table, Tabs, Tooltip } from "@heroui/react";
+import { Button, Chip, cn, Table, Tabs, Tooltip } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import type { Key } from "@react-types/shared";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+import { v2 } from "@/services/api";
+import type { AdminGuardian, AdminStudent } from "@/services/api/v2";
 
 type UserClientProps = {
-    data: UserData[];
+    initialData?: UserData[];
 };
 
-export type GuardianData = {
-    id: string;
-    name: string;
-    email: string;
-    phone: string;
-    relationship?: string; // Thuộc tính riêng của Guardian
-};
+export type GuardianData = AdminGuardian;
 
-export type UserData = {
-    id: string;
-    name: string;
-    email: string;
-    phone: string;
-    role: string;
-    status: string;
-    className: string;
-    guardians?: (UserData | GuardianData)[]; // Có thể chứa cả 2 loại
-};
+export type UserData = AdminStudent;
 
 const ROLE_LABELS: Record<string, string> = {
     Student: "Học sinh",
@@ -37,35 +25,41 @@ const getRoleLabel = (role: string) => {
     return ROLE_LABELS[role] ?? role;
 };
 
-export default function UserClient({ data }: UserClientProps) {
+export default function UserClient({ initialData }: UserClientProps) {
+    const [data, setData] = useState<UserData[]>(() => initialData ?? []);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    // const data: UserData[] = [
-    //     {
-    //         "id": "112001",
-    //         "name": "Đoàn Ngọc Minh Quân",
-    //         "email": "doanngocminhquan.9a4@gmail.com",
-    //         "phone": "0934177280",
-    //         "role": "Student",
-    //         "status": "PendingApproved",
-    //         "className": "12A1",
-    //         "guardians": [
-    //             {
-    //                 "id": "2120002",
-    //                 "name": "Đoàn Đức Hùng",
-    //                 "email": "hungdr1969@gmail.com",
-    //                 "phone": "0908108855",
-    //                 "relationship": "Ba"
-    //             },
-    //             {
-    //                 "id": "2120001",
-    //                 "name": "Trần Thị Tuyết Mai",
-    //                 "email": "mtran0170@gmail.com",
-    //                 "phone": "0906022137",
-    //                 "relationship": "Mẹ"
-    //             }
-    //         ]
-    //     }
-    // ];
+    useEffect(() => {
+        let isActive = true;
+
+        const loadStudents = async () => {
+            try {
+                setIsLoading(true);
+                setError(null);
+
+                const students = await v2.getAdminStudents();
+
+                if (isActive) {
+                    setData(students);
+                }
+            } catch {
+                if (isActive) {
+                    setError("Không thể tải danh sách học sinh.");
+                }
+            } finally {
+                if (isActive) {
+                    setIsLoading(false);
+                }
+            }
+        };
+
+        void loadStudents();
+
+        return () => {
+            isActive = false;
+        };
+    }, []);
 
     const renderExpandableRow = (item: UserData | GuardianData) => {
         // Kiểm tra xem đây là Guardian hay User để hiển thị thông tin phù hợp
@@ -101,7 +95,16 @@ export default function UserClient({ data }: UserClientProps) {
                     )}
                 </Table.Cell>
 
-                <Table.Cell>{item.name}</Table.Cell>
+                <Table.Cell>
+                    <div className="flex flex-row items-center gap-4">
+                        <span>{item.name}</span>
+                        {isGuardian && item.isPrimary ? (
+                            <Chip color="accent">
+                                <Chip.Label>Liên hệ chính</Chip.Label>
+                            </Chip>
+                        ) : null}
+                    </div>
+                </Table.Cell>
                 <Table.Cell>{item.email}</Table.Cell>
                 <Table.Cell>{item.phone}</Table.Cell>
 
@@ -135,7 +138,7 @@ export default function UserClient({ data }: UserClientProps) {
                                     <Tooltip delay={0}>
                                         <Button className="rounded-full" size="md" variant="outline">
                                             {/* Xem chi tiết */}
-                                            <Icon icon="oui:cross-in-circle-empty" width="84" height="84" color="#fd0a3a" />
+                                            <Icon icon="oui:cross-in-circle-empty" width="1024" height="1024" color="#fd0a3a" />
                                             <Tooltip.Content placement="bottom">
                                                 <p>Từ chối</p>
                                             </Tooltip.Content>
@@ -205,6 +208,8 @@ export default function UserClient({ data }: UserClientProps) {
                                     </Table.Content>
                                 </Table.ScrollContainer>
                             </Table>
+                            {isLoading ? <p className="mt-3 text-sm text-muted-foreground">Đang tải dữ liệu...</p> : null}
+                            {error ? <p className="mt-3 text-sm text-danger">{error}</p> : null}
                         </Tabs.Panel>
                         <Tabs.Panel className="pt-2" id="teachers">
                             <p>Track your metrics and analyze performance data.</p>
