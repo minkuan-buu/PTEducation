@@ -57,3 +57,11 @@ export async function approveStudent(studentId: string, accessStatus: string) {
 
   return normalizeStudents(response.data);
 }
+
+export async function deleteStudent(studentId: string) {
+  const response = await api.delete<
+    AdminStudent[] | ApiListResponse<AdminStudent> | ApiResponse<AdminStudent[]>
+  >(`/admin/students/${studentId}`);
+
+  return normalizeStudents(response.data);
+}

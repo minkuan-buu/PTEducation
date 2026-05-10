@@ -76,7 +76,6 @@ export default function UserClient({ initialData }: UserClientProps) {
         }
     }
 
-
     const renderExpandableRow = (item: UserData | GuardianData) => {
         // Kiểm tra xem đây là Guardian hay User để hiển thị thông tin phù hợp
         const isGuardian = 'relationship' in item;
@@ -161,7 +160,34 @@ export default function UserClient({ initialData }: UserClientProps) {
                                         </Button>
                                     </Tooltip>
                                 </div>
-                            ) : null}
+                            ) : (
+                                <div className="flex gap-2">
+                                    <Tooltip delay={0}>
+                                        <Button className="rounded-full" size="md" variant="outline">
+                                            <Icon icon="lucide:edit" width="1024" height="1024" />
+                                            <Tooltip.Content placement="bottom">
+                                                <p>Chỉnh sửa</p>
+                                            </Tooltip.Content>
+                                        </Button>
+                                    </Tooltip>
+                                    <Tooltip delay={0}>
+                                        <Button className="rounded-full" size="md" variant="outline">
+                                            <Icon icon="ep:remove" width="1024" height="1024" />
+                                            <Tooltip.Content placement="bottom">
+                                                <p>Vô hiệu hóa</p>
+                                            </Tooltip.Content>
+                                        </Button>
+                                    </Tooltip>
+                                    <Tooltip delay={0}>
+                                        <Button className="rounded-full" size="md" variant="outline">
+                                            <Icon icon="mingcute:delete-2-fill" color="#fd0a3a" width="1024" height="1024" />
+                                            <Tooltip.Content placement="bottom">
+                                                <p>Xóa</p>
+                                            </Tooltip.Content>
+                                        </Button>
+                                    </Tooltip>
+                                </div>
+                            )}
                         </>
                     )}
                 </Table.Cell>
