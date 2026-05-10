@@ -25,7 +25,7 @@ const getRoleLabel = (role: string) => {
     return ROLE_LABELS[role] ?? role;
 };
 
-const StudentActions = ({
+const StudentApproveActions = ({
     studentId,
     onAction
 }: {
@@ -72,6 +72,63 @@ const StudentActions = ({
                     onPress={() => handlePress("Rejected")}
                 >
                     <Icon icon="oui:cross-in-circle-empty" color="#fd0a3a" width="20" height="20" />
+                </Button>
+            </Tooltip>
+        </div>
+    );
+};
+
+const StudentActions = ({
+    studentId,
+    onAction
+}: {
+    studentId: string,
+    onAction: (id: string) => Promise<void>
+}) => {
+    // Tự quản lý state loading cục bộ
+    const [isProcessing, setIsProcessing] = useState(false);
+
+    const handlePress = async () => {
+        setIsProcessing(true);
+        try {
+            await onAction(studentId);
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    if (isProcessing) {
+        return (
+            <div className="flex h-10 min-w-[88px] items-center">
+                <Spinner size="md" />
+            </div>
+        );
+    }
+
+    return (
+        <div className="flex gap-2 h-10">
+            <Tooltip delay={0}>
+                <Button className="rounded-full" size="md" variant="outline">
+                    <Icon icon="lucide:edit" width="1024" height="1024" />
+                    <Tooltip.Content placement="bottom">
+                        <p>Chỉnh sửa</p>
+                    </Tooltip.Content>
+                </Button>
+            </Tooltip>
+            <Tooltip delay={0}>
+                <Button className="rounded-full" size="md" variant="outline">
+                    <Icon icon="ep:remove" width="1024" height="1024" />
+                    <Tooltip.Content placement="bottom">
+                        <p>Vô hiệu hóa</p>
+                    </Tooltip.Content>
+                </Button>
+            </Tooltip>
+            <Tooltip delay={0}>
+                <Button className="rounded-full" size="md" variant="outline" onPress={() => handlePress()}>
+                    <Icon icon="mingcute:delete-2-fill" color="#fd0a3a" width="1024" height="1024" />
+                    <Tooltip.Content placement="bottom">
+                        <p>Xóa</p>
+                    </Tooltip.Content>
                 </Button>
             </Tooltip>
         </div>
@@ -125,6 +182,17 @@ export default function UserClient({ initialData }: UserClientProps) {
             setIsLoading(true);
         } catch (err) {
             console.error("Error approving student:", err);
+        }
+    }
+
+    async function handleDeleteStudent(studentId: string) {
+        try {
+            // Hãy chắc chắn bạn đã BỎ COMMENT dòng gọi API này
+            await v2.deleteStudent(studentId);
+            // Gọi lại dữ liệu để table tự cập nhật sau khi xóa thành công
+            setIsLoading(true);
+        } catch (err) {
+            console.error("Error deleting student:", err);
         }
     }
 
@@ -189,39 +257,32 @@ export default function UserClient({ initialData }: UserClientProps) {
                     {isGuardian ? "-" : (item as UserData).className}
                 </Table.Cell>
                 <Table.Cell>
-                    {!isGuardian && (item as UserData).status === "PendingApproved" ? (
-                        <StudentActions
+                    {/* {!isGuardian && (item as UserData).status === "PendingApproved" ? (
+                        <StudentApproveActions
                             studentId={item.id}
                             onAction={handleApproveStudent}
                         />
                     ) : (
-                        <div className="flex gap-2">
-                            <Tooltip delay={0}>
-                                <Button className="rounded-full" size="md" variant="outline">
-                                    <Icon icon="lucide:edit" width="1024" height="1024" />
-                                    <Tooltip.Content placement="bottom">
-                                        <p>Chỉnh sửa</p>
-                                    </Tooltip.Content>
-                                </Button>
-                            </Tooltip>
-                            <Tooltip delay={0}>
-                                <Button className="rounded-full" size="md" variant="outline">
-                                    <Icon icon="ep:remove" width="1024" height="1024" />
-                                    <Tooltip.Content placement="bottom">
-                                        <p>Vô hiệu hóa</p>
-                                    </Tooltip.Content>
-                                </Button>
-                            </Tooltip>
-                            <Tooltip delay={0}>
-                                <Button className="rounded-full" size="md" variant="outline">
-                                    <Icon icon="mingcute:delete-2-fill" color="#fd0a3a" width="1024" height="1024" />
-                                    <Tooltip.Content placement="bottom">
-                                        <p>Xóa</p>
-                                    </Tooltip.Content>
-                                </Button>
-                            </Tooltip>
-                        </div>
-                    )}
+                        <StudentActions
+                            studentId={item.id}
+                            onAction={handleDeleteStudent}
+                        />
+                    )} */}
+                    {!isGuardian ? (
+                        <>
+                            {(item as UserData).status === "PendingApproved" ? (
+                                <StudentApproveActions
+                                    studentId={item.id}
+                                    onAction={handleApproveStudent}
+                                />
+                            ) : (
+                                <StudentActions
+                                    studentId={item.id}
+                                    onAction={handleDeleteStudent}
+                                />
+                            )}
+                        </>
+                    ) : null}
                 </Table.Cell>
 
                 {/* Phần đệ quy: HeroUI sẽ tìm field này để mở rộng */}
