@@ -29,6 +29,7 @@ export default function UserClient({ initialData }: UserClientProps) {
     const [data, setData] = useState<UserData[]>(() => initialData ?? []);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [isHandlingAction, setIsHandlingAction] = useState(false);
 
     useEffect(() => {
         let isActive = true;
@@ -54,12 +55,27 @@ export default function UserClient({ initialData }: UserClientProps) {
             }
         };
 
-        void loadStudents();
+        if (isLoading) {
+            void loadStudents();
+        }
 
         return () => {
             isActive = false;
         };
-    }, []);
+    }, [isLoading]);
+
+    async function handleApproveStudent(studentId: string, accessStatus: string) {
+        try {
+            setIsHandlingAction(true);
+            var result = await v2.approveStudent(studentId, accessStatus);
+            setIsLoading(true);
+        } catch (err) {
+            console.error("Error approving student:", err);
+        } finally {
+            setIsHandlingAction(false);
+        }
+    }
+
 
     const renderExpandableRow = (item: UserData | GuardianData) => {
         // Kiểm tra xem đây là Guardian hay User để hiển thị thông tin phù hợp
@@ -127,7 +143,7 @@ export default function UserClient({ initialData }: UserClientProps) {
                             {(item as UserData).status === "PendingApproved" ? (
                                 <div className="flex gap-2">
                                     <Tooltip delay={0}>
-                                        <Button className="rounded-full" size="md" variant="outline">
+                                        <Button className="rounded-full" size="md" variant="outline" onPress={() => void handleApproveStudent(item.id, "Approved")} isDisabled={isHandlingAction}>
                                             {/* Xem chi tiết */}
                                             <Icon icon="simple-line-icons:check" color="#38b000" width="1024" height="1024" />
                                             <Tooltip.Content placement="bottom">
@@ -136,7 +152,7 @@ export default function UserClient({ initialData }: UserClientProps) {
                                         </Button>
                                     </Tooltip>
                                     <Tooltip delay={0}>
-                                        <Button className="rounded-full" size="md" variant="outline">
+                                        <Button className="rounded-full" size="md" variant="outline" onPress={() => void handleApproveStudent(item.id, "Rejected")} isDisabled={isHandlingAction}>
                                             {/* Xem chi tiết */}
                                             <Icon icon="oui:cross-in-circle-empty" width="1024" height="1024" color="#fd0a3a" />
                                             <Tooltip.Content placement="bottom">
@@ -208,7 +224,7 @@ export default function UserClient({ initialData }: UserClientProps) {
                                     </Table.Content>
                                 </Table.ScrollContainer>
                             </Table>
-                            {isLoading ? <p className="mt-3 text-sm text-muted-foreground">Đang tải dữ liệu...</p> : null}
+                            {isLoading ? <p className="mt-3 text-sm text-center text-muted-foreground">Đang tải dữ liệu...</p> : null}
                             {error ? <p className="mt-3 text-sm text-danger">{error}</p> : null}
                         </Tabs.Panel>
                         <Tabs.Panel className="pt-2" id="teachers">

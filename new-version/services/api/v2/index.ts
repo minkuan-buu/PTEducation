@@ -1,4 +1,4 @@
 // Placeholder for future v2 endpoints.
 // Create files here when the backend exposes a new API version.
 export * from "./auth";
-export * from "./students";
+export * from "./admin";

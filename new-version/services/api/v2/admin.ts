@@ -21,6 +21,10 @@ export type AdminStudent = {
   guardians?: AdminGuardian[];
 };
 
+export type ApproveStudentPayload = {
+  accessStatus: string;
+};
+
 const api = createApiClient("v2");
 
 function normalizeStudents(
@@ -40,6 +44,16 @@ export async function getAdminStudents() {
   const response = await api.get<
     AdminStudent[] | ApiListResponse<AdminStudent> | ApiResponse<AdminStudent[]>
   >("/admin/students");
+
+  return normalizeStudents(response.data);
+}
+
+export async function approveStudent(studentId: string, accessStatus: string) {
+  const response = await api.patch<
+    AdminStudent[] | ApiListResponse<AdminStudent> | ApiResponse<AdminStudent[]>
+  >(`/admin/students/${studentId}`, {
+    accessStatus,
+  });
 
   return normalizeStudents(response.data);
 }
