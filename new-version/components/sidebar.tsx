@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@heroui/react";
 
 import { useUser } from "@/context/user-context";
+import { UserCard } from "./user-sidebar-card";
 
 type MenuItem = {
     label: string;
@@ -103,11 +104,15 @@ export const Sidebar = () => {
 
     return (
         <aside className="fixed left-0 top-0 z-50 h-screen w-72 border-r border-separator bg-background/95 backdrop-blur-md">
-            <div className="flex h-16 items-center justify-between px-4">
+            <div className="flex h-18 items-center justify-between px-6">
                 <div className="flex flex-col">
                     <p className="font-bold text-inherit">PTEducation</p>
                     <span className="text-xs text-muted">Biological Sciences</span>
                 </div>
+            </div>
+            <div className="space-y-4 border-t border-divider pt-4" />
+            <div className="px-3">
+                <UserCard />
             </div>
 
             <nav className="px-3 py-4">
