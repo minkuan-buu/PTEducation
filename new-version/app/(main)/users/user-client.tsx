@@ -296,7 +296,7 @@ export default function UserClient({ initialData }: UserClientProps) {
     const [expandedKeys, setExpandedKeys] = useState<Set<Key>>(() => new Set(["1"]));
 
     return (
-        <main className="min-h-screen pt-15 flex flex-col justify-start">
+        <main className="min-h-screen pt-4 flex flex-col justify-start">
             <div className="p-8">
                 <h1 className="text-2xl font-bold">Người dùng</h1>
                 <p className="text-muted mt-2">Trang quản lý người dùng</p>

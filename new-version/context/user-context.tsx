@@ -7,6 +7,7 @@ export type UserProfile = {
     name: string;
     email?: string;
     phoneNumber?: string;
+    avatarUrl?: string;
     role?: "admin" | "student" | "guardian" | "manager";
 };
 

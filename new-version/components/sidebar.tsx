@@ -6,6 +6,9 @@ import { Button } from "@heroui/react";
 
 import { useUser } from "@/context/user-context";
 import { UserCard } from "./user-sidebar-card";
+import { TbLogout2 } from "react-icons/tb";
+import NextLink from "next/link";
+import OpenIcon from '@iconify-react/majesticons/open';
 
 type MenuItem = {
     label: string;
@@ -112,7 +115,7 @@ export const Sidebar = () => {
             </div>
             <div className="space-y-4 border-t border-divider pt-4" />
             <div className="px-3">
-                <UserCard />
+                <UserCard name={user?.name || "User"} role={user?.role || "User"} avatarUrl={user?.avatarUrl || ""} />
             </div>
 
             <nav className="px-3 py-4">
@@ -147,6 +150,34 @@ export const Sidebar = () => {
                     ))}
                 </div>
             </nav>
+            <div className="absolute bottom-0 left-0 w-full border-t border-divider p-4">
+                <div className="flex flex-col gap-2">
+                    <NextLink className="flex items-center gap-1" href="https://pteducation.edu.vn/" target="_blank" rel="noopener noreferrer">
+                        <Button
+                            size="lg"
+                            className="w-full justify-start rounded-xl px-3 py-2 text-md font-medium"
+                            fullWidth
+                            variant="secondary"
+                        >
+                            <OpenIcon height="1em" />
+                            Truy cập E-Learning
+                        </Button>
+                    </NextLink>
+                    <Button
+                        size="lg"
+                        className="w-full justify-start rounded-xl px-3 py-2 text-md font-medium"
+                        fullWidth
+                        onPress={() => {
+                            // Add logout logic here
+                            router.push("/auth");
+                        }}
+                        variant="danger-soft"
+                    >
+                        <TbLogout2 />
+                        Đăng xuất
+                    </Button>
+                </div>
+            </div>
         </aside>
     );
 };
