@@ -19,10 +19,11 @@ import {
 } from "@tanstack/react-table";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { v2 } from "@/services/api";
+import { v1, v2 } from "@/services/api";
 import type { ClassData, ClassSchedule } from "@/services/api/v2/classes";
-import { useClasses } from "@/hooks/use-classes";
 import "./class.css";
+import { useClasses, useCreateClass } from "@/hooks/classes";
+import { useQueryClient } from "@tanstack/react-query";
 
 const DAY_LABELS: Record<number, string> = {
     0: "Thứ 2",
@@ -100,7 +101,8 @@ export default function ClassClient() {
     // const [data, setData] = useState<ClassData[]>([]);
     // const [isLoading, setIsLoading] = useState(true);
     // const [error, setError] = useState<string | null>(null);
-    const [isSaving, setIsSaving] = useState(false);
+    // const [isSaving, setIsSaving] = useState(false);
+    const { mutate, isPending, isSuccess } = useCreateClass();
     const [request, setRequest] = useState({ pageIndex: 1 }); // Used to trigger data reload after create/delete
 
     // Form state
@@ -129,15 +131,26 @@ export default function ClassClient() {
     //     // eslint-disable-next-line react-hooks/exhaustive-deps
     // }, []);
 
-    const { data, isLoading, isError, error } = useClasses({ pageIndex, pageSize });
+    const queryClient = useQueryClient();
+    const { data, isLoading, isPlaceholderData } = useClasses({ pageIndex, pageSize });
     const tableData = useMemo(() => data?.data ?? [], [data]);
     const totalPages = Math.max(1, data?.totalPages ?? 1);
+    const hasNextPage = (data?.pageNumber ?? 1) < totalPages;
+
+    // useEffect(() => {
+    //     if (pageIndex > totalPages) {
+    //         setPageIndex(totalPages);
+    //     }
+    // }, [pageIndex, totalPages]);
 
     useEffect(() => {
-        if (pageIndex > totalPages) {
-            setPageIndex(totalPages);
-        }
-    }, [pageIndex, totalPages]);
+        if (!hasNextPage) return;
+        queryClient.prefetchQuery({
+            queryKey: ["classes", "pagination", pageIndex + 1, pageSize],
+            queryFn: () => v1.getAdminClasses({ pageIndex: pageIndex + 1 }),
+            staleTime: 3 * 60 * 1000, // 3 minutes
+        });
+    }, [hasNextPage, pageIndex, pageSize, queryClient]);
 
     const handleScheduleChange = (
         index: number,
@@ -186,8 +199,14 @@ export default function ClassClient() {
         }
 
         try {
-            setIsSaving(true);
-            await v2.createClass({
+            // setIsSaving(true);
+            // await v2.createClass({
+            //     name,
+            //     startAt: new Date(startAt).toISOString(),
+            //     endAt: new Date(endAt).toISOString(),
+            //     schedules,
+            // });
+            mutate({
                 name,
                 startAt: new Date(startAt).toISOString(),
                 endAt: new Date(endAt).toISOString(),
@@ -200,7 +219,7 @@ export default function ClassClient() {
             console.error("Error creating class:", err);
             alert("Có lỗi xảy ra khi tạo lớp học.");
         } finally {
-            setIsSaving(false);
+            // setIsSaving(false);
         }
     };
 
@@ -391,10 +410,10 @@ export default function ClassClient() {
                                     </Button>
                                     <Button
                                         variant="primary"
-                                        isDisabled={isSaving}
+                                        isDisabled={isPending}
                                         onPress={handleCreate}
                                     >
-                                        {isSaving ? "Đang tạo..." : "Tạo lớp"}
+                                        {isPending ? "Đang tạo..." : "Tạo lớp"}
                                     </Button>
                                 </Modal.Footer>
                             </Modal.Dialog>
@@ -493,7 +512,7 @@ export default function ClassClient() {
                         ) : null}
                     </Table>
                     {isLoading ? <p className="mt-3 text-sm text-center text-muted-foreground">Đang tải dữ liệu...</p> : null}
-                    {isError ? <p className="mt-3 text-sm text-danger text-center">{error.message}</p> : null}
+                    {/* {isError ? <p className="mt-3 text-sm text-danger text-center">{error.message}</p> : null} */}
                 </div>
             </div>
         </main>

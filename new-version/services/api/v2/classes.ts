@@ -50,7 +50,7 @@ function normalizeClass(
 
 export async function createClass(payload: CreateClassPayload) {
   const response = await api.post<ClassData | ApiResponse<ClassData>>(
-    "/admin/classes",
+    "/classes",
     payload,
   );
   return normalizeClass(response.data);
