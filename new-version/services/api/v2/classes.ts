@@ -48,13 +48,6 @@ function normalizeClass(
   return payload as ClassData;
 }
 
-export async function getAdminClasses() {
-  const response = await api.get<
-    ClassData[] | ApiListResponse<ClassData> | ApiResponse<ClassData[]>
-  >("/admin/classes");
-  return normalizeClasses(response.data);
-}
-
 export async function createClass(payload: CreateClassPayload) {
   const response = await api.post<ClassData | ApiResponse<ClassData>>(
     "/admin/classes",

@@ -6,6 +6,7 @@ import * as React from "react";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 
 import { UserProvider } from "@/context/user-context";
+import { TanStackProvider } from "@/providers/tanstack-provider";
 
 export interface ProvidersProps {
   children: React.ReactNode;
@@ -15,7 +16,9 @@ export interface ProvidersProps {
 export function Providers({ children, themeProps }: ProvidersProps) {
   return (
     <NextThemesProvider {...themeProps}>
-      <UserProvider>{children}</UserProvider>
+      <TanStackProvider>
+        <UserProvider>{children}</UserProvider>
+      </TanStackProvider>
     </NextThemesProvider>
   );
 }

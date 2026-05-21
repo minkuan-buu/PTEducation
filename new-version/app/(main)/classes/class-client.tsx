@@ -5,27 +5,36 @@ import {
     Chip,
     Input,
     Modal,
+    Pagination,
     Table,
     Tooltip,
     useOverlayState,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
-import { useEffect, useState } from "react";
+import {
+    ColumnDef,
+    flexRender,
+    getCoreRowModel,
+    useReactTable,
+} from "@tanstack/react-table";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { v2 } from "@/services/api";
 import type { ClassData, ClassSchedule } from "@/services/api/v2/classes";
+import { useClasses } from "@/hooks/use-classes";
+import "./class.css";
 
 const DAY_LABELS: Record<number, string> = {
-    1: "Thứ 2",
-    2: "Thứ 3",
-    3: "Thứ 4",
-    4: "Thứ 5",
-    5: "Thứ 6",
-    6: "Thứ 7",
-    7: "Chủ nhật",
+    0: "Thứ 2",
+    1: "Thứ 3",
+    2: "Thứ 4",
+    3: "Thứ 5",
+    4: "Thứ 6",
+    5: "Thứ 7",
+    6: "Chủ nhật",
 };
 
-const getDayLabel = (day: number) => DAY_LABELS[day] ?? `Thứ ${day + 1}`;
+const getDayLabel = (day: number) => DAY_LABELS[day] ?? `Thứ ${day + 2}`;
 
 const formatDateTime = (dateStr: string) => {
     if (!dateStr) return "-";
@@ -49,9 +58,9 @@ const ScheduleRow = ({
     onRemove: (index: number) => void;
 }) => {
     return (
-        <div className="flex items-end gap-2">
+        <div className="flex items-end gap-3">
             <select
-                className="w-28 rounded-lg border border-divider bg-background px-3 py-2 text-sm"
+                className="w-full rounded-lg border border-divider bg-background px-3 py-2 text-sm"
                 value={schedule.dayOfWeek}
                 onChange={(e) => onChange(index, "dayOfWeek", Number(e.target.value))}
             >
@@ -66,14 +75,14 @@ const ScheduleRow = ({
                     type="time"
                     value={schedule.startTime}
                     onChange={(e) => onChange(index, "startTime", e.target.value)}
-                    className="w-32 rounded-lg border border-divider bg-background px-3 py-2 text-sm"
+                    className="w-full rounded-lg border border-divider bg-background px-3 py-2 text-sm"
                 />
                 <span className="text-muted">→</span>
                 <input
                     type="time"
                     value={schedule.endTime}
                     onChange={(e) => onChange(index, "endTime", e.target.value)}
-                    className="w-32 rounded-lg border border-divider bg-background px-3 py-2 text-sm"
+                    className="w-full rounded-lg border border-divider bg-background px-3 py-2 text-sm"
                 />
             </div>
             <Button
@@ -87,35 +96,48 @@ const ScheduleRow = ({
 };
 
 export default function ClassClient() {
-    const { isOpen, setOpen } = useOverlayState();
-    const [data, setData] = useState<ClassData[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const { isOpen, setOpen, open, close } = useOverlayState();
+    // const [data, setData] = useState<ClassData[]>([]);
+    // const [isLoading, setIsLoading] = useState(true);
+    // const [error, setError] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
+    const [request, setRequest] = useState({ pageIndex: 1 }); // Used to trigger data reload after create/delete
 
     // Form state
     const [name, setName] = useState("");
     const [startAt, setStartAt] = useState("");
     const [endAt, setEndAt] = useState("");
     const [schedules, setSchedules] = useState<ClassSchedule[]>([]);
+    const [pageIndex, setPageIndex] = useState(1);
+    const pageSize = 10;
 
-    const loadClasses = async () => {
-        try {
-            setIsLoading(true);
-            setError(null);
-            const classes = await v2.getAdminClasses();
-            setData(classes);
-        } catch {
-            setError("Không thể tải danh sách lớp học.");
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    // const loadClasses = async () => {
+    //     try {
+    //         setIsLoading(true);
+    //         setError(null);
+    //         const classes = await v2.getAdminClasses();
+    //         setData(classes);
+    //     } catch {
+    //         setError("Không thể tải danh sách lớp học.");
+    //     } finally {
+    //         setIsLoading(false);
+    //     }
+    // };
+
+    // useEffect(() => {
+    //     loadClasses();
+    //     // eslint-disable-next-line react-hooks/exhaustive-deps
+    // }, []);
+
+    const { data, isLoading, isError, error } = useClasses({ pageIndex, pageSize });
+    const tableData = useMemo(() => data?.data ?? [], [data]);
+    const totalPages = Math.max(1, data?.totalPages ?? 1);
 
     useEffect(() => {
-        loadClasses();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+        if (pageIndex > totalPages) {
+            setPageIndex(totalPages);
+        }
+    }, [pageIndex, totalPages]);
 
     const handleScheduleChange = (
         index: number,
@@ -130,7 +152,7 @@ export default function ClassClient() {
     const addSchedule = () => {
         setSchedules((prev) => [
             ...prev,
-            { dayOfWeek: 1, startTime: "07:00", endTime: "09:00" },
+            { dayOfWeek: 0, startTime: "07:00", endTime: "09:00" },
         ]);
     };
 
@@ -143,6 +165,13 @@ export default function ClassClient() {
         setStartAt("");
         setEndAt("");
         setSchedules([]);
+    };
+
+    const handleOpenChange = (nextOpen: boolean) => {
+        if (!nextOpen) {
+            resetForm();
+        }
+        setOpen(nextOpen);
     };
 
     const handleCreate = async () => {
@@ -165,8 +194,8 @@ export default function ClassClient() {
                 schedules,
             });
             resetForm();
-            setOpen(false);
-            await loadClasses();
+            close();
+            // await loadClasses();
         } catch (err) {
             console.error("Error creating class:", err);
             alert("Có lỗi xảy ra khi tạo lớp học.");
@@ -175,20 +204,101 @@ export default function ClassClient() {
         }
     };
 
-    const handleDelete = async (classId: string) => {
+    const handleDelete = useCallback(async (classId: string) => {
         if (!confirm("Bạn có chắc chắn muốn xóa lớp học này?")) return;
         try {
             await v2.deleteClass(classId);
-            await loadClasses();
+            // await loadClasses();
         } catch (err) {
             console.error("Error deleting class:", err);
             alert("Có lỗi xảy ra khi xóa lớp học.");
         }
-    };
+    }, []);
+
+    const columns = useMemo<ColumnDef<ClassData>[]>(
+        () => [
+            {
+                accessorKey: "name",
+                header: "Tên lớp",
+                cell: ({ getValue }) => (
+                    <span className="font-medium">{getValue<string>()}</span>
+                ),
+            },
+            {
+                accessorKey: "startAt",
+                header: "Ngày bắt đầu",
+                cell: ({ getValue }) => formatDateTime(getValue<string>()),
+            },
+            {
+                accessorKey: "endAt",
+                header: "Ngày kết thúc",
+                cell: ({ getValue }) => formatDateTime(getValue<string>()),
+            },
+            {
+                id: "schedules",
+                header: "Lịch học",
+                cell: ({ row }) =>
+                    row.original.schedules && row.original.schedules.length > 0 ? (
+                        <div className="flex flex-col gap-1">
+                            {row.original.schedules.map((schedule, index) => (
+                                <span key={index} className="text-xs">
+                                    {getDayLabel(schedule.dayOfWeek)}: {schedule.startTime} - {schedule.endTime}
+                                </span>
+                            ))}
+                        </div>
+                    ) : (
+                        <span className="text-xs text-muted">-</span>
+                    ),
+            },
+            {
+                accessorKey: "totalStudent",
+                header: "Sĩ số",
+                cell: ({ getValue }) => getValue<number>() ?? 0,
+            },
+            {
+                id: "createdBy",
+                header: "Người tạo",
+                cell: ({ row }) => row.original.createdBy?.name ?? "-",
+            },
+            {
+                accessorKey: "status",
+                header: "Trạng thái",
+                cell: ({ getValue }) => (
+                    <Chip variant={getValue<string>() === "Active" ? "primary" : "secondary"}>
+                        {getValue<string>() === "Active" ? "Hoạt động" : "Vô hiệu"}
+                    </Chip>
+                ),
+            },
+            {
+                id: "actions",
+                header: "Hành động",
+                cell: ({ row }) => (
+                    <Tooltip>
+                        <Button
+                            variant="secondary"
+                            onPress={() => handleDelete(row.original.id)}
+                        >
+                            <Icon icon="mingcute:delete-2-fill" width="20" height="20" />
+                        </Button>
+                        <Tooltip.Content placement="bottom">
+                            <p>Xóa lớp</p>
+                        </Tooltip.Content>
+                    </Tooltip>
+                ),
+            },
+        ],
+        [handleDelete],
+    );
+
+    const table = useReactTable({
+        data: tableData,
+        columns,
+        getCoreRowModel: getCoreRowModel(),
+    });
 
     const handleCloseModal = () => {
         resetForm();
-        setOpen(false);
+        close();
     };
 
     return (
@@ -201,88 +311,95 @@ export default function ClassClient() {
                     </div>
                     <Button
                         variant="primary"
-                        onPress={() => setOpen(true)}
+                        onPress={open}
                     >
                         <Icon icon="lucide:plus" width="20" />
                         Tạo lớp học
                     </Button>
                 </div>
 
-                <Modal isOpen={isOpen} onOpenChange={setOpen}>
-                    <Modal.Backdrop />
-                    <Modal.Container size="lg">
-                        <Modal.Dialog>
-                            <Modal.Header>
-                                <Modal.Heading>Tạo lớp học mới</Modal.Heading>
-                            </Modal.Header>
-                            <Modal.Body>
-                                <div className="flex flex-col gap-4">
-                                    <Input
-                                        placeholder="Tên lớp"
-                                        value={name}
-                                        onChange={(e) => setName(e.target.value)}
-                                    />
-                                    <div className="flex gap-4">
+                <Modal>
+                    <Modal.Backdrop isOpen={isOpen} onOpenChange={handleOpenChange}>
+                        <Modal.Container size="lg">
+                            <Modal.Dialog>
+                                <Modal.Header>
+                                    <Modal.Heading>Tạo lớp học mới</Modal.Heading>
+                                </Modal.Header>
+                                <Modal.Body className="px-2">
+                                    <div className="flex flex-col gap-4 mt-4">
                                         <Input
-                                            type="date"
-                                            placeholder="Ngày bắt đầu"
-                                            value={startAt}
-                                            onChange={(e) => setStartAt(e.target.value)}
+                                            placeholder="Tên lớp"
+                                            value={name}
+                                            onChange={(e) => setName(e.target.value)}
                                         />
-                                        <Input
-                                            type="date"
-                                            placeholder="Ngày kết thúc"
-                                            value={endAt}
-                                            onChange={(e) => setEndAt(e.target.value)}
-                                        />
-                                    </div>
-
-                                    <div className="border-t border-divider pt-4 mt-2">
-                                        <div className="flex items-center justify-between mb-3">
-                                            <h3 className="text-md font-semibold">Lịch học cố định</h3>
-                                            <Button
-                                                variant="secondary"
-                                                onPress={addSchedule}
-                                            >
-                                                <Icon icon="lucide:plus" width="16" />
-                                                Thêm buổi học
-                                            </Button>
+                                        <div className="flex flex-row justify-between gap-4">
+                                            <div className="flex items-center gap-2">
+                                                <label className="text-sm text-muted">Ngày bắt đầu</label>
+                                                <Input
+                                                    type="date"
+                                                    placeholder="Ngày bắt đầu"
+                                                    value={startAt}
+                                                    onChange={(e) => setStartAt(e.target.value)}
+                                                />
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <label className="text-sm text-muted">Ngày kết thúc</label>
+                                                <Input
+                                                    type="date"
+                                                    placeholder="Ngày kết thúc"
+                                                    value={endAt}
+                                                    onChange={(e) => setEndAt(e.target.value)}
+                                                />
+                                            </div>
                                         </div>
 
-                                        {schedules.length === 0 ? (
-                                            <p className="text-sm text-muted">
-                                                Chưa có buổi học nào. Nhấn "Thêm buổi học" để thêm lịch học.
-                                            </p>
-                                        ) : (
-                                            <div className="flex flex-col gap-3">
-                                                {schedules.map((schedule, index) => (
-                                                    <ScheduleRow
-                                                        key={index}
-                                                        schedule={schedule}
-                                                        index={index}
-                                                        onChange={handleScheduleChange}
-                                                        onRemove={removeSchedule}
-                                                    />
-                                                ))}
+                                        <div className="border-t border-divider pt-4 mt-2">
+                                            <div className="flex items-center justify-between mb-3">
+                                                <h3 className="text-md font-semibold">Lịch học cố định</h3>
+                                                <Button
+                                                    variant="secondary"
+                                                    onPress={addSchedule}
+                                                >
+                                                    <Icon icon="lucide:plus" width="16" />
+                                                    Thêm buổi học
+                                                </Button>
                                             </div>
-                                        )}
+
+                                            {schedules.length === 0 ? (
+                                                <p className="text-sm text-muted">
+                                                    Chưa có buổi học nào. Nhấn "Thêm buổi học" để thêm lịch học.
+                                                </p>
+                                            ) : (
+                                                <div className="flex flex-col gap-3">
+                                                    {schedules.map((schedule, index) => (
+                                                        <ScheduleRow
+                                                            key={index}
+                                                            schedule={schedule}
+                                                            index={index}
+                                                            onChange={handleScheduleChange}
+                                                            onRemove={removeSchedule}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                            </Modal.Body>
-                            <Modal.Footer>
-                                <Button variant="ghost" onPress={handleCloseModal}>
-                                    Hủy
-                                </Button>
-                                <Button
-                                    variant="primary"
-                                    isDisabled={isSaving}
-                                    onPress={handleCreate}
-                                >
-                                    {isSaving ? "Đang tạo..." : "Tạo lớp"}
-                                </Button>
-                            </Modal.Footer>
-                        </Modal.Dialog>
-                    </Modal.Container>
+                                </Modal.Body>
+                                <Modal.Footer>
+                                    <Button variant="ghost" onPress={handleCloseModal}>
+                                        Hủy
+                                    </Button>
+                                    <Button
+                                        variant="primary"
+                                        isDisabled={isSaving}
+                                        onPress={handleCreate}
+                                    >
+                                        {isSaving ? "Đang tạo..." : "Tạo lớp"}
+                                    </Button>
+                                </Modal.Footer>
+                            </Modal.Dialog>
+                        </Modal.Container>
+                    </Modal.Backdrop>
                 </Modal>
 
                 <div className="mt-6">
@@ -290,72 +407,93 @@ export default function ClassClient() {
                         <Table.ScrollContainer>
                             <Table.Content aria-label="Classes table">
                                 <Table.Header>
-                                    <Table.Column id="name" isRowHeader>
-                                        Tên lớp
-                                    </Table.Column>
-                                    <Table.Column id="startAt">Ngày bắt đầu</Table.Column>
-                                    <Table.Column id="endAt">Ngày kết thúc</Table.Column>
-                                    <Table.Column id="schedules">Lịch học</Table.Column>
-                                    <Table.Column id="totalStudent">Sĩ số</Table.Column>
-                                    <Table.Column id="createdBy">Người tạo</Table.Column>
-                                    <Table.Column id="status">Trạng thái</Table.Column>
-                                    <Table.Column id="actions">Hành động</Table.Column>
+                                    {table.getHeaderGroups().map((headerGroup) =>
+                                        headerGroup.headers.map((header) => (
+                                            <Table.Column
+                                                key={header.id}
+                                                id={header.id}
+                                                isRowHeader={header.id === "name"}
+                                            >
+                                                {header.isPlaceholder
+                                                    ? null
+                                                    : flexRender(
+                                                        header.column.columnDef.header,
+                                                        header.getContext(),
+                                                    )}
+                                            </Table.Column>
+                                        )),
+                                    )}
                                 </Table.Header>
-                                <Table.Body items={data}>
-                                    {(item: ClassData) => (
-                                        <Table.Row id={item.id} textValue={item.name}>
-                                            <Table.Cell>
-                                                <span className="font-medium">{item.name}</span>
-                                            </Table.Cell>
-                                            <Table.Cell>
-                                                {formatDateTime(item.startAt)}
-                                            </Table.Cell>
-                                            <Table.Cell>{formatDateTime(item.endAt)}</Table.Cell>
-                                            <Table.Cell>
-                                                {item.schedules && item.schedules.length > 0 ? (
-                                                    <div className="flex flex-col gap-1">
-                                                        {item.schedules.map((s, i) => (
-                                                            <span key={i} className="text-xs">
-                                                                {getDayLabel(s.dayOfWeek)}: {s.startTime} - {s.endTime}
-                                                            </span>
-                                                        ))}
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-xs text-muted">-</span>
-                                                )}
-                                            </Table.Cell>
-                                            <Table.Cell>{item.totalStudent ?? 0}</Table.Cell>
-                                            <Table.Cell>
-                                                {item.createdBy?.name ?? "-"}
-                                            </Table.Cell>
-                                            <Table.Cell>
-                                                <Chip
-                                                    variant={item.status === "Active" ? "primary" : "secondary"}
-                                                >
-                                                    {item.status === "Active" ? "Hoạt động" : "Vô hiệu"}
-                                                </Chip>
-                                            </Table.Cell>
-                                            <Table.Cell>
-                                                <Tooltip>
-                                                    <Button
-                                                        variant="secondary"
-                                                        onPress={() => handleDelete(item.id)}
-                                                    >
-                                                        <Icon icon="mingcute:delete-2-fill" width="20" height="20" />
-                                                    </Button>
-                                                    <Tooltip.Content placement="bottom">
-                                                        <p>Xóa lớp</p>
-                                                    </Tooltip.Content>
-                                                </Tooltip>
-                                            </Table.Cell>
+                                <Table.Body
+                                    items={table.getRowModel().rows}
+                                    renderEmptyState={() => (
+                                        <p className="text-sm text-muted"></p>
+                                    )}
+                                >
+                                    {(row) => (
+                                        <Table.Row id={row.id} textValue={row.original.name}>
+                                            {row.getVisibleCells().map((cell) => (
+                                                <Table.Cell key={cell.id}>
+                                                    {flexRender(
+                                                        cell.column.columnDef.cell,
+                                                        cell.getContext(),
+                                                    )}
+                                                </Table.Cell>
+                                            ))}
                                         </Table.Row>
                                     )}
                                 </Table.Body>
                             </Table.Content>
                         </Table.ScrollContainer>
+                        {totalPages > 1 ? (
+                            <Table.Footer>
+                                <Pagination>
+                                    <Pagination.Summary className="text-sm text-muted">
+                                        Trang {pageIndex} / {totalPages}
+                                    </Pagination.Summary>
+                                    <Pagination.Content>
+                                        <Pagination.Item>
+                                            <Pagination.Previous
+                                                isDisabled={isLoading || pageIndex === 1}
+                                                onPress={() =>
+                                                    setPageIndex((prev) => Math.max(1, prev - 1))
+                                                }
+                                            >
+                                                Trước
+                                            </Pagination.Previous>
+                                        </Pagination.Item>
+                                        {Array.from({ length: totalPages }, (_, index) => {
+                                            const page = index + 1;
+
+                                            return (
+                                                <Pagination.Item key={page}>
+                                                    <Pagination.Link
+                                                        isActive={page === pageIndex}
+                                                        isDisabled={isLoading}
+                                                        onPress={() => setPageIndex(page)}
+                                                    >
+                                                        {page}
+                                                    </Pagination.Link>
+                                                </Pagination.Item>
+                                            );
+                                        })}
+                                        <Pagination.Item>
+                                            <Pagination.Next
+                                                isDisabled={isLoading || pageIndex === totalPages}
+                                                onPress={() =>
+                                                    setPageIndex((prev) => Math.min(totalPages, prev + 1))
+                                                }
+                                            >
+                                                Sau
+                                            </Pagination.Next>
+                                        </Pagination.Item>
+                                    </Pagination.Content>
+                                </Pagination>
+                            </Table.Footer>
+                        ) : null}
                     </Table>
                     {isLoading ? <p className="mt-3 text-sm text-center text-muted-foreground">Đang tải dữ liệu...</p> : null}
-                    {error ? <p className="mt-3 text-sm text-danger text-center">{error}</p> : null}
+                    {isError ? <p className="mt-3 text-sm text-danger text-center">{error.message}</p> : null}
                 </div>
             </div>
         </main>

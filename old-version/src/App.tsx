@@ -9,11 +9,12 @@ import ManageClassesPage from "@/pages/manage-classes";
 import ComingSoonPage from "@/pages/coming-soon";
 import AttendancePage from "@/pages/attendance";
 import ManageAssistantsPage from "./pages/manage-assistants";
+import MaintenancePage from "./pages/maintainance";
 
 function App() {
   return (
     <Routes>
-      <Route element={<IndexPage />} path="/" />
+      {/* <Route element={<IndexPage />} path="/" />
       <Route element={<ManageClassesPage />} path="/manage-classes" />
       <Route element={<ScoreDetail />} path="/class/:id/score/:scoreId" />
       <Route element={<ClassDetail />} path="/class/:id" />
@@ -24,7 +25,8 @@ function App() {
       <Route
         element={<AttendanceDetail />}
         path="/class/:id/attendance/:attendanceId"
-      />
+      /> */}
+      <Route element={<MaintenancePage />} path="*" />
     </Routes>
   );
 }
