@@ -34,9 +34,10 @@ type ClassOption = {
 
 type AuthClientProps = {
     classOptions: ClassOption[];
+    nextPath?: string;
 };
 
-export default function AuthClient({ classOptions }: AuthClientProps) {
+export default function AuthClient({ classOptions, nextPath }: AuthClientProps) {
     const { resolvedTheme } = useTheme();
     const { setUser } = useUser();
     const router = useRouter();
@@ -57,13 +58,30 @@ export default function AuthClient({ classOptions }: AuthClientProps) {
         return isMounted && resolvedTheme === "dark" ? "secondary" : undefined;
     };
 
-    function getSafeNextPath() {
-        const nextPath = searchParams.get("next") || "/";
-        if (nextPath.startsWith("/") && !nextPath.startsWith("//")) {
-            return nextPath;
+    function normalizeNextPath(rawNext?: string | null) {
+        if (!rawNext) {
+            return "/";
+        }
+
+        if (rawNext.startsWith("/") && !rawNext.startsWith("//")) {
+            return rawNext;
+        }
+
+        try {
+            const decoded = decodeURIComponent(rawNext);
+            if (decoded.startsWith("/") && !decoded.startsWith("//")) {
+                return decoded;
+            }
+        } catch {
+            // ignore decode errors
         }
 
         return "/";
+    }
+
+    function getSafeNextPath() {
+        const nextFromQuery = searchParams.get("next");
+        return normalizeNextPath(nextFromQuery ?? nextPath);
     }
 
     function handleInputChange() {

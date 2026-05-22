@@ -1,6 +1,5 @@
 import { createApiClient } from "../client";
 import type { ApiResponse } from "../types";
-import { clearAccessToken, setAccessToken } from "../token";
 
 export type LoginPayload = {
   username: string;
@@ -44,9 +43,14 @@ export async function login(payload: LoginPayload) {
   const result = response.data;
   console.log(result);
 
-  if (result.data.token) {
-    setAccessToken(result.data.token);
-  }
+  return result;
+}
+
+export async function logout() {
+  const response = await api.post<ApiResponse<null>>("/authentication/logout");
+
+  const result = response.data;
+  console.log(result);
 
   return result;
 }
@@ -56,14 +60,6 @@ export async function register(payload: RegisterPayload) {
     "/authentication/register",
     payload,
   );
-
-  return response.data;
-}
-
-export async function logout() {
-  const response = await api.post<ApiResponse<null>>("/auth/logout");
-
-  clearAccessToken();
 
   return response.data;
 }

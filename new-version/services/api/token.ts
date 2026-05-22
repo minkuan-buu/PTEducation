@@ -1,25 +1,8 @@
-const ACCESS_TOKEN_KEY = "pteducation_access_token";
-
+// Tokens are managed by backend httpOnly cookies; client does not store them.
 export function getAccessToken() {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  return window.localStorage.getItem(ACCESS_TOKEN_KEY);
+  return null;
 }
 
-export function setAccessToken(token: string) {
-  if (typeof window === "undefined") {
-    return;
-  }
+export function setAccessToken(_token: string) {}
 
-  window.localStorage.setItem(ACCESS_TOKEN_KEY, token);
-}
-
-export function clearAccessToken() {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.localStorage.removeItem(ACCESS_TOKEN_KEY);
-}
+export function clearAccessToken() {}

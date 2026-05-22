@@ -6,7 +6,7 @@ export default async function ClassesPage() {
   const cookieStore = await cookies();
   const token = cookieStore.get('at')?.value;
   if (!token) {
-    redirect('/auth?next=/');
+    redirect('/auth?next=/classes');
   }
 
   return <ClassClient />;

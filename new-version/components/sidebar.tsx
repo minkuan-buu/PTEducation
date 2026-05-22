@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@heroui/react";
 
 import { useUser } from "@/context/user-context";
+import { v2 } from "@/services/api";
 import { UserCard } from "./user-sidebar-card";
 import { TbLogout2 } from "react-icons/tb";
 import NextLink from "next/link";
@@ -23,7 +24,7 @@ type MenuSection = {
 export const Sidebar = () => {
     const router = useRouter();
     const pathname = usePathname();
-    const { user, isAuthenticated } = useUser();
+    const { user, isAuthenticated, clearUser } = useUser();
 
     const role = (user?.role ?? "null").toLowerCase();
     console.log(user);
@@ -105,6 +106,17 @@ export const Sidebar = () => {
         }
     }, [firstItemHref, isAuthenticated, pathname, router]);
 
+    async function handleLogout() {
+        try {
+            await v2.logout();
+        } catch {
+            // Ignore network errors on logout.
+        } finally {
+            clearUser();
+            router.push("/auth");
+        }
+    }
+
     return (
         <aside className="fixed left-0 top-0 z-50 h-screen w-72 border-r border-separator bg-background/95 backdrop-blur-md">
             <div className="flex h-18 items-center justify-between px-6">
@@ -167,10 +179,7 @@ export const Sidebar = () => {
                         size="lg"
                         className="w-full justify-start rounded-xl px-3 py-2 text-md font-medium"
                         fullWidth
-                        onPress={() => {
-                            // Add logout logic here
-                            router.push("/auth");
-                        }}
+                        onPress={handleLogout}
                         variant="danger-soft"
                     >
                         <TbLogout2 />

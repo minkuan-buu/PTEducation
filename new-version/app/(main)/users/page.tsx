@@ -7,7 +7,7 @@ export default async function UserServerPage() {
   const cookieStore = await cookies();
   const token = cookieStore.get('at')?.value;
   if (!token) {
-    redirect('/auth?next=/');
+    redirect('/auth?next=/users');
   }
 
   return <UserClient />;

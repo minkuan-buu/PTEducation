@@ -36,6 +36,17 @@ function getSafeNextPath(nextParam?: string | string[]) {
         return nextValue;
     }
 
+    if (nextValue) {
+        try {
+            const decoded = decodeURIComponent(nextValue);
+            if (decoded.startsWith("/") && !decoded.startsWith("//")) {
+                return decoded;
+            }
+        } catch {
+            // ignore decode errors
+        }
+    }
+
     return "/";
 }
 
@@ -52,6 +63,7 @@ export default async function Home({
     }
 
     const classOptions = await fetchClassOptions();
+    const safeNext = getSafeNextPath(searchParams?.next);
 
-    return <AuthClient classOptions={classOptions} />;
+    return <AuthClient classOptions={classOptions} nextPath={safeNext} />;
 }
