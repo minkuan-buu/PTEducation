@@ -26,16 +26,16 @@ import { useClasses, useCreateClass } from "@/hooks/classes";
 import { useQueryClient } from "@tanstack/react-query";
 
 const DAY_LABELS: Record<number, string> = {
-    0: "Thứ 2",
-    1: "Thứ 3",
-    2: "Thứ 4",
-    3: "Thứ 5",
-    4: "Thứ 6",
-    5: "Thứ 7",
-    6: "Chủ nhật",
+    1: "Thứ 2",
+    2: "Thứ 3",
+    3: "Thứ 4",
+    4: "Thứ 5",
+    5: "Thứ 6",
+    6: "Thứ 7",
+    0: "Chủ nhật",
 };
 
-const getDayLabel = (day: number) => DAY_LABELS[day] ?? `Thứ ${day + 2}`;
+const getDayLabel = (day: number) => DAY_LABELS[day] ?? `Thứ ${day + 1}`;
 
 const formatDateTime = (dateStr: string) => {
     if (!dateStr) return "-";
@@ -102,7 +102,7 @@ export default function ClassClient() {
     // const [isLoading, setIsLoading] = useState(true);
     // const [error, setError] = useState<string | null>(null);
     // const [isSaving, setIsSaving] = useState(false);
-    const { mutate, isPending, isSuccess } = useCreateClass();
+    const { mutate, isPending, isSuccess } = useCreateClass(() => hanleCreateSuccess());
     const [request, setRequest] = useState({ pageIndex: 1 }); // Used to trigger data reload after create/delete
 
     // Form state
@@ -165,7 +165,7 @@ export default function ClassClient() {
     const addSchedule = () => {
         setSchedules((prev) => [
             ...prev,
-            { dayOfWeek: 0, startTime: "07:00", endTime: "09:00" },
+            { dayOfWeek: 1, startTime: "07:00", endTime: "09:00" },
         ]);
     };
 
@@ -186,6 +186,11 @@ export default function ClassClient() {
         }
         setOpen(nextOpen);
     };
+
+    const hanleCreateSuccess = () => {
+        resetForm();
+        close();
+    }
 
     const handleCreate = async () => {
         if (!name || !startAt || !endAt) {
@@ -212,8 +217,6 @@ export default function ClassClient() {
                 endAt: new Date(endAt).toISOString(),
                 schedules,
             });
-            resetForm();
-            close();
             // await loadClasses();
         } catch (err) {
             console.error("Error creating class:", err);

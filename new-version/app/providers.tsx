@@ -44,7 +44,7 @@ export function Providers({ children, themeProps }: ProvidersProps) {
       }
 
       if (!hasNotifiedRef.current) {
-        toast.danger("Phien dang nhap het han. Vui long dang nhap lai.");
+        toast.danger("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
         hasNotifiedRef.current = true;
       }
 
