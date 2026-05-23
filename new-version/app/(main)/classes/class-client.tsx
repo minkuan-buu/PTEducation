@@ -6,24 +6,18 @@ import {
     Input,
     Modal,
     Pagination,
-    Table,
     Tooltip,
     useOverlayState,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
-import {
-    ColumnDef,
-    flexRender,
-    getCoreRowModel,
-    useReactTable,
-} from "@tanstack/react-table";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { v1, v2 } from "@/services/api";
-import type { ClassData, ClassSchedule } from "@/services/api/v2/classes";
+import type { ClassSchedule } from "@/services/api/v2/classes";
 import "./class.css";
 import { useClasses, useCreateClass } from "@/hooks/classes";
 import { useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 
 const DAY_LABELS: Record<number, string> = {
     1: "Thứ 2",
@@ -97,6 +91,7 @@ const ScheduleRow = ({
 };
 
 export default function ClassClient() {
+    const router = useRouter();
     const { isOpen, setOpen, open, close } = useOverlayState();
     // const [data, setData] = useState<ClassData[]>([]);
     // const [isLoading, setIsLoading] = useState(true);
@@ -111,7 +106,9 @@ export default function ClassClient() {
     const [endAt, setEndAt] = useState("");
     const [schedules, setSchedules] = useState<ClassSchedule[]>([]);
     const [pageIndex, setPageIndex] = useState(1);
+    const [searchTerm, setSearchTerm] = useState("");
     const pageSize = 10;
+    const keyword = searchTerm.trim();
 
     // const loadClasses = async () => {
     //     try {
@@ -132,7 +129,7 @@ export default function ClassClient() {
     // }, []);
 
     const queryClient = useQueryClient();
-    const { data, isLoading, isPlaceholderData } = useClasses({ pageIndex, pageSize });
+    const { data, isLoading } = useClasses({ pageIndex, pageSize, keyword });
     const tableData = useMemo(() => data?.data ?? [], [data]);
     const totalPages = Math.max(1, data?.totalPages ?? 1);
     const hasNextPage = (data?.pageNumber ?? 1) < totalPages;
@@ -144,13 +141,17 @@ export default function ClassClient() {
     // }, [pageIndex, totalPages]);
 
     useEffect(() => {
+        setPageIndex((prev) => (prev === 1 ? prev : 1));
+    }, [keyword]);
+
+    useEffect(() => {
         if (!hasNextPage) return;
         queryClient.prefetchQuery({
-            queryKey: ["classes", "pagination", pageIndex + 1, pageSize],
-            queryFn: () => v1.getAdminClasses({ pageIndex: pageIndex + 1 }),
+            queryKey: ["classes", "pagination", pageIndex + 1, pageSize, keyword],
+            queryFn: () => v1.getAdminClasses({ pageIndex: pageIndex + 1, keyword }),
             staleTime: 3 * 60 * 1000, // 3 minutes
         });
-    }, [hasNextPage, pageIndex, pageSize, queryClient]);
+    }, [hasNextPage, keyword, pageIndex, pageSize, queryClient]);
 
     const handleScheduleChange = (
         index: number,
@@ -237,95 +238,14 @@ export default function ClassClient() {
         }
     }, []);
 
-    const columns = useMemo<ColumnDef<ClassData>[]>(
-        () => [
-            {
-                accessorKey: "name",
-                header: "Tên lớp",
-                cell: ({ getValue }) => (
-                    <span className="font-medium">{getValue<string>()}</span>
-                ),
-            },
-            {
-                accessorKey: "startAt",
-                header: "Ngày bắt đầu",
-                cell: ({ getValue }) => formatDateTime(getValue<string>()),
-            },
-            {
-                accessorKey: "endAt",
-                header: "Ngày kết thúc",
-                cell: ({ getValue }) => formatDateTime(getValue<string>()),
-            },
-            {
-                id: "schedules",
-                header: "Lịch học",
-                cell: ({ row }) =>
-                    row.original.schedules && row.original.schedules.length > 0 ? (
-                        <div className="flex flex-col gap-1">
-                            {row.original.schedules.map((schedule, index) => (
-                                <span key={index} className="text-xs">
-                                    {getDayLabel(schedule.dayOfWeek)}: {schedule.startTime} - {schedule.endTime}
-                                </span>
-                            ))}
-                        </div>
-                    ) : (
-                        <span className="text-xs text-muted">-</span>
-                    ),
-            },
-            {
-                accessorKey: "totalStudent",
-                header: "Sĩ số",
-                cell: ({ getValue }) => getValue<number>() ?? 0,
-            },
-            {
-                id: "createdBy",
-                header: "Người tạo",
-                cell: ({ row }) => row.original.createdBy?.name ?? "-",
-            },
-            {
-                accessorKey: "status",
-                header: "Trạng thái",
-                cell: ({ getValue }) => (
-                    <Chip variant={getValue<string>() === "Active" ? "primary" : "secondary"}>
-                        {getValue<string>() === "Active" ? "Hoạt động" : "Vô hiệu"}
-                    </Chip>
-                ),
-            },
-            {
-                id: "actions",
-                header: "Hành động",
-                cell: ({ row }) => (
-                    <Tooltip>
-                        <Button
-                            variant="secondary"
-                            onPress={() => handleDelete(row.original.id)}
-                        >
-                            <Icon icon="mingcute:delete-2-fill" width="20" height="20" />
-                        </Button>
-                        <Tooltip.Content placement="bottom">
-                            <p>Xóa lớp</p>
-                        </Tooltip.Content>
-                    </Tooltip>
-                ),
-            },
-        ],
-        [handleDelete],
-    );
-
-    const table = useReactTable({
-        data: tableData,
-        columns,
-        getCoreRowModel: getCoreRowModel(),
-    });
-
     const handleCloseModal = () => {
         resetForm();
         close();
     };
 
     return (
-        <main className="min-h-screen pt-4 flex flex-col justify-start">
-            <div className="p-8">
+        <main className="min-h-screen flex flex-col justify-start">
+            <div className="py-6 px-8">
                 <div className="flex justify-between items-center">
                     <div>
                         <h1 className="text-2xl font-bold">Lớp học</h1>
@@ -338,6 +258,14 @@ export default function ClassClient() {
                         <Icon icon="lucide:plus" width="20" />
                         Tạo lớp học
                     </Button>
+                </div>
+
+                <div className="mt-4">
+                    <Input
+                        placeholder="Tìm kiếm lớp học..."
+                        value={searchTerm}
+                        onChange={(event) => setSearchTerm(event.target.value)}
+                    />
                 </div>
 
                 <Modal>
@@ -424,97 +352,137 @@ export default function ClassClient() {
                     </Modal.Backdrop>
                 </Modal>
 
-                <div className="mt-6">
-                    <Table>
-                        <Table.ScrollContainer>
-                            <Table.Content aria-label="Classes table">
-                                <Table.Header>
-                                    {table.getHeaderGroups().map((headerGroup) =>
-                                        headerGroup.headers.map((header) => (
-                                            <Table.Column
-                                                key={header.id}
-                                                id={header.id}
-                                                isRowHeader={header.id === "name"}
-                                            >
-                                                {header.isPlaceholder
-                                                    ? null
-                                                    : flexRender(
-                                                        header.column.columnDef.header,
-                                                        header.getContext(),
-                                                    )}
-                                            </Table.Column>
-                                        )),
-                                    )}
-                                </Table.Header>
-                                <Table.Body
-                                    items={table.getRowModel().rows}
-                                    renderEmptyState={() => (
-                                        <p className="text-sm text-muted"></p>
-                                    )}
-                                >
-                                    {(row) => (
-                                        <Table.Row id={row.id} textValue={row.original.name}>
-                                            {row.getVisibleCells().map((cell) => (
-                                                <Table.Cell key={cell.id}>
-                                                    {flexRender(
-                                                        cell.column.columnDef.cell,
-                                                        cell.getContext(),
-                                                    )}
-                                                </Table.Cell>
-                                            ))}
-                                        </Table.Row>
-                                    )}
-                                </Table.Body>
-                            </Table.Content>
-                        </Table.ScrollContainer>
-                        {totalPages > 1 ? (
-                            <Table.Footer>
-                                <Pagination>
-                                    <Pagination.Summary className="text-sm text-muted">
-                                        Trang {pageIndex} / {totalPages}
-                                    </Pagination.Summary>
-                                    <Pagination.Content>
-                                        <Pagination.Item>
-                                            <Pagination.Previous
-                                                isDisabled={isLoading || pageIndex === 1}
-                                                onPress={() =>
-                                                    setPageIndex((prev) => Math.max(1, prev - 1))
-                                                }
-                                            >
-                                                Trước
-                                            </Pagination.Previous>
-                                        </Pagination.Item>
-                                        {Array.from({ length: totalPages }, (_, index) => {
-                                            const page = index + 1;
+                <div className="mt-6 flex flex-col gap-4">
+                    {tableData.length === 0 && !isLoading ? (
+                        <p className="text-sm text-muted">
+                            {keyword
+                                ? "Không tìm thấy lớp học phù hợp."
+                                : "Chưa có lớp học nào."}
+                        </p>
+                    ) : null}
+                    {tableData.map((classItem) => (
+                        <div
+                            key={classItem.id}
+                            className="cursor-pointer rounded-2xl border border-divider bg-background/60 p-4 shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md active:translate-y-0"
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => {
+                                router.push(`/classes/${classItem.id}`);
+                            }}
+                            onKeyDown={(event) => {
+                                if (event.currentTarget !== event.target) {
+                                    return;
+                                }
+                                if (event.key === "Enter" || event.key === " ") {
+                                    event.preventDefault();
+                                    router.push(`/classes/${classItem.id}`);
+                                }
+                            }}
+                        >
+                            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                                <div className="flex flex-col gap-3">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <h3 className="text-lg font-semibold">{classItem.name}</h3>
+                                        <Chip
+                                            variant={classItem.status === "Active" ? "primary" : "secondary"}
+                                        >
+                                            {classItem.status === "Active" ? "Hoạt động" : "Vô hiệu"}
+                                        </Chip>
+                                    </div>
+                                    <div className="text-sm text-muted">
+                                        <span className="mr-4">Bắt đầu: {formatDateTime(classItem.startAt)}</span>
+                                        <span>Kết thúc: {formatDateTime(classItem.endAt)}</span>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {classItem.schedules && classItem.schedules.length > 0 ? (
+                                            classItem.schedules.map((schedule, index) => (
+                                                <span
+                                                    key={`${classItem.id}-${index}`}
+                                                    className="rounded-full border border-divider px-2 py-1 text-xs text-muted"
+                                                >
+                                                    {getDayLabel(schedule.dayOfWeek)} {schedule.startTime}-{schedule.endTime}
+                                                </span>
+                                            ))
+                                        ) : (
+                                            <span className="text-xs text-muted">Chưa có lịch học.</span>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-3 text-sm text-muted">
+                                    <div>
+                                        <span className="font-semibold text-foreground">
+                                            {classItem.totalStudent ?? 0}
+                                        </span>{" "}
+                                        học viên
+                                    </div>
+                                    <div>Tạo bởi: {classItem.createdBy?.name ?? "-"}</div>
+                                    <Tooltip>
+                                        <Button
+                                            variant="secondary"
+                                            onClick={(event) => {
+                                                event.stopPropagation();
+                                                handleDelete(classItem.id);
+                                            }}
+                                        >
+                                            <Icon icon="mingcute:delete-2-fill" width="20" height="20" />
+                                        </Button>
+                                        <Tooltip.Content placement="bottom">
+                                            <p>Xóa lớp</p>
+                                        </Tooltip.Content>
+                                    </Tooltip>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                    {totalPages > 1 ? (
+                        <div className="pt-2">
+                            <Pagination>
+                                <Pagination.Summary className="text-sm text-muted">
+                                    Trang {pageIndex} / {totalPages}
+                                </Pagination.Summary>
+                                <Pagination.Content>
+                                    <Pagination.Item>
+                                        <Pagination.Previous
+                                            isDisabled={isLoading || pageIndex === 1}
+                                            onPress={() =>
+                                                setPageIndex((prev) => Math.max(1, prev - 1))
+                                            }
+                                        >
+                                            Trước
+                                        </Pagination.Previous>
+                                    </Pagination.Item>
+                                    {Array.from({ length: totalPages }, (_, index) => {
+                                        const page = index + 1;
 
-                                            return (
-                                                <Pagination.Item key={page}>
-                                                    <Pagination.Link
-                                                        isActive={page === pageIndex}
-                                                        isDisabled={isLoading}
-                                                        onPress={() => setPageIndex(page)}
-                                                    >
-                                                        {page}
-                                                    </Pagination.Link>
-                                                </Pagination.Item>
-                                            );
-                                        })}
-                                        <Pagination.Item>
-                                            <Pagination.Next
-                                                isDisabled={isLoading || pageIndex === totalPages}
-                                                onPress={() =>
-                                                    setPageIndex((prev) => Math.min(totalPages, prev + 1))
-                                                }
-                                            >
-                                                Sau
-                                            </Pagination.Next>
-                                        </Pagination.Item>
-                                    </Pagination.Content>
-                                </Pagination>
-                            </Table.Footer>
-                        ) : null}
-                    </Table>
-                    {isLoading ? <p className="mt-3 text-sm text-center text-muted-foreground">Đang tải dữ liệu...</p> : null}
+                                        return (
+                                            <Pagination.Item key={page}>
+                                                <Pagination.Link
+                                                    isActive={page === pageIndex}
+                                                    isDisabled={isLoading}
+                                                    onPress={() => setPageIndex(page)}
+                                                >
+                                                    {page}
+                                                </Pagination.Link>
+                                            </Pagination.Item>
+                                        );
+                                    })}
+                                    <Pagination.Item>
+                                        <Pagination.Next
+                                            isDisabled={isLoading || pageIndex === totalPages}
+                                            onPress={() =>
+                                                setPageIndex((prev) => Math.min(totalPages, prev + 1))
+                                            }
+                                        >
+                                            Sau
+                                        </Pagination.Next>
+                                    </Pagination.Item>
+                                </Pagination.Content>
+                            </Pagination>
+                        </div>
+                    ) : null}
+                    {isLoading ? (
+                        <p className="text-sm text-center text-muted-foreground">Đang tải dữ liệu...</p>
+                    ) : null}
                     {/* {isError ? <p className="mt-3 text-sm text-danger text-center">{error.message}</p> : null} */}
                 </div>
             </div>

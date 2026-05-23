@@ -56,7 +56,7 @@ export default function RootLayout({
             <main className="flex-grow w-full">
               {children}
             </main>
-            <FloatingThemeSwitch />
+            {/* <FloatingThemeSwitch /> */}
             {/* <footer className="w-full flex items-center justify-center py-3">
               <a
                 className="flex items-center gap-1 text-current no-underline"

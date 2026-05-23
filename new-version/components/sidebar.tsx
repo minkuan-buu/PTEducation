@@ -10,6 +10,7 @@ import { UserCard } from "./user-sidebar-card";
 import { TbLogout2 } from "react-icons/tb";
 import NextLink from "next/link";
 import OpenIcon from '@iconify-react/majesticons/open';
+import { ThemeSwitch } from "./theme-switch";
 
 type MenuItem = {
     label: string;
@@ -124,6 +125,7 @@ export const Sidebar = () => {
                     <p className="font-bold text-inherit">PTEducation</p>
                     <span className="text-xs text-muted">Biological Sciences</span>
                 </div>
+                <ThemeSwitch />
             </div>
             <div className="space-y-4 border-t border-divider pt-4" />
             <div className="px-3">

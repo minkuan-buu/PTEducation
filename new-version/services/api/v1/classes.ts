@@ -51,10 +51,14 @@ function normalizeClassesPage(payload: ClassesResponse): ClassesPage {
   return { data: [], pageNumber: 1, pageSize: 10, totalPages: 1 };
 }
 
-export async function getAdminClasses(params?: { pageIndex?: number }) {
+export async function getAdminClasses(params?: {
+  pageIndex?: number;
+  keyword?: string;
+}) {
   const response = await api.get<ClassesResponse>("/classes", {
     params: {
       pageIndex: params?.pageIndex,
+      Keyword: params?.keyword || undefined,
     },
   });
 
