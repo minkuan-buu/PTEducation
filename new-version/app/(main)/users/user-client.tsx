@@ -1,12 +1,14 @@
 "use client";
 
-import { Button, Chip, cn, Spinner, Table, Tabs, Tooltip } from "@heroui/react";
+import { Button, Chip, cn, Pagination, Spinner, Table, Tabs, Tooltip } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import type { Key } from "@react-types/shared";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { v2 } from "@/services/api";
 import type { AdminGuardian, AdminStudent } from "@/services/api/v2";
+import { useUsers } from "@/hooks/users/use-users";
+import { useQueryClient } from "@tanstack/react-query";
 
 type UserClientProps = {
     initialData?: UserData[];
@@ -136,50 +138,34 @@ const StudentActions = ({
 };
 
 export default function UserClient({ initialData }: UserClientProps) {
-    const [data, setData] = useState<UserData[]>(() => initialData ?? []);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const queryClient = useQueryClient();
+    const [pageIndex, setPageIndex] = useState(1);
+    const [searchTerm, setSearchTerm] = useState("");
+    const pageSize = 10;
+    const keyword = searchTerm.trim();
+    const { data, isLoading } = useUsers({ pageIndex, pageSize, keyword });
+    const tableData = useMemo(() => data?.data ?? [], [data]);
+    const totalPages = Math.max(1, data?.totalPages ?? 1);
+    const hasNextPage = (data?.pageNumber ?? 1) < totalPages;
 
     useEffect(() => {
-        let isActive = true;
+        setPageIndex((prev) => (prev === 1 ? prev : 1));
+    }, [keyword]);
 
-        const loadStudents = async () => {
-            try {
-                setIsLoading(true);
-                setError(null);
+    useEffect(() => {
+        if (!hasNextPage) return;
 
-                const students = await v2.getAdminStudents();
-
-                if (isActive) {
-                    setData(students);
-                }
-            } catch {
-                if (isActive) {
-                    setError("Không thể tải danh sách học sinh.");
-                }
-            } finally {
-                if (isActive) {
-                    setIsLoading(false);
-                }
-            }
-        };
-
-        if (isLoading) {
-            void loadStudents();
-        }
-
-        return () => {
-            isActive = false;
-        };
-    }, [isLoading]);
+        queryClient.prefetchQuery({
+            queryKey: ["users", "pagination", pageIndex + 1, pageSize, keyword],
+            queryFn: () => v2.getAdminStudents({ pageIndex: pageIndex + 1, pageSize, keyword }),
+            staleTime: 3 * 60 * 1000, // 3 minutes
+        });
+    }, [hasNextPage, keyword, pageIndex, pageSize, queryClient]);
 
     async function handleApproveStudent(studentId: string, accessStatus: string) {
         try {
-            // Hãy chắc chắn bạn đã BỎ COMMENT dòng gọi API này
             await v2.approveStudent(studentId, accessStatus);
-
-            // Gọi lại dữ liệu để table tự cập nhật sau khi duyệt thành công
-            setIsLoading(true);
+            await queryClient.invalidateQueries({ queryKey: ["users", "pagination"] });
         } catch (err) {
             console.error("Error approving student:", err);
         }
@@ -187,10 +173,8 @@ export default function UserClient({ initialData }: UserClientProps) {
 
     async function handleDeleteStudent(studentId: string) {
         try {
-            // Hãy chắc chắn bạn đã BỎ COMMENT dòng gọi API này
             await v2.deleteStudent(studentId);
-            // Gọi lại dữ liệu để table tự cập nhật sau khi xóa thành công
-            setIsLoading(true);
+            await queryClient.invalidateQueries({ queryKey: ["users", "pagination"] });
         } catch (err) {
             console.error("Error deleting student:", err);
         }
@@ -337,14 +321,103 @@ export default function UserClient({ initialData }: UserClientProps) {
                                         </Table.Header>
 
                                         {/* Sử dụng hàm render đệ quy ở trên */}
-                                        <Table.Body items={data}>
+                                        <Table.Body items={tableData}>
                                             {(item) => renderExpandableRow(item)}
                                         </Table.Body>
                                     </Table.Content>
                                 </Table.ScrollContainer>
+                                <Table.Footer>
+                                    <Pagination>
+                                        <Pagination.Summary className="text-sm text-muted">
+                                            Trang {pageIndex} / {totalPages}
+                                        </Pagination.Summary>
+                                        <Pagination.Content>
+                                            <Pagination.Item>
+                                                <Pagination.Previous
+                                                    isDisabled={isLoading || pageIndex === 1}
+                                                    onPress={() =>
+                                                        setPageIndex((prev) => Math.max(1, prev - 1))
+                                                    }
+                                                >
+                                                    Trước
+                                                </Pagination.Previous>
+                                            </Pagination.Item>
+                                            {Array.from({ length: totalPages }, (_, index) => {
+                                                const page = index + 1;
+
+                                                return (
+                                                    <Pagination.Item key={page}>
+                                                        <Pagination.Link
+                                                            isActive={page === pageIndex}
+                                                            isDisabled={isLoading}
+                                                            onPress={() => setPageIndex(page)}
+                                                        >
+                                                            {page}
+                                                        </Pagination.Link>
+                                                    </Pagination.Item>
+                                                );
+                                            })}
+                                            <Pagination.Item>
+                                                <Pagination.Next
+                                                    isDisabled={isLoading || pageIndex === totalPages}
+                                                    onPress={() =>
+                                                        setPageIndex((prev) => Math.min(totalPages, prev + 1))
+                                                    }
+                                                >
+                                                    Sau
+                                                </Pagination.Next>
+                                            </Pagination.Item>
+                                        </Pagination.Content>
+                                    </Pagination>
+                                </Table.Footer>
                             </Table>
+                            {/* {totalPages > 1 ? (
+                                <div className="pt-4">
+                                    <Pagination>
+                                        <Pagination.Summary className="text-sm text-muted">
+                                            Trang {pageIndex} / {totalPages}
+                                        </Pagination.Summary>
+                                        <Pagination.Content>
+                                            <Pagination.Item>
+                                                <Pagination.Previous
+                                                    isDisabled={isLoading || pageIndex === 1}
+                                                    onPress={() =>
+                                                        setPageIndex((prev) => Math.max(1, prev - 1))
+                                                    }
+                                                >
+                                                    Trước
+                                                </Pagination.Previous>
+                                            </Pagination.Item>
+                                            {Array.from({ length: totalPages }, (_, index) => {
+                                                const page = index + 1;
+
+                                                return (
+                                                    <Pagination.Item key={page}>
+                                                        <Pagination.Link
+                                                            isActive={page === pageIndex}
+                                                            isDisabled={isLoading}
+                                                            onPress={() => setPageIndex(page)}
+                                                        >
+                                                            {page}
+                                                        </Pagination.Link>
+                                                    </Pagination.Item>
+                                                );
+                                            })}
+                                            <Pagination.Item>
+                                                <Pagination.Next
+                                                    isDisabled={isLoading || pageIndex === totalPages}
+                                                    onPress={() =>
+                                                        setPageIndex((prev) => Math.min(totalPages, prev + 1))
+                                                    }
+                                                >
+                                                    Sau
+                                                </Pagination.Next>
+                                            </Pagination.Item>
+                                        </Pagination.Content>
+                                    </Pagination>
+                                </div>
+                            ) : null} */}
                             {isLoading ? <p className="mt-3 text-sm text-center text-muted-foreground">Đang tải dữ liệu...</p> : null}
-                            {error ? <p className="mt-3 text-sm text-danger">{error}</p> : null}
                         </Tabs.Panel>
                         <Tabs.Panel className="pt-2" id="teachers">
                             <p>Track your metrics and analyze performance data.</p>

@@ -50,20 +50,17 @@ function getSafeNextPath(nextParam?: string | string[]) {
     return "/";
 }
 
-export default async function Home({
-    searchParams,
-}: {
-    searchParams?: { next?: string | string[] };
-}) {
+export default async function Home({ searchParams }: { searchParams?: any }) {
+    const resolvedSearchParams = await searchParams;
     const cookieStore = await cookies();
     const token = cookieStore.get("at")?.value;
 
     if (token) {
-        redirect(getSafeNextPath(searchParams?.next));
+        redirect(getSafeNextPath(resolvedSearchParams?.next));
     }
 
     const classOptions = await fetchClassOptions();
-    const safeNext = getSafeNextPath(searchParams?.next);
+    const safeNext = getSafeNextPath(resolvedSearchParams?.next);
 
     return <AuthClient classOptions={classOptions} nextPath={safeNext} />;
 }

@@ -18,6 +18,7 @@ import "./class.css";
 import { useClasses, useCreateClass } from "@/hooks/classes";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
+import { LoadingDots } from "@/components/loading-dots";
 
 const DAY_LABELS: Record<number, string> = {
     1: "Thứ 2",
@@ -98,7 +99,6 @@ export default function ClassClient() {
     // const [error, setError] = useState<string | null>(null);
     // const [isSaving, setIsSaving] = useState(false);
     const { mutate, isPending, isSuccess } = useCreateClass(() => hanleCreateSuccess());
-    const [request, setRequest] = useState({ pageIndex: 1 }); // Used to trigger data reload after create/delete
 
     // Form state
     const [name, setName] = useState("");
@@ -481,7 +481,10 @@ export default function ClassClient() {
                         </div>
                     ) : null}
                     {isLoading ? (
-                        <p className="text-sm text-center text-muted-foreground">Đang tải dữ liệu...</p>
+                        // <p className="text-sm text-center text-muted-foreground">Đang tải dữ liệu...</p>
+                        <div className="min-h-[200px] flex items-center justify-center">
+                            <LoadingDots size={12} gap={12} />
+                        </div>
                     ) : null}
                     {/* {isError ? <p className="mt-3 text-sm text-danger text-center">{error.message}</p> : null} */}
                 </div>

@@ -21,6 +21,13 @@ export type AdminStudent = {
   guardians?: AdminGuardian[];
 };
 
+export type StudentsPage = {
+  data: AdminStudent[];
+  pageNumber: number;
+  pageSize: number;
+  totalPages: number;
+};
+
 export type ApproveStudentPayload = {
   accessStatus: string;
 };
@@ -32,18 +39,47 @@ function normalizeStudents(
     | AdminStudent[]
     | ApiListResponse<AdminStudent>
     | ApiResponse<AdminStudent[]>,
-): AdminStudent[] {
+): StudentsPage {
   if (Array.isArray(payload)) {
-    return payload;
+    return {
+      data: payload,
+      pageNumber: 1,
+      pageSize: payload.length,
+      totalPages: 1,
+    };
   }
 
-  return payload.data ?? [];
+  const data = payload.data ?? [];
+  const meta = "meta" in payload ? payload.meta : undefined;
+  const pageNumber = meta?.page ?? 1;
+  const pageSize = meta?.pageSize ?? data.length;
+  const totalPages =
+    meta?.total && pageSize > 0
+      ? Math.max(1, Math.ceil(meta.total / pageSize))
+      : 1;
+
+  return {
+    data,
+    pageNumber,
+    pageSize,
+    totalPages,
+  };
 }
 
-export async function getAdminStudents() {
+export async function getAdminStudents(params?: {
+  pageIndex?: number;
+  pageSize?: number;
+  keyword?: string;
+}) {
   const response = await api.get<
     AdminStudent[] | ApiListResponse<AdminStudent> | ApiResponse<AdminStudent[]>
-  >("/admin/students");
+  >("/admin/students", {
+    params: {
+      pageIndex: params?.pageIndex,
+      pageSize: params?.pageSize,
+      Keyword: params?.keyword || undefined,
+    },
+  });
 
   return normalizeStudents(response.data);
 }

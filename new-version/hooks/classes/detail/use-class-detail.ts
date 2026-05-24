@@ -1,10 +1,10 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { v1 } from "@/services/api";
+import { v2 } from "@/services/api";
 
-export function useClasses({ id = "" } = {}) {
+export function useClasses({ classId = "" } = {}) {
   return useQuery({
-    queryKey: ["classes", id],
-    // queryFn: () => v1.getAdminClassById(id),
+    queryKey: ["classes", classId],
+    queryFn: () => v2.getClassDetails(classId),
     placeholderData: keepPreviousData,
     staleTime: 3 * 60 * 1000, // 3 minutes
   });
