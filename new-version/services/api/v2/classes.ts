@@ -32,13 +32,13 @@ export type ClassData = {
 export type ClassDetail = {
   name: string;
   totalStudent: number;
+  totalPendingStudent: number;
   averageScore: number;
   totalSessions: number;
   completedSessions: number;
   startAt: string;
   endAt: string;
 };
-
 
 type ClassDetailResponse =
   | ClassDetail
@@ -103,7 +103,12 @@ export async function getClassDetails(classId: string) {
 
 export async function getStudentsInClass(
   classId: string,
-  params?: { pageIndex?: number; pageSize?: number; keyword?: string },
+  params?: {
+    pageIndex?: number;
+    pageSize?: number;
+    keyword?: string;
+    isPendingFilter?: boolean;
+  },
 ) {
   const response = await api.get<
     AdminStudent[] | ApiListResponse<AdminStudent> | ApiResponse<AdminStudent[]>
@@ -112,6 +117,7 @@ export async function getStudentsInClass(
       pageIndex: params?.pageIndex,
       pageSize: params?.pageSize,
       Keyword: params?.keyword || undefined,
+      isPending: params?.isPendingFilter || undefined,
     },
   });
 

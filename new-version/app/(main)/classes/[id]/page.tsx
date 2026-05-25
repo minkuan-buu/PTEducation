@@ -17,15 +17,16 @@ import { v2 } from "@/services/api";
 import type { AdminGuardian, AdminStudent } from "@/services/api/v2";
 import { useUsers } from "@/hooks/users/use-users";
 import { useQueryClient } from "@tanstack/react-query";
+import { useClassStudents } from "@/hooks/classes/detail/use-class-student";
 
 /* Users table component (copied from user-client) */
-function UsersTable() {
+function UsersTable({ classId, isPendingFilter }: { classId: string; isPendingFilter: boolean }) {
     const queryClient = useQueryClient();
     const [pageIndex, setPageIndex] = useState(1);
     const [searchTerm, setSearchTerm] = useState("");
     const pageSize = 10;
     const keyword = searchTerm.trim();
-    const { data, isLoading } = useUsers({ pageIndex, pageSize, keyword });
+    const { data, isPending } = useClassStudents(classId, { pageIndex, pageSize, keyword, isPendingFilter });
     const tableData = useMemo(() => data?.data ?? [], [data]);
     const totalPages = Math.max(1, data?.totalPages ?? 1);
     const hasNextPage = (data?.pageNumber ?? 1) < totalPages;
@@ -38,16 +39,48 @@ function UsersTable() {
         if (!hasNextPage) return;
 
         queryClient.prefetchQuery({
-            queryKey: ["users", "pagination", pageIndex + 1, pageSize, keyword],
-            queryFn: () => v2.getAdminStudents({ pageIndex: pageIndex + 1, pageSize, keyword }),
+            queryKey: [
+                "class-students",
+                classId,
+                "pagination",
+                pageIndex,
+                pageSize,
+                keyword,
+                isPendingFilter,
+            ],
+            queryFn: () => v2.getStudentsInClass(classId, { pageIndex: pageIndex + 1, pageSize, keyword, isPendingFilter }),
             staleTime: 3 * 60 * 1000, // 3 minutes
         });
-    }, [hasNextPage, keyword, pageIndex, pageSize, queryClient]);
+    }, [hasNextPage, keyword, pageIndex, pageSize, queryClient, isPendingFilter]);
 
     async function handleApproveStudent(studentId: string, accessStatus: string) {
         try {
             await v2.approveStudent(studentId, accessStatus);
-            await queryClient.invalidateQueries({ queryKey: ["users", "pagination"] });
+            await queryClient.invalidateQueries({
+                queryKey: [
+                    "class-students",
+                    classId,
+                    "pagination",
+                    pageIndex,
+                    pageSize,
+                    keyword,
+                    true,
+                ],
+            });
+            await queryClient.invalidateQueries({
+                queryKey: [
+                    "class-students",
+                    classId,
+                    "pagination",
+                    pageIndex,
+                    pageSize,
+                    keyword,
+                    false,
+                ],
+            });
+            await queryClient.invalidateQueries({
+                queryKey: ["classes", classId]
+            });
         } catch (err) {
             console.error("Error approving student:", err);
         }
@@ -56,7 +89,31 @@ function UsersTable() {
     async function handleDeleteStudent(studentId: string) {
         try {
             await v2.deleteStudent(studentId);
-            await queryClient.invalidateQueries({ queryKey: ["users", "pagination"] });
+            await queryClient.invalidateQueries({
+                queryKey: [
+                    "class-students",
+                    classId,
+                    "pagination",
+                    pageIndex,
+                    pageSize,
+                    keyword,
+                    true,
+                ],
+            });
+            await queryClient.invalidateQueries({
+                queryKey: [
+                    "class-students",
+                    classId,
+                    "pagination",
+                    pageIndex,
+                    pageSize,
+                    keyword,
+                    false,
+                ],
+            });
+            await queryClient.invalidateQueries({
+                queryKey: ["classes", classId]
+            });
         } catch (err) {
             console.error("Error deleting student:", err);
         }
@@ -192,17 +249,16 @@ function UsersTable() {
                 <Table.Cell>{item.phone}</Table.Cell>
 
                 <Table.Cell>
-                    {isGuardian ? <span className="italic text-primary">PH: {(item as AdminGuardian).relationship}</span> : (item as AdminStudent).role}
+                    {isGuardian ? <span className="italic text-primary">{(item as AdminGuardian).relationship}</span> : "-" /*(item as AdminStudent).role*/}
                 </Table.Cell>
 
-                <Table.Cell>{isGuardian ? "-" : (item as AdminStudent).className}</Table.Cell>
+                {/* <Table.Cell>{isGuardian ? "-" : (item as AdminStudent).className}</Table.Cell> */}
                 <Table.Cell>
-                    {!isGuardian ? (
-                        (item as AdminStudent).status === "PendingApproved" ? (
-                            <StudentApproveActions studentId={item.id} onAction={handleApproveStudent} />
-                        ) : (
-                            <StudentActions studentId={item.id} onAction={handleDeleteStudent} />
-                        )
+                    {!isGuardian ? (isPendingFilter ? (
+                        <StudentApproveActions studentId={item.id} onAction={handleApproveStudent} />
+                    ) : (
+                        <StudentActions studentId={item.id} onAction={handleDeleteStudent} />
+                    )
                     ) : null}
                 </Table.Cell>
 
@@ -227,7 +283,7 @@ function UsersTable() {
                         <Table.Column id="email">Email</Table.Column>
                         <Table.Column id="phone">Điện thoại</Table.Column>
                         <Table.Column id="role">Vai trò/Quan hệ</Table.Column>
-                        <Table.Column id="className">Lớp</Table.Column>
+                        {/* <Table.Column id="className">Lớp</Table.Column> */}
                         <Table.Column id="actions">Hành động</Table.Column>
                     </Table.Header>
 
@@ -235,34 +291,40 @@ function UsersTable() {
                 </Table.Content>
             </Table.ScrollContainer>
             <Table.Footer>
-                <Pagination>
-                    <Pagination.Summary className="text-sm text-muted">Trang {pageIndex} / {totalPages}</Pagination.Summary>
-                    <Pagination.Content>
-                        <Pagination.Item>
-                            <Pagination.Previous isDisabled={isLoading || pageIndex === 1} onPress={() => setPageIndex((prev) => Math.max(1, prev - 1))}>
-                                Trước
-                            </Pagination.Previous>
-                        </Pagination.Item>
-                        {Array.from({ length: totalPages }, (_, index) => {
-                            const page = index + 1;
+                {tableData.length === 0 && !isPending ? (
+                    <div className="w-full flex items-center justify-center py-4">
+                        <p className="text-sm text-center text-muted-foreground">Danh sách trống</p>
+                    </div>
+                ) : (
+                    <Pagination>
+                        <Pagination.Summary className="text-sm text-muted">Trang {pageIndex} / {totalPages}</Pagination.Summary>
+                        <Pagination.Content>
+                            <Pagination.Item>
+                                <Pagination.Previous isDisabled={isPending || pageIndex === 1} onPress={() => setPageIndex((prev) => Math.max(1, prev - 1))}>
+                                    Trước
+                                </Pagination.Previous>
+                            </Pagination.Item>
+                            {Array.from({ length: totalPages }, (_, index) => {
+                                const page = index + 1;
 
-                            return (
-                                <Pagination.Item key={page}>
-                                    <Pagination.Link isActive={page === pageIndex} isDisabled={isLoading} onPress={() => setPageIndex(page)}>
-                                        {page}
-                                    </Pagination.Link>
-                                </Pagination.Item>
-                            );
-                        })}
-                        <Pagination.Item>
-                            <Pagination.Next isDisabled={isLoading || pageIndex === totalPages} onPress={() => setPageIndex((prev) => Math.min(totalPages, prev + 1))}>
-                                Sau
-                            </Pagination.Next>
-                        </Pagination.Item>
-                    </Pagination.Content>
-                </Pagination>
+                                return (
+                                    <Pagination.Item key={page}>
+                                        <Pagination.Link isActive={page === pageIndex} isDisabled={isPending} onPress={() => setPageIndex(page)}>
+                                            {page}
+                                        </Pagination.Link>
+                                    </Pagination.Item>
+                                );
+                            })}
+                            <Pagination.Item>
+                                <Pagination.Next isDisabled={isPending || pageIndex === totalPages} onPress={() => setPageIndex((prev) => Math.min(totalPages, prev + 1))}>
+                                    Sau
+                                </Pagination.Next>
+                            </Pagination.Item>
+                        </Pagination.Content>
+                    </Pagination>
+                )}
+                {isPending ? <p className="mt-3 text-sm text-center text-muted-foreground">Đang tải dữ liệu...</p> : null}
             </Table.Footer>
-            {isLoading ? <p className="mt-3 text-sm text-center text-muted-foreground">Đang tải dữ liệu...</p> : null}
         </Table>
     );
 }
@@ -271,6 +333,7 @@ export default function ClassDetailPage() {
     const params = useParams<{ id: string }>();
     const router = useRouter();
     const classId = params?.id ?? "";
+    const [isPendingFilter, setIsPendingFilter] = useState(false);
 
     const formatDateOnly = (value: string) => {
         const date = new Date(value);
@@ -345,12 +408,17 @@ export default function ClassDetailPage() {
                         }
                     />
                 </div>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-12 pt-6">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-12 pt-6">
                     <div className="md:col-span-9">
-                        <h2 className="text-lg font-semibold mb-4">Danh sách học sinh</h2>
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-lg font-semibold">Danh sách học sinh</h2>
+                            <Button variant={!isPendingFilter ? "outline" : "primary"} onClick={() => setIsPendingFilter(!isPendingFilter)}>
+                                Đang chờ duyệt ({classData.totalPendingStudent})
+                            </Button>
+                        </div>
                         {/* Left column content (e.g. student list/table) */}
                         {/* Users table copied from user-client */}
-                        <UsersTable />
+                        <UsersTable classId={classId} isPendingFilter={isPendingFilter} />
                     </div>
                     <div className="md:col-span-3">
                         <h2 className="text-lg font-semibold mb-4">Thông tin</h2>
