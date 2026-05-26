@@ -36,6 +36,7 @@ export type ClassDetail = {
   averageScore: number;
   totalSessions: number;
   completedSessions: number;
+  weeklySchedules: ClassSchedule[];
   startAt: string;
   endAt: string;
 };

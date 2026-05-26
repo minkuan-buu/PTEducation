@@ -3,7 +3,7 @@
 import { Card } from "@/components/classes/card";
 import { LoadingDots } from "@/components/loading-dots";
 import { useClasses } from "@/hooks/classes/detail/use-class-detail";
-import { Breadcrumbs, Button, Chip, cn, Pagination, Spinner, Table, Tooltip } from "@heroui/react";
+import { Breadcrumbs, Button, Chip, cn, Modal, Pagination, Spinner, Table, Tooltip, useOverlayState } from "@heroui/react";
 import { useParams, useRouter } from "next/navigation";
 import { FaUsers } from "react-icons/fa";
 import { HiClipboardDocumentList } from "react-icons/hi2";
@@ -12,9 +12,10 @@ import { TbPresentationAnalytics } from "react-icons/tb";
 import { Icon } from "@iconify/react";
 import type { Key } from "@react-types/shared";
 import { useEffect, useMemo, useState } from "react";
+import WeeklySchedule from "@/components/weekly-schedule";
 
 import { v2 } from "@/services/api";
-import type { AdminGuardian, AdminStudent } from "@/services/api/v2";
+import type { AdminGuardian, AdminStudent, ClassSchedule } from "@/services/api/v2";
 import { useUsers } from "@/hooks/users/use-users";
 import { useQueryClient } from "@tanstack/react-query";
 import { useClassStudents } from "@/hooks/classes/detail/use-class-student";
@@ -329,11 +330,84 @@ function UsersTable({ classId, isPendingFilter }: { classId: string; isPendingFi
     );
 }
 
+const DAY_LABELS: Record<number, string> = {
+    1: "Thứ 2",
+    2: "Thứ 3",
+    3: "Thứ 4",
+    4: "Thứ 5",
+    5: "Thứ 6",
+    6: "Thứ 7",
+    0: "Chủ nhật",
+};
+
+const getDayLabel = (day: number) => DAY_LABELS[day] ?? `Thứ ${day + 1}`;
+
+const formatDateTime = (dateStr: string) => {
+    if (!dateStr) return "-";
+    const d = new Date(dateStr);
+    return d.toLocaleDateString("vi-VN", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+    });
+};
+
+const ScheduleRow = ({
+    schedule,
+    index,
+    onChange,
+    onRemove,
+}: {
+    schedule: ClassSchedule;
+    index: number;
+    onChange: (index: number, field: keyof ClassSchedule, value: number | string) => void;
+    onRemove: (index: number) => void;
+}) => {
+    return (
+        <div className="flex items-end gap-3">
+            <select
+                className="w-full rounded-lg border border-divider bg-background px-3 py-2 text-sm"
+                value={schedule.dayOfWeek}
+                onChange={(e) => onChange(index, "dayOfWeek", Number(e.target.value))}
+            >
+                {Object.entries(DAY_LABELS).map(([key, label]) => (
+                    <option key={key} value={key}>
+                        {label}
+                    </option>
+                ))}
+            </select>
+            <div className="flex items-center gap-1">
+                <input
+                    type="time"
+                    value={schedule.startTime}
+                    onChange={(e) => onChange(index, "startTime", e.target.value)}
+                    className="w-full rounded-lg border border-divider bg-background px-3 py-2 text-sm"
+                />
+                <span className="text-muted">→</span>
+                <input
+                    type="time"
+                    value={schedule.endTime}
+                    onChange={(e) => onChange(index, "endTime", e.target.value)}
+                    className="w-full rounded-lg border border-divider bg-background px-3 py-2 text-sm"
+                />
+            </div>
+            <Button
+                variant="secondary"
+                onPress={() => onRemove(index)}
+            >
+                <Icon icon="mingcute:delete-2-fill" width="18" height="18" />
+            </Button>
+        </div>
+    );
+};
+
 export default function ClassDetailPage() {
     const params = useParams<{ id: string }>();
     const router = useRouter();
     const classId = params?.id ?? "";
     const [isPendingFilter, setIsPendingFilter] = useState(false);
+    const { isOpen, setOpen, open, close } = useOverlayState();
+    const [schedules, setSchedules] = useState<ClassSchedule[]>([]);
 
     const formatDateOnly = (value: string) => {
         const date = new Date(value);
@@ -353,6 +427,33 @@ export default function ClassDetailPage() {
 
     const { data: classData, isLoading: isLoadingClass, isError: isErrorClass } = useClasses({ classId });
 
+    const scheduleEvents = useMemo(() => {
+        // if backend provides weeklySchedule use it; otherwise a safe empty array (rendering handled later)
+        if (classData?.weeklySchedules && Array.isArray(classData.weeklySchedules)) {
+            const colors: ("blue" | "purple" | "green" | "orange")[] = ["blue", "purple", "green", "orange"];
+            return classData.weeklySchedules.map((schedule, index) => ({
+                id: `schedule-${index}`,
+                title: `${classData.name} - ${["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ Nhật"][schedule.dayOfWeek]}`,
+                day: schedule.dayOfWeek,
+                // Dùng substring(0, 5) để cắt "08:00:00" thành "08:00"
+                start: schedule.startTime?.substring(0, 5) || "",
+                end: schedule.endTime?.substring(0, 5) || "",
+                colorTheme: colors[index % colors.length],
+            }));
+        }
+
+        if (classData) {
+            return [
+                // { id: "e1", title: `${classData.name} - Thứ 2`, day: 0, start: "17:30", end: "20:30", color: "rgba(56,168,255,0.12)" },
+                // { id: "e2", title: `${classData.name} - Thứ 3`, day: 1, start: "13:30", end: "16:30", color: "rgba(165,94,234,0.18)" },
+                // { id: "e3", title: `${classData.name} - Thứ 7`, day: 5, start: "13:30", end: "16:30", color: "rgba(165,94,234,0.18)" },
+                // { id: "e4", title: `${classData.name} - Thứ 6`, day: 4, start: "13:30", end: "16:30", color: "rgba(165,94,234,0.18)" },
+            ];
+        }
+
+        return [];
+    }, [classData]);
+
     if (isLoadingClass) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -364,6 +465,43 @@ export default function ClassDetailPage() {
     if (isErrorClass || !classData) {
         return <div>Could not load class details</div>;
     }
+
+    const handleOpenChange = (nextOpen: boolean) => {
+        if (!nextOpen) {
+            resetForm();
+        }
+        setOpen(nextOpen);
+    };
+
+    const handleScheduleChange = (
+        index: number,
+        field: keyof ClassSchedule,
+        value: number | string,
+    ) => {
+        setSchedules((prev) =>
+            prev.map((s, i) => (i === index ? { ...s, [field]: value } : s)),
+        );
+    };
+
+    const addSchedule = () => {
+        setSchedules((prev) => [
+            ...prev,
+            { dayOfWeek: 1, startTime: "07:00", endTime: "09:00" },
+        ]);
+    };
+
+    const removeSchedule = (index: number) => {
+        setSchedules((prev) => prev.filter((_, i) => i !== index));
+    };
+
+    const resetForm = () => {
+        setSchedules([]);
+    };
+
+    const handleCloseModal = () => {
+        resetForm();
+        close();
+    };
 
     return (
         <main className="min-h-screen flex flex-col justify-start">
@@ -409,7 +547,7 @@ export default function ClassDetailPage() {
                     />
                 </div>
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-12 pt-6">
-                    <div className="md:col-span-9">
+                    <div className="md:col-span-8">
                         <div className="flex items-center justify-between mb-4">
                             <h2 className="text-lg font-semibold">Danh sách học sinh</h2>
                             <Button variant={!isPendingFilter ? "outline" : "primary"} onClick={() => setIsPendingFilter(!isPendingFilter)}>
@@ -420,9 +558,73 @@ export default function ClassDetailPage() {
                         {/* Users table copied from user-client */}
                         <UsersTable classId={classId} isPendingFilter={isPendingFilter} />
                     </div>
-                    <div className="md:col-span-3">
-                        <h2 className="text-lg font-semibold mb-4">Thông tin</h2>
-                        {/* Right column content (e.g. filters, stats, actions) */}
+                    <div className="md:col-span-4">
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-lg font-semibold">Lịch học trong tuần</h2>
+                            <Button variant="primary" onPress={() => setOpen(true)}>
+                                Chỉnh sửa
+                            </Button>
+                        </div>
+                        <Modal>
+                            <Modal.Backdrop isOpen={isOpen} onOpenChange={handleOpenChange}>
+                                <Modal.Container size="lg">
+                                    <Modal.Dialog>
+                                        <Modal.Header>
+                                            <Modal.Heading>Tạo lớp học mới</Modal.Heading>
+                                        </Modal.Header>
+                                        <Modal.Body className="px-2">
+                                            <div className="flex flex-col gap-4 mt-4">
+
+                                                <div className="pt-4 mt-2">
+                                                    <div className="flex items-center justify-between mb-3">
+                                                        <h3 className="text-md font-semibold">Lịch học cố định</h3>
+                                                        <Button
+                                                            variant="secondary"
+                                                            onPress={addSchedule}
+                                                        >
+                                                            <Icon icon="lucide:plus" width="16" />
+                                                            Thêm buổi học
+                                                        </Button>
+                                                    </div>
+
+                                                    {schedules.length === 0 ? (
+                                                        <p className="text-sm text-muted">
+                                                            Chưa có buổi học nào. Nhấn "Thêm buổi học" để thêm lịch học.
+                                                        </p>
+                                                    ) : (
+                                                        <div className="flex flex-col gap-3">
+                                                            {schedules.map((schedule, index) => (
+                                                                <ScheduleRow
+                                                                    key={index}
+                                                                    schedule={schedule}
+                                                                    index={index}
+                                                                    onChange={handleScheduleChange}
+                                                                    onRemove={removeSchedule}
+                                                                />
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </Modal.Body>
+                                        <Modal.Footer>
+                                            <Button variant="ghost" onPress={handleCloseModal}>
+                                                Hủy
+                                            </Button>
+                                            <Button
+                                                variant="primary"
+                                            // isDisabled={isPending}
+                                            // onPress={handleCreate}
+                                            >
+                                                {/* {isPending ? "Đang tạo..." : "Tạo lớp"} */}
+                                                Chỉnh sửa
+                                            </Button>
+                                        </Modal.Footer>
+                                    </Modal.Dialog>
+                                </Modal.Container>
+                            </Modal.Backdrop>
+                        </Modal>
+                        <WeeklySchedule events={scheduleEvents} />
                     </div>
                 </div>
             </div>
