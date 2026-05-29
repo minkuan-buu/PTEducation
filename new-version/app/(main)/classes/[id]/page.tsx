@@ -7,6 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import { LoadingDots } from "@/components/loading-dots";
 import { useClasses } from "@/hooks/classes/detail/use-class-detail";
 
+import { ClassAttendancePanel } from "./_components/class-attendance-panel";
 import { ClassGeneralPanel } from "./_components/class-general-panel";
 
 import { FaUsers } from "react-icons/fa";
@@ -60,7 +61,9 @@ export default function ClassDetailPage() {
         <main className="min-h-screen flex flex-col justify-start">
             <div className="py-6 px-8">
                 <Breadcrumbs className="mb-4">
-                    <Breadcrumbs.Item href="/classes">Lớp học</Breadcrumbs.Item>
+                    <Breadcrumbs.Item onClick={() => router.push("/classes")}>
+                        Lớp học
+                    </Breadcrumbs.Item>
                     <Breadcrumbs.Item href="#">{classData.name}</Breadcrumbs.Item>
                 </Breadcrumbs>
 
@@ -104,7 +107,7 @@ export default function ClassDetailPage() {
                         <ClassGeneralPanel classId={classId} classData={classData} />
                     </Tabs.Panel>
                     <Tabs.Panel className="pt-4" id="attendance">
-                        <p>Track your metrics and analyze performance data.</p>
+                        <ClassAttendancePanel classId={classId} classData={classData} />
                     </Tabs.Panel>
                     <Tabs.Panel className="pt-4" id="score">
                         <p>Generate and download detailed reports.</p>

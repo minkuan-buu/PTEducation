@@ -7,6 +7,7 @@ import { toast } from "@heroui/react";
 import * as React from "react";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 
+import { AttendanceProvider } from "@/context/attendance-context";
 import { UserProvider } from "@/context/user-context";
 import { TanStackProvider } from "@/providers/tanstack-provider";
 import { setUnauthorizedHandler, v2 } from "@/services/api";
@@ -64,7 +65,9 @@ export function Providers({ children, themeProps }: ProvidersProps) {
   return (
     <NextThemesProvider {...themeProps}>
       <TanStackProvider>
-        <UserProvider>{children}</UserProvider>
+        <UserProvider>
+          <AttendanceProvider>{children}</AttendanceProvider>
+        </UserProvider>
       </TanStackProvider>
     </NextThemesProvider>
   );

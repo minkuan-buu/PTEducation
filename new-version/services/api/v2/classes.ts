@@ -39,6 +39,7 @@ export type ClassDetail = {
   weeklySchedules: ClassSchedule[];
   startAt: string;
   endAt: string;
+  nextSession: string;
 };
 
 type ClassDetailResponse =

@@ -11,6 +11,8 @@ import type { ClassDetail, ClassSchedule } from "@/services/api/v2";
 import { v2 } from "@/services/api";
 import type { AdminGuardian, AdminStudent } from "@/services/api/v2";
 import { useClassStudents } from "@/hooks/classes/detail/use-class-student";
+import { CgCalendarToday } from "react-icons/cg";
+import { Card } from "@/components/classes/card";
 
 function UsersTable({ classId, isPendingFilter }: { classId: string; isPendingFilter: boolean }) {
     const queryClient = useQueryClient();
@@ -381,6 +383,22 @@ export function ClassGeneralPanel({ classId, classData }: { classId: string; cla
         close();
     };
 
+    const formatDateTimeNextSession = (value: string) => {
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+            return "-";
+        }
+
+        const pad = (n: number) => n.toString().padStart(2, "0");
+        const hours = pad(date.getHours());
+        const minutes = pad(date.getMinutes());
+        const day = pad(date.getDate());
+        const month = pad(date.getMonth() + 1);
+        const year = date.getFullYear();
+
+        return `${hours}:${minutes}, ${day}/${month}/${year}`;
+    };
+
     return (
         <section>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-12">
@@ -395,53 +413,59 @@ export function ClassGeneralPanel({ classId, classData }: { classId: string; cla
                 </div>
 
                 <div className="md:col-span-4">
-                    <div className="mb-4 flex items-center justify-between">
-                        <h2 className="text-lg font-semibold">Lịch học trong tuần</h2>
-                        <Button variant="primary" onPress={() => setOpen(true)}>
-                            Chỉnh sửa lịch
-                        </Button>
-                    </div>
-                    <Modal>
-                        <Modal.Backdrop isOpen={isOpen} onOpenChange={handleOpenChange}>
-                            <Modal.Container size="lg">
-                                <Modal.Dialog>
-                                    <Modal.Header>
-                                        <Modal.Heading>Chỉnh sửa lịch học</Modal.Heading>
-                                    </Modal.Header>
-                                    <Modal.Body className="px-2">
-                                        <div className="mt-4 flex flex-col gap-4">
-                                            <div className="mt-2 pt-4">
-                                                <div className="mb-3 flex items-center justify-between">
-                                                    <h3 className="text-md font-semibold">Lịch học cố định</h3>
-                                                    <Button variant="secondary" onPress={addSchedule}>
-                                                        <Icon icon="lucide:plus" width="16" />
-                                                        Thêm buổi học
-                                                    </Button>
-                                                </div>
+                    <div className="flex flex-col gap-4">
+                        <div>
+                            <Card logo={<CgCalendarToday className="h-5 w-5" />} title="Lịch học tiếp theo sẽ bắt đầu vào" description={`${formatDateTimeNextSession(classData.nextSession)}`} />
+                        </div>
+                        <div>
+                            <div className="mb-4 flex items-center justify-between">
+                                <h2 className="text-lg font-semibold">Lịch học trong tuần</h2>
+                                <Button variant="primary" onPress={() => setOpen(true)}>
+                                    Chỉnh sửa lịch
+                                </Button>
+                            </div>
+                            <Modal>
+                                <Modal.Backdrop isOpen={isOpen} onOpenChange={handleOpenChange}>
+                                    <Modal.Container size="lg">
+                                        <Modal.Dialog>
+                                            <Modal.Header>
+                                                <Modal.Heading>Chỉnh sửa lịch học</Modal.Heading>
+                                            </Modal.Header>
+                                            <Modal.Body className="px-2">
+                                                <div className="mt-4 flex flex-col gap-4">
+                                                    <div className="mt-2 pt-4">
+                                                        <div className="mb-3 flex items-center justify-between">
+                                                            <h3 className="text-md font-semibold">Lịch học cố định</h3>
+                                                            <Button variant="secondary" onPress={addSchedule}>
+                                                                <Icon icon="lucide:plus" width="16" />
+                                                                Thêm buổi học
+                                                            </Button>
+                                                        </div>
 
-                                                {schedules.length === 0 ? (
-                                                    <p className="text-sm text-muted">Chưa có buổi học nào. Nhấn "Thêm buổi học" để thêm lịch học.</p>
-                                                ) : (
-                                                    <div className="flex flex-col gap-3">
-                                                        {schedules.map((schedule, index) => (
-                                                            <ScheduleRow key={index} schedule={schedule} index={index} onChange={handleScheduleChange} onRemove={removeSchedule} />
-                                                        ))}
+                                                        {schedules.length === 0 ? (
+                                                            <p className="text-sm text-muted">Chưa có buổi học nào. Nhấn "Thêm buổi học" để thêm lịch học.</p>
+                                                        ) : (
+                                                            <div className="flex flex-col gap-3">
+                                                                {schedules.map((schedule, index) => (
+                                                                    <ScheduleRow key={index} schedule={schedule} index={index} onChange={handleScheduleChange} onRemove={removeSchedule} />
+                                                                ))}
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </Modal.Body>
-                                    <Modal.Footer>
-                                        <Button variant="ghost" onPress={handleCloseModal}>
-                                            Hủy
-                                        </Button>
-                                        <Button variant="primary">Chỉnh sửa</Button>
-                                    </Modal.Footer>
-                                </Modal.Dialog>
-                            </Modal.Container>
-                        </Modal.Backdrop>
-                    </Modal>
-                    <WeeklySchedule events={scheduleEvents} />
+                                                </div>
+                                            </Modal.Body>
+                                            <Modal.Footer>
+                                                <Button variant="ghost" onPress={handleCloseModal}>
+                                                    Hủy
+                                                </Button>
+                                                <Button variant="primary">Chỉnh sửa</Button>
+                                            </Modal.Footer>
+                                        </Modal.Dialog>
+                                    </Modal.Container>
+                                </Modal.Backdrop>
+                            </Modal>
+                            <WeeklySchedule events={scheduleEvents} /></div>
+                    </div>
                 </div>
             </div>
         </section>

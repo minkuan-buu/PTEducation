@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@heroui/react";
 
+import { useAttendanceRealtime } from "@/context/attendance-context";
 import { useUser } from "@/context/user-context";
 import { v2 } from "@/services/api";
 import { UserCard } from "./user-sidebar-card";
@@ -11,6 +12,23 @@ import { TbLogout2 } from "react-icons/tb";
 import NextLink from "next/link";
 import OpenIcon from '@iconify-react/majesticons/open';
 import { ThemeSwitch } from "./theme-switch";
+
+function formatClock(date: Date) {
+    return date.toLocaleTimeString("vi-VN", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+    });
+}
+
+function formatDateLabel(date: Date) {
+    return date.toLocaleDateString("vi-VN", {
+        weekday: "short",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+    });
+}
 
 type MenuItem = {
     label: string;
@@ -26,9 +44,61 @@ export const Sidebar = () => {
     const router = useRouter();
     const pathname = usePathname();
     const { user, isAuthenticated, clearUser } = useUser();
+    const attendanceRealtime = useAttendanceRealtime();
+    const [tick, setTick] = useState(() => new Date());
+    const [isMounted, setIsMounted] = useState(false);
 
     const role = (user?.role ?? "null").toLowerCase();
-    console.log(user);
+
+    useEffect(() => {
+        setIsMounted(true);
+
+        const timerId = window.setInterval(() => {
+            setTick(new Date());
+        }, 1000);
+
+        return () => window.clearInterval(timerId);
+    }, []);
+
+    const displayNow = useMemo(() => {
+        if (!isMounted) {
+            return null;
+        }
+
+        if (!attendanceRealtime.serverTime || !attendanceRealtime.serverTimeSyncedAt) {
+            return tick;
+        }
+
+        const elapsedMs = tick.getTime() - attendanceRealtime.serverTimeSyncedAt.getTime();
+        return new Date(attendanceRealtime.serverTime.getTime() + elapsedMs);
+    }, [attendanceRealtime.serverTime, attendanceRealtime.serverTimeSyncedAt, isMounted, tick]);
+
+    const connectionBadge = useMemo(() => {
+        switch (attendanceRealtime.connectionStatus) {
+            case "connected":
+                return {
+                    dotClass: "bg-emerald-500",
+                    animateClass: "animate-ping",
+                };
+            case "connecting":
+            case "reconnecting":
+                return {
+                    dotClass: "bg-amber-400",
+                    animateClass: "",
+                };
+            case "error":
+            case "disconnected":
+                return {
+                    dotClass: "bg-red-500",
+                    animateClass: "",
+                };
+            default:
+                return {
+                    dotClass: "bg-zinc-400",
+                    animateClass: "",
+                };
+        }
+    }, [attendanceRealtime.connectionStatus]);
 
     const menuByRole: Record<string, MenuSection[]> = useMemo(
         () => ({
@@ -128,6 +198,41 @@ export const Sidebar = () => {
                 <ThemeSwitch />
             </div>
             <div className="space-y-4 border-t border-divider pt-4" />
+            <div className="px-3 pb-3">
+                <div className="rounded-2xl border border-divider bg-content1/80 p-4 shadow-sm backdrop-blur-md">
+                    <div className="flex items-center justify-between gap-2">
+                        <div>
+                            {/* <p className="text-xs uppercase tracking-wide text-muted">Đồng hồ hệ thống</p> */}
+                            <p className="text-2xl font-semibold tabular-nums">{displayNow ? formatClock(displayNow) : "--:--:--"}</p>
+                        </div>
+                        <span
+                            aria-label={attendanceRealtime.connectionStatus}
+                            title={attendanceRealtime.connectionStatus}
+                            className="relative inline-flex size-5 items-center justify-center"
+                        >
+                            {attendanceRealtime.connectionStatus === "connected" ? (
+                                <>
+                                    <span
+                                        className={`absolute inline-block size-5 rounded-full ${connectionBadge.dotClass} opacity-20 ${connectionBadge.animateClass}`}
+                                        style={{ animationDuration: "2.5s" }}
+                                    />
+                                    <span
+                                        className={`absolute inline-block size-4 rounded-full ${connectionBadge.dotClass} opacity-35 ${connectionBadge.animateClass}`}
+                                        style={{ animationDuration: "2.5s", animationDelay: "0.8s" }}
+                                    />
+                                </>
+                            ) : null}
+                            <span
+                                className={`relative inline-block size-2.5 rounded-full ${connectionBadge.dotClass} shadow-[0_0_0_4px_rgba(255,255,255,0.08)]`}
+                            />
+                        </span>
+                    </div>
+                    <p className="mt-2 text-xs text-muted">{displayNow ? formatDateLabel(displayNow) : "Đang tải giờ..."}</p>
+                    {/* <p className="mt-1 text-xs text-muted">
+                        {attendanceRealtime.serverTime ? "Đang sync giờ từ BE" : "Đang dùng giờ máy tạm thời"}
+                    </p> */}
+                </div>
+            </div>
             <div className="px-3">
                 <UserCard name={user?.name || "User"} role={user?.role || "User"} avatarUrl={user?.avatarUrl || ""} />
             </div>
