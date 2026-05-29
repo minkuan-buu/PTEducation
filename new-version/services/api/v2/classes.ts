@@ -47,6 +47,11 @@ type ClassDetailResponse =
   | ApiResponse<ClassDetail>
   | { data: ClassDetail };
 
+type CalendarIndicatorsResponse =
+  | string[]
+  | ApiResponse<string[]>
+  | { data: string[] };
+
 const api = createApiClient("v2");
 
 function normalizeClasses(
@@ -76,6 +81,20 @@ function normalizeClassDetail(
   return payload as ClassDetail;
 }
 
+function normalizeCalendarIndicators(
+  payload: CalendarIndicatorsResponse,
+): string[] {
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+
+  if (payload && typeof payload === "object" && "data" in payload) {
+    return payload.data ?? [];
+  }
+
+  return [];
+}
+
 export async function createClass(payload: CreateClassPayload) {
   const response = await api.post<ClassData | ApiResponse<ClassData>>(
     "/classes",
@@ -101,6 +120,30 @@ export async function getClassDetails(classId: string) {
   );
 
   return normalizeClassDetail(response.data);
+}
+
+export async function getClassCalendarIndicators(
+  classId: string,
+  params?: {
+    fromDate?: string;
+    toDate?: string;
+  },
+) {
+  if (!classId) {
+    throw new Error("Class id is required.");
+  }
+
+  const response = await api.get<CalendarIndicatorsResponse>(
+    `/classes/${encodeURIComponent(classId)}/calendar-indicators`,
+    {
+      params: {
+        fromDate: params?.fromDate,
+        toDate: params?.toDate,
+      },
+    },
+  );
+
+  return normalizeCalendarIndicators(response.data);
 }
 
 export async function getStudentsInClass(

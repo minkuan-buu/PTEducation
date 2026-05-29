@@ -1,11 +1,22 @@
 "use client";
 
-import { Button, Chip, Spinner } from "@heroui/react";
+import { useEffect, useMemo, useState } from "react";
+
+import { Button, Calendar, Chip, Spinner } from "@heroui/react";
+import {
+    endOfMonth,
+    getLocalTimeZone,
+    startOfMonth,
+    today,
+} from "@internationalized/date";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { Card } from "@/components/classes/card";
+import { v2 } from "@/services/api";
 import type { ClassDetail } from "@/services/api/v2";
 
 import { useAttendanceWindow } from "@/hooks/classes/detail/use-attendance-window";
+import { useClassCalendarIndicators } from "@/hooks/classes/detail/use-class-calendar-indicators";
 
 function formatDateTime(value?: Date | null) {
     if (!value) {
@@ -23,6 +34,58 @@ function formatDateTime(value?: Date | null) {
 
 export function ClassAttendancePanel({ classId, classData }: { classId: string; classData: ClassDetail }) {
     const attendanceWindow = useAttendanceWindow(classId, classData.nextSession);
+    const queryClient = useQueryClient();
+    const [calendarValue, setCalendarValue] = useState(() => today(getLocalTimeZone()));
+    const [calendarFocusedValue, setCalendarFocusedValue] = useState(() => calendarValue);
+    const calendarRange = useMemo(() => {
+        const start = startOfMonth(calendarFocusedValue);
+        const end = endOfMonth(calendarFocusedValue);
+
+        return {
+            start,
+            end,
+            startIso: start.toString(),
+            endIso: end.toString(),
+        };
+    }, [calendarFocusedValue]);
+    const {
+        data: indicatorDates = [],
+        isLoading: isIndicatorsLoading,
+        isError: isIndicatorsError,
+    } = useClassCalendarIndicators(
+        classId,
+        calendarRange.startIso,
+        calendarRange.endIso,
+    );
+    const indicatorSet = useMemo(
+        () => new Set(indicatorDates),
+        [indicatorDates],
+    );
+
+    useEffect(() => {
+        if (!classId) return;
+
+        const prefetchMonth = (offset: number) => {
+            const targetDate = calendarFocusedValue.add({ months: offset });
+            const start = startOfMonth(targetDate);
+            const end = endOfMonth(targetDate);
+            const startIso = start.toString();
+            const endIso = end.toString();
+
+            queryClient.prefetchQuery({
+                queryKey: ["class-calendar-indicators", classId, startIso, endIso],
+                queryFn: () =>
+                    v2.getClassCalendarIndicators(classId, {
+                        fromDate: startIso,
+                        toDate: endIso,
+                    }),
+                staleTime: 3 * 60 * 1000,
+            });
+        };
+
+        prefetchMonth(-1);
+        prefetchMonth(1);
+    }, [calendarFocusedValue, classId, queryClient]);
 
     const connectionTone =
         attendanceWindow.connectionStatus === "connected"
@@ -36,11 +99,61 @@ export function ClassAttendancePanel({ classId, classData }: { classId: string; 
     return (
         <section className="grid grid-cols-1 gap-6 xl:grid-cols-12">
             <div className="xl:col-span-4 space-y-4">
-                <Card
-                    logo={<span className="text-lg font-semibold">{attendanceWindow.isOpen ? "ON" : "OFF"}</span>}
-                    title="Trạng thái điểm danh"
-                    description={attendanceWindow.statusLabel}
-                />
+
+                <div className="rounded-2xl border border-divider bg-background p-4 shadow-sm">
+                    <div className="flex items-center justify-between gap-3">
+                        <div>
+                            <p className="text-sm font-medium text-muted">Lịch học</p>
+                            <p className="mt-1 text-xs text-muted">Đánh dấu ngày có lịch học hoặc học bù.</p>
+                        </div>
+                        {isIndicatorsLoading ? <Spinner size="sm" /> : null}
+                    </div>
+
+                    <div className="mt-4">
+                        <Calendar
+                            aria-label="Lịch học"
+                            value={calendarValue}
+                            onChange={setCalendarValue}
+                            focusedValue={calendarFocusedValue}
+                            onFocusChange={setCalendarFocusedValue}
+                        >
+                            <Calendar.Header>
+                                <Calendar.Heading />
+                                <div className="flex items-center gap-2">
+                                    <Calendar.NavButton slot="previous" />
+                                    <Calendar.NavButton slot="next" />
+                                </div>
+                            </Calendar.Header>
+                            <Calendar.Grid>
+                                <Calendar.GridHeader>
+                                    {(day) => (
+                                        <Calendar.HeaderCell>{day}</Calendar.HeaderCell>
+                                    )}
+                                </Calendar.GridHeader>
+                                <Calendar.GridBody>
+                                    {(date) => (
+                                        <Calendar.Cell date={date}>
+                                            {({ formattedDate }) => (
+                                                <>
+                                                    {formattedDate}
+                                                    {indicatorSet.has(date.toString()) ? (
+                                                        <Calendar.CellIndicator />
+                                                    ) : null}
+                                                </>
+                                            )}
+                                        </Calendar.Cell>
+                                    )}
+                                </Calendar.GridBody>
+                            </Calendar.Grid>
+                        </Calendar>
+                    </div>
+
+                    {isIndicatorsError ? (
+                        <p className="mt-2 text-xs text-danger">
+                            Không thể tải lịch học.
+                        </p>
+                    ) : null}
+                </div>
 
                 <div className="rounded-2xl border border-divider bg-background p-4 shadow-sm">
                     <div className="flex items-center justify-between gap-3">
@@ -77,10 +190,16 @@ export function ClassAttendancePanel({ classId, classData }: { classId: string; 
             </div>
 
             <div className="xl:col-span-8 space-y-4">
-                <Card
+                {/* <Card
                     logo={<span className="text-lg font-semibold">{classData.totalSessions}</span>}
                     title="Tổng buổi học"
                     description={`${classData.completedSessions} buổi đã diễn ra · ${classData.totalPendingStudent} học sinh đang chờ duyệt`}
+                /> */}
+
+                <Card
+                    logo={<span className="text-lg font-semibold">{attendanceWindow.isOpen ? "ON" : "OFF"}</span>}
+                    title="Trạng thái điểm danh"
+                    description={attendanceWindow.statusLabel}
                 />
 
                 <div className="rounded-2xl border border-divider bg-background p-5 shadow-sm">
