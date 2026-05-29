@@ -36,7 +36,7 @@ export default function WeeklySchedule({
     hoursStart?: number;
     hoursEnd?: number;
 }) {
-    const dayNames = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ Nhật"];
+    const dayNames = ["Chủ Nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
 
     let displayStart = hoursStart;
     let displayEnd = hoursEnd;

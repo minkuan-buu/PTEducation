@@ -100,7 +100,7 @@ export default function ClassDetailPage() {
                             </Tabs.Tab>
                         </Tabs.List>
                     </Tabs.ListContainer>
-                    <Tabs.Panel id="overview">
+                    <Tabs.Panel className="pt-4" id="overview">
                         <ClassGeneralPanel classId={classId} classData={classData} />
                     </Tabs.Panel>
                     <Tabs.Panel className="pt-4" id="attendance">
