@@ -17,26 +17,117 @@ import type { ClassDetail } from "@/services/api/v2";
 
 import { useAttendanceWindow } from "@/hooks/classes/detail/use-attendance-window";
 import { useClassCalendarIndicators } from "@/hooks/classes/detail/use-class-calendar-indicators";
+import { useClassAttendanceSessions } from "@/hooks/classes/detail/use-class-attendance-sessions";
+import { useAttendanceSessionDetail } from "@/hooks/classes/detail/use-attendance-session-detail";
 
-function formatDateTime(value?: Date | null) {
+const parseDate = (value: string | Date | null) => {
+    if (!value) {
+        return null;
+    }
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) {
+        return null;
+    }
+
+    return date;
+};
+
+const pad2 = (value: number) => value.toString().padStart(2, "0");
+
+const formatDateTime = (value: string | Date | null) => {
+    const date = parseDate(value);
+    if (!date) {
+        return "-";
+    }
+
+    const hours = pad2(date.getHours());
+    const minutes = pad2(date.getMinutes());
+    const day = pad2(date.getDate());
+    const month = pad2(date.getMonth() + 1);
+    const year = date.getFullYear();
+
+    return `${hours}:${minutes}, ${day}/${month}/${year}`;
+};
+
+const formatDateOnly = (value: string | Date | null) => {
+    const date = parseDate(value);
+    if (!date) {
+        return "-";
+    }
+
+    const day = pad2(date.getDate());
+    const month = pad2(date.getMonth() + 1);
+    const year = date.getFullYear();
+
+    return `${day}/${month}/${year}`;
+};
+
+const formatTimeOnly = (value: string | Date | null) => {
     if (!value) {
         return "-";
     }
 
-    return value.toLocaleString("vi-VN", {
-        hour: "2-digit",
-        minute: "2-digit",
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-    });
-}
+    if (typeof value === "string") {
+        const timeMatch = value.trim().match(/^(\d{1,2}):(\d{2})/);
+        if (timeMatch) {
+            const hours = pad2(Number(timeMatch[1]));
+            const minutes = timeMatch[2];
+            return `${hours}:${minutes}`;
+        }
+    }
+
+    const date = parseDate(value);
+    if (!date) {
+        return "-";
+    }
+
+    const hours = pad2(date.getHours());
+    const minutes = pad2(date.getMinutes());
+
+    return `${hours}:${minutes}`;
+};
+
+const formatTimeRange = (start: string | Date | null, end: string | Date | null) => {
+    if (!start && !end) {
+        return "-";
+    }
+
+    if (!start) {
+        return formatTimeOnly(end);
+    }
+
+    if (!end) {
+        return formatTimeOnly(start);
+    }
+
+    return `${formatTimeOnly(start)} - ${formatTimeOnly(end)}`;
+};
+
+const formatSessionType = (value?: string) => {
+    if (!value) {
+        return null;
+    }
+
+    switch (value) {
+        case "makeup":
+            return "Học bù";
+        case "regular":
+            return "Cố định";
+        default:
+            return value;
+    }
+};
 
 export function ClassAttendancePanel({ classId, classData }: { classId: string; classData: ClassDetail }) {
     const attendanceWindow = useAttendanceWindow(classId, classData.nextSession);
     const queryClient = useQueryClient();
     const [calendarValue, setCalendarValue] = useState(() => today(getLocalTimeZone()));
     const [calendarFocusedValue, setCalendarFocusedValue] = useState(() => calendarValue);
+    const selectedDateIso = useMemo(() => calendarValue.toString(), [calendarValue]);
+    const selectedDateLabel = useMemo(
+        () => formatDateOnly(calendarValue.toDate(getLocalTimeZone())),
+        [calendarValue],
+    );
     const calendarRange = useMemo(() => {
         const start = startOfMonth(calendarFocusedValue);
         const end = endOfMonth(calendarFocusedValue);
@@ -61,6 +152,16 @@ export function ClassAttendancePanel({ classId, classData }: { classId: string; 
         () => new Set(indicatorDates),
         [indicatorDates],
     );
+    const {
+        data: attendanceSessions = [],
+        isLoading: isSessionsLoading,
+        isError: isSessionsError,
+    } = useClassAttendanceSessions(classId, selectedDateIso);
+    const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+    const {
+        isLoading: isSessionDetailLoading,
+        isError: isSessionDetailError,
+    } = useAttendanceSessionDetail(selectedSessionId);
 
     useEffect(() => {
         if (!classId) return;
@@ -87,30 +188,37 @@ export function ClassAttendancePanel({ classId, classData }: { classId: string; 
         prefetchMonth(1);
     }, [calendarFocusedValue, classId, queryClient]);
 
-    const connectionTone =
-        attendanceWindow.connectionStatus === "connected"
-            ? "success"
-            : attendanceWindow.connectionStatus === "error"
-                ? "danger"
-                : attendanceWindow.connectionStatus === "reconnecting"
-                    ? "warning"
-                    : "default";
+    useEffect(() => {
+        setSelectedSessionId(null);
+    }, [selectedDateIso]);
+
+    useEffect(() => {
+        if (!selectedSessionId) return;
+
+        const stillExists = attendanceSessions.some(
+            (session) => session.id === selectedSessionId,
+        );
+
+        if (!stillExists) {
+            setSelectedSessionId(null);
+        }
+    }, [attendanceSessions, selectedSessionId]);
 
     return (
         <section className="grid grid-cols-1 gap-6 xl:grid-cols-12">
-            <div className="xl:col-span-4 space-y-4">
+            <div className="xl:col-span-3 space-y-4">
 
-                <div className="rounded-2xl border border-divider bg-background p-4 shadow-sm">
+                <div className="rounded-2xl border border-divider bg-background p-6 shadow-sm">
                     <div className="flex items-center justify-between gap-3">
                         <div>
                             <p className="text-sm font-medium text-muted">Lịch học</p>
-                            <p className="mt-1 text-xs text-muted">Đánh dấu ngày có lịch học hoặc học bù.</p>
                         </div>
                         {isIndicatorsLoading ? <Spinner size="sm" /> : null}
                     </div>
 
-                    <div className="mt-4">
+                    <div className="mt-4 items-center justify-center flex">
                         <Calendar
+                            className="w-full"
                             aria-label="Lịch học"
                             value={calendarValue}
                             onChange={setCalendarValue}
@@ -147,6 +255,9 @@ export function ClassAttendancePanel({ classId, classData }: { classId: string; 
                             </Calendar.Grid>
                         </Calendar>
                     </div>
+                    <Button className="w-full mt-4" variant="outline">
+                        Tạo buổi học mới
+                    </Button>
 
                     {isIndicatorsError ? (
                         <p className="mt-2 text-xs text-danger">
@@ -161,9 +272,9 @@ export function ClassAttendancePanel({ classId, classData }: { classId: string; 
                             <p className="text-sm font-medium text-muted">Mốc mở tiếp theo</p>
                             <p className="mt-1 text-lg font-semibold">{formatDateTime(attendanceWindow.opensAt)}</p>
                         </div>
-                        <Chip color={connectionTone as never} variant="soft">
+                        {/* <Chip color={connectionTone as never} variant="soft">
                             {attendanceWindow.connectionStatus}
-                        </Chip>
+                        </Chip> */}
                     </div>
 
                     <div className="mt-4 rounded-xl bg-muted/40 p-4">
@@ -189,18 +300,79 @@ export function ClassAttendancePanel({ classId, classData }: { classId: string; 
                 </div>
             </div>
 
-            <div className="xl:col-span-8 space-y-4">
+            <div className="xl:col-span-9 space-y-4">
                 {/* <Card
                     logo={<span className="text-lg font-semibold">{classData.totalSessions}</span>}
                     title="Tổng buổi học"
                     description={`${classData.completedSessions} buổi đã diễn ra · ${classData.totalPendingStudent} học sinh đang chờ duyệt`}
                 /> */}
 
-                <Card
+                <div className="rounded-2xl border border-divider bg-background p-5 shadow-sm">
+                    <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                        <div>
+                            <h2 className="text-lg font-semibold">Các lịch học trong ngày {selectedDateLabel}</h2>
+                            {/* <p className="mt-1 text-sm text-muted">{selectedDateLabel}</p> */}
+                        </div>
+                        {isSessionsLoading ? <Spinner size="sm" /> : null}
+                    </div>
+
+                    <div className="mt-4 space-y-3">
+                        {attendanceSessions.length ? (
+                            attendanceSessions.map((session) => {
+                                const chipTone =
+                                    session.status === "Pending" ? "warning" : session.status === "Opening" ? "success" : "default";
+                                const isSelected = selectedSessionId === session.id;
+                                const cardClassName = `w-full text-left rounded-xl border border-divider p-4 transition-all duration-200 ease-out ${isSelected
+                                    ? "border-primary/60 bg-primary/5 shadow-sm ring-1 ring-primary/20"
+                                    : "bg-background"
+                                    } hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md`;
+
+                                return (
+                                    <button
+                                        key={session.id}
+                                        type="button"
+                                        className={cardClassName}
+                                        aria-pressed={isSelected}
+                                        onClick={() => setSelectedSessionId(session.id)}
+                                    >
+                                        <div className="flex items-center justify-between gap-3">
+                                            <div>
+                                                <p className="text-sm font-semibold">
+                                                    {formatTimeRange(session.startTime, session.endTime)}
+                                                </p>
+                                                <p className="mt-1 text-xs text-muted">
+                                                    {session.sessionType === "Makeup" ? "Lịch học bù" : session.sessionType === "Adhoc" ? "Lịch học bổ  sung" : "Lịch học cố định"}
+                                                </p>
+                                            </div>
+                                            {session.status ? (
+                                                <Chip color={chipTone as never} variant="soft">
+                                                    {session.status === "Pending" ? "Chưa mở" : session.status === "Opening" ? "Đang mở" : "Đã đóng"}
+                                                </Chip>
+                                            ) : null}
+                                        </div>
+                                    </button>
+                                );
+                            })
+                        ) : (
+                            <p className="text-sm text-muted">Không có buổi điểm danh trong ngày này.</p>
+                        )}
+                        {isSessionsError ? (
+                            <p className="text-xs text-danger">Không thể tải danh sách buổi điểm danh.</p>
+                        ) : null}
+                        {selectedSessionId && isSessionDetailLoading ? (
+                            <p className="text-xs text-muted">Đang tải chi tiết buổi điểm danh...</p>
+                        ) : null}
+                        {selectedSessionId && isSessionDetailError ? (
+                            <p className="text-xs text-danger">Không thể tải chi tiết buổi điểm danh.</p>
+                        ) : null}
+                    </div>
+                </div>
+
+                {/* <Card
                     logo={<span className="text-lg font-semibold">{attendanceWindow.isOpen ? "ON" : "OFF"}</span>}
                     title="Trạng thái điểm danh"
                     description={attendanceWindow.statusLabel}
-                />
+                /> */}
 
                 <div className="rounded-2xl border border-divider bg-background p-5 shadow-sm">
                     <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">

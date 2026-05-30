@@ -2,7 +2,7 @@
 
 import type { ThemeProviderProps } from "next-themes";
 import { useRouter } from "next/navigation";
-import { toast } from "@heroui/react";
+import { Toast, toast } from "@heroui/react";
 
 import * as React from "react";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
@@ -66,7 +66,10 @@ export function Providers({ children, themeProps }: ProvidersProps) {
     <NextThemesProvider {...themeProps}>
       <TanStackProvider>
         <UserProvider>
-          <AttendanceProvider>{children}</AttendanceProvider>
+          <AttendanceProvider>
+            <Toast.Provider placement="bottom end" />
+            {children}
+          </AttendanceProvider>
         </UserProvider>
       </TanStackProvider>
     </NextThemesProvider>

@@ -8,7 +8,6 @@ import { siteConfig } from "@/config/site";
 import { fontSans } from "@/config/fonts";
 import { Navbar } from "@/components/navbar";
 import { FloatingThemeSwitch } from "@/components/floating-theme-switch";
-import { Toast } from "@heroui/react";
 
 export const metadata: Metadata = {
   title: {
@@ -52,7 +51,6 @@ export default function RootLayout({
         >
           <div className="relative flex flex-col h-screen">
             {/* <Navbar /> */}
-            <Toast.Provider placement="bottom end" />
             <main className="flex-grow w-full">
               {children}
             </main>
