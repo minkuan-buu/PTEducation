@@ -62,7 +62,10 @@ export function useAttendanceWindow(classId: string, nextSession?: string) {
   const [now, setNow] = useState(() => new Date());
   const serverWindow = attendanceRealtime.windowsByClassId[classId] ?? null;
 
-  const opensAt = useMemo(() => parseDateTime(nextSession), [nextSession]);
+  const opensAt = useMemo(
+    () => parseDateTime(serverWindow?.opensAt ?? nextSession),
+    [serverWindow?.opensAt, nextSession],
+  );
   const closesAt = useMemo(
     () => parseDateTime(serverWindow?.closesAt),
     [serverWindow?.closesAt],
