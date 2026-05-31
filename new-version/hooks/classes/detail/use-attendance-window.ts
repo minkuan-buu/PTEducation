@@ -57,14 +57,14 @@ function formatCountdown(ms: number) {
   return `${seconds} giây`;
 }
 
-export function useAttendanceWindow(classId: string, nextSession?: string) {
+export function useAttendanceWindow(classId: string) {
   const attendanceRealtime = useAttendanceRealtime();
   const [now, setNow] = useState(() => new Date());
   const serverWindow = attendanceRealtime.windowsByClassId[classId] ?? null;
 
   const opensAt = useMemo(
-    () => parseDateTime(serverWindow?.opensAt ?? nextSession),
-    [serverWindow?.opensAt, nextSession],
+    () => parseDateTime(serverWindow?.opensAt),
+    [serverWindow?.opensAt],
   );
   const closesAt = useMemo(
     () => parseDateTime(serverWindow?.closesAt),
@@ -87,7 +87,12 @@ export function useAttendanceWindow(classId: string, nextSession?: string) {
 
   useEffect(() => {
     setNow(new Date());
-  }, [classId, attendanceRealtime.connectionStatus]);
+  }, [
+    classId,
+    attendanceRealtime.connectionStatus,
+    serverWindow?.opensAt,
+    serverWindow?.closesAt,
+  ]);
 
   const isOpen =
     serverWindow?.isOpen ??

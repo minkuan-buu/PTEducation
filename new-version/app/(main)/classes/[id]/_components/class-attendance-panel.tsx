@@ -1,9 +1,7 @@
 "use client";
 
-import type { ClassDetail } from "@/services/api/v2";
-
 import { useEffect, useMemo, useState } from "react";
-import { Button, Calendar, Chip, Spinner } from "@heroui/react";
+import { Button, Calendar, Chip, Spinner, Skeleton } from "@heroui/react";
 import {
   endOfMonth,
   getLocalTimeZone,
@@ -13,6 +11,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 
 import { v2 } from "@/services/api";
+import { useAttendanceRealtime } from "@/context/attendance-context";
 import { useAttendanceWindow } from "@/hooks/classes/detail/use-attendance-window";
 import { useClassCalendarIndicators } from "@/hooks/classes/detail/use-class-calendar-indicators";
 import { useClassAttendanceSessions } from "@/hooks/classes/detail/use-class-attendance-sessions";
@@ -110,14 +109,22 @@ const formatTimeRange = (
   return `${formatTimeOnly(start)} - ${formatTimeOnly(end)}`;
 };
 
-export function ClassAttendancePanel({
-  classId,
-  classData,
-}: {
-  classId: string;
-  classData: ClassDetail;
-}) {
-  const attendanceWindow = useAttendanceWindow(classId, classData.nextSession);
+export function ClassAttendancePanel({ classId }: { classId: string }) {
+  const { joinClassGroup, leaveClassGroup } = useAttendanceRealtime();
+  const attendanceWindow = useAttendanceWindow(classId);
+
+  useEffect(() => {
+    if (!classId) {
+      return;
+    }
+
+    void joinClassGroup(classId);
+
+    return () => {
+      void leaveClassGroup(classId);
+    };
+  }, [classId, joinClassGroup, leaveClassGroup]);
+
   const queryClient = useQueryClient();
   const [calendarValue, setCalendarValue] = useState(() =>
     today(getLocalTimeZone()),
@@ -263,78 +270,11 @@ export function ClassAttendancePanel({
           ) : null}
         </div>
 
-        <div className="rounded-2xl border border-divider bg-background p-4 shadow-sm">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-sm font-medium text-muted">Mốc mở tiếp theo</p>
-              <p className="mt-1 text-lg font-semibold">
-                {formatDateTime(attendanceWindow.opensAt)}
-              </p>
-            </div>
-            {/* <Chip color={connectionTone as never} variant="soft">
-                            {attendanceWindow.connectionStatus}
-                        </Chip> */}
-          </div>
-
-          <div className="mt-4 rounded-xl bg-muted/40 p-4">
-            <p className="text-sm text-muted">Đếm ngược</p>
-            <p className="mt-1 text-2xl font-semibold">
-              {attendanceWindow.countdownLabel}
-            </p>
-            <p className="mt-2 text-xs text-muted">
-              Nguồn trạng thái:{" "}
-              {attendanceWindow.source === "signalr"
-                ? "SignalR từ BE"
-                : "đồng hồ FE"}
-            </p>
-          </div>
-
-          <div className="mt-4 flex items-center gap-3">
-            <Button
-              className="flex-1"
-              isDisabled={!attendanceWindow.isOpen}
-              variant={attendanceWindow.isOpen ? "primary" : "secondary"}
-            >
-              {attendanceWindow.isOpen
-                ? "Điểm danh ngay"
-                : "Chưa thể điểm danh"}
-            </Button>
-            {attendanceWindow.connectionStatus === "connecting" ? (
-              <Spinner size="sm" />
-            ) : null}
-          </div>
-
-          {attendanceWindow.closesAt ? (
-            <p className="mt-3 text-xs text-muted">
-              Kết thúc dự kiến: {formatDateTime(attendanceWindow.closesAt)}
-            </p>
-          ) : null}
-          {attendanceWindow.lastUpdatedAt ? (
-            <p className="mt-1 text-xs text-muted">
-              Cập nhật gần nhất:{" "}
-              {formatDateTime(attendanceWindow.lastUpdatedAt)}
-            </p>
-          ) : null}
-          {attendanceWindow.errorMessage ? (
-            <p className="mt-2 text-xs text-danger">
-              {attendanceWindow.errorMessage}
-            </p>
-          ) : null}
-        </div>
-      </div>
-
-      <div className="xl:col-span-9 space-y-4">
-        {/* <Card
-                    logo={<span className="text-lg font-semibold">{classData.totalSessions}</span>}
-                    title="Tổng buổi học"
-                    description={`${classData.completedSessions} buổi đã diễn ra · ${classData.totalPendingStudent} học sinh đang chờ duyệt`}
-                /> */}
-
-        <div className="rounded-2xl border border-divider bg-background p-5 shadow-sm">
+         <div className="rounded-2xl border border-divider bg-background p-5 shadow-sm">
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div>
               <h2 className="text-lg font-semibold">
-                Các lịch học trong ngày {selectedDateLabel}
+                Các buổi học trong ngày {selectedDateLabel}
               </h2>
               {/* <p className="mt-1 text-sm text-muted">{selectedDateLabel}</p> */}
             </div>
@@ -372,10 +312,10 @@ export function ClassAttendancePanel({
                         </p>
                         <p className="mt-1 text-xs text-muted">
                           {session.sessionType === "Makeup"
-                            ? "Lịch học bù"
+                            ? "Buổi học bù"
                             : session.sessionType === "Adhoc"
-                              ? "Lịch học bổ  sung"
-                              : "Lịch học cố định"}
+                              ? "Buổi học bổ  sung"
+                              : "Buổi học cố định"}
                         </p>
                       </div>
                       {session.status ? (
@@ -412,6 +352,93 @@ export function ClassAttendancePanel({
               </p>
             ) : null}
           </div>
+        </div>
+      </div>
+
+      <div className="xl:col-span-9 space-y-4">
+        {/* <Card
+                    logo={<span className="text-lg font-semibold">{classData.totalSessions}</span>}
+                    title="Tổng buổi học"
+                    description={`${classData.completedSessions} buổi đã diễn ra · ${classData.totalPendingStudent} học sinh đang chờ duyệt`}
+                /> */}
+
+        <div className="rounded-2xl border border-divider bg-background p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-muted">Buổi học tiếp theo</p>
+              
+                {attendanceWindow.opensAt
+                  ? (<p className="mt-1 text-lg font-semibold">{formatDateTime(attendanceWindow.opensAt)}</p>)
+                  : (
+                  <div className="space-y-3">
+                    <Skeleton className="h-3 w-2/5 rounded-lg" />
+                    <Skeleton className="h-3 w-4/5 rounded-lg" />
+                  </div>
+                  )}
+              
+            </div>
+            {/* <Chip color={connectionTone as never} variant="soft">
+                            {attendanceWindow.connectionStatus}
+                        </Chip> */}
+          </div>
+
+          {(() => {
+            const ONE_HOUR = 60 * 60 * 1000;
+            const shows =
+              attendanceWindow.opensAt &&
+              (attendanceWindow.isOpen ||
+                attendanceWindow.opensAt.getTime() - Date.now() <= ONE_HOUR);
+
+            if (!shows) return null;
+
+            return (
+              <div className="mt-4 rounded-xl bg-muted/40 p-4">
+                <p className="text-sm text-muted">Đếm ngược</p>
+                <p className="mt-1 text-xl font-semibold">
+                  {attendanceWindow.opensAt
+                    ? attendanceWindow.countdownLabel
+                    : (
+                    <div className="space-y-3">
+                      <Skeleton className="h-3 w-2/5 rounded-lg" />
+                      <Skeleton className="h-3 w-4/5 rounded-lg" />
+                    </div>
+                  )}
+                </p>
+              </div>
+            );
+          })()}
+
+          {/* <div className="mt-4 flex items-center gap-3">
+            <Button
+              className="flex-1"
+              isDisabled={!attendanceWindow.isOpen}
+              variant={attendanceWindow.isOpen ? "primary" : "secondary"}
+            >
+              {attendanceWindow.isOpen
+                ? "Điểm danh ngay"
+                : "Chưa thể điểm danh"}
+            </Button>
+            {attendanceWindow.connectionStatus === "connecting" ? (
+              <Spinner size="sm" />
+            ) : null}
+          </div> */}
+
+          {attendanceWindow.closesAt ? (
+            <p className="mt-3 text-xs text-muted">
+              Kết thúc dự kiến: {formatDateTime(attendanceWindow.closesAt)}
+            </p>
+          ) : null}
+          {attendanceWindow.lastUpdatedAt ? (
+            <p className="mt-1 text-xs text-muted">
+              Cập nhật gần nhất:{" "}
+              {formatDateTime(attendanceWindow.lastUpdatedAt)}
+            </p>
+          ) : null}
+          {attendanceWindow.errorMessage ? (
+            <p className="mt-2 text-xs text-danger">
+              {attendanceWindow.errorMessage}
+            </p>
+          ) : null}
         </div>
 
         {/* <Card
