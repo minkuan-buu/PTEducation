@@ -1,22 +1,205 @@
-import { Modal, Button } from "@heroui/react";
+import { useEffect, useState } from "react";
 
-const CreateAttendanceModal = () => {
+import { Button, Modal } from "@heroui/react";
+
+type AttendanceSessionType = "Adhoc" | "Makeup";
+
+type CreateAttendanceModalProps = {
+  isOpen: boolean;
+  handleOpenChange: (isOpen: boolean) => void;
+  handleCloseModal: () => void;
+  defaultDate?: string;
+};
+
+type AttendanceFormState = {
+  date: string;
+  startTime: string;
+  endTime: string;
+  sessionType: AttendanceSessionType;
+  note: string;
+};
+
+const getTodayDate = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+};
+
+const createInitialForm = (defaultDate?: string): AttendanceFormState => ({
+  date: defaultDate ?? getTodayDate(),
+  startTime: "",
+  endTime: "",
+  sessionType: "Adhoc",
+  note: "",
+});
+
+const isEndTimeAfterStartTime = (startTime: string, endTime: string) => {
+  if (!startTime || !endTime) {
+    return true;
+  }
+
+  return endTime > startTime;
+};
+
+const CreateAttendanceModal = ({
+  isOpen,
+  handleOpenChange,
+  handleCloseModal,
+  defaultDate,
+}: CreateAttendanceModalProps) => {
+  const [form, setForm] = useState<AttendanceFormState>(() =>
+    createInitialForm(defaultDate),
+  );
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    setForm(createInitialForm(defaultDate));
+  }, [defaultDate, isOpen]);
+
+  useEffect(() => {
+    if (form.sessionType === "Makeup") {
+      return;
+    }
+
+    if (form.note) {
+      setForm((current) => ({ ...current, note: "" }));
+    }
+  }, [form.note, form.sessionType]);
+
+  const updateField = <K extends keyof AttendanceFormState>(
+    field: K,
+    value: AttendanceFormState[K],
+  ) => {
+    setForm((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  };
+
+  const handleSubmit = () => {
+    handleCloseModal();
+  };
+
+  const isEndTimeValid = isEndTimeAfterStartTime(form.startTime, form.endTime);
+
   return (
     <Modal>
       <Modal.Backdrop isOpen={isOpen} onOpenChange={handleOpenChange}>
         <Modal.Container size="lg">
           <Modal.Dialog>
             <Modal.Header>
-              <Modal.Heading>Chỉnh sửa lịch học</Modal.Heading>
+              <Modal.Heading>Tạo buổi học mới</Modal.Heading>
             </Modal.Header>
             <Modal.Body className="px-2">
-              <div className="mt-4 flex flex-col gap-4"></div>
+              <form
+                className="mt-4 flex flex-col gap-4"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  handleSubmit();
+                }}
+              >
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <label className="flex flex-col gap-2 text-sm font-medium text-foreground">
+                    Ngày
+                    <input
+                      className="h-11 rounded-xl border border-divider bg-background px-3 text-sm outline-none transition-colors focus:border-primary"
+                      type="date"
+                      value={form.date}
+                      onChange={(event) =>
+                        updateField("date", event.target.value)
+                      }
+                    />
+                  </label>
+
+                  <label className="flex flex-col gap-2 text-sm font-medium text-foreground">
+                    Loại buổi học
+                    <select
+                      className="h-11 rounded-xl border border-divider bg-background px-3 text-sm outline-none transition-colors focus:border-primary"
+                      value={form.sessionType}
+                      onChange={(event) =>
+                        updateField(
+                          "sessionType",
+                          event.target.value as AttendanceSessionType,
+                        )
+                      }
+                    >
+                      <option value="Adhoc">Bổ sung</option>
+                      <option value="Makeup">Bù</option>
+                    </select>
+                  </label>
+
+                  <label className="flex flex-col gap-2 text-sm font-medium text-foreground">
+                    Giờ bắt đầu
+                    <input
+                      className="h-11 rounded-xl border border-divider bg-background px-3 text-sm outline-none transition-colors focus:border-primary"
+                      type="time"
+                      value={form.startTime}
+                      onChange={(event) =>
+                        updateField("startTime", event.target.value)
+                      }
+                    />
+                  </label>
+
+                  <label className="flex flex-col gap-2 text-sm font-medium text-foreground">
+                    Giờ kết thúc
+                    <input
+                      className="h-11 rounded-xl border border-divider bg-background px-3 text-sm outline-none transition-colors focus:border-primary"
+                      type="time"
+                      min={form.startTime || undefined}
+                      value={form.endTime}
+                      onChange={(event) =>
+                        updateField("endTime", event.target.value)
+                      }
+                    />
+                    {!isEndTimeValid ? (
+                      <span className="text-xs font-normal text-danger">
+                        Giờ kết thúc phải sau giờ bắt đầu.
+                      </span>
+                    ) : null}
+                  </label>
+                </div>
+
+                {form.sessionType === "Makeup" ? (
+                  <label className="flex flex-col gap-2 text-sm font-medium text-foreground">
+                    Note
+                    <input
+                      className="h-11 rounded-xl border border-divider bg-background px-3 text-sm outline-none transition-colors focus:border-primary"
+                      type="date"
+                      value={form.note}
+                      onChange={(event) =>
+                        updateField("note", event.target.value)
+                      }
+                    />
+                    {/* <span className="text-xs font-normal text-muted">
+                      Chỉ hiển thị khi chọn Makeup.
+                    </span> */}
+                  </label>
+                ) : null}
+              </form>
             </Modal.Body>
             <Modal.Footer>
               <Button variant="ghost" onPress={handleCloseModal}>
                 Hủy
               </Button>
-              <Button variant="primary">Chỉnh sửa</Button>
+              <Button
+                variant="primary"
+                isDisabled={
+                  !form.date ||
+                  !form.startTime ||
+                  !form.endTime ||
+                  !isEndTimeValid ||
+                  (form.sessionType === "Makeup" && !form.note)
+                }
+                onPress={handleSubmit}
+              >
+                Tạo buổi học
+              </Button>
             </Modal.Footer>
           </Modal.Dialog>
         </Modal.Container>

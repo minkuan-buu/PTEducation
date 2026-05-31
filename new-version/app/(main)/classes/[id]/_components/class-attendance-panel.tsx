@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Button, Calendar, Chip, Spinner, Skeleton } from "@heroui/react";
+import {
+  Button,
+  Calendar,
+  Chip,
+  Spinner,
+  Skeleton,
+  useOverlayState,
+} from "@heroui/react";
 import {
   endOfMonth,
   getLocalTimeZone,
@@ -16,6 +23,7 @@ import { useAttendanceWindow } from "@/hooks/classes/detail/use-attendance-windo
 import { useClassCalendarIndicators } from "@/hooks/classes/detail/use-class-calendar-indicators";
 import { useClassAttendanceSessions } from "@/hooks/classes/detail/use-class-attendance-sessions";
 import { useAttendanceSessionDetail } from "@/hooks/classes/detail/use-attendance-session-detail";
+import CreateAttendanceModal from "./create-attendance-modal";
 
 const parseDate = (value: string | Date | null) => {
   if (!value) {
@@ -112,6 +120,7 @@ const formatTimeRange = (
 export function ClassAttendancePanel({ classId }: { classId: string }) {
   const { joinClassGroup, leaveClassGroup } = useAttendanceRealtime();
   const attendanceWindow = useAttendanceWindow(classId);
+  const { isOpen, setOpen, close } = useOverlayState();
 
   useEffect(() => {
     if (!classId) {
@@ -213,6 +222,10 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
     }
   }, [attendanceSessions, selectedSessionId]);
 
+  const handleOpenChange = setOpen;
+
+  const handleCloseModal = close;
+
   return (
     <section className="grid grid-cols-1 gap-6 xl:grid-cols-12">
       <div className="xl:col-span-3 space-y-4">
@@ -261,16 +274,26 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
               </Calendar.Grid>
             </Calendar>
           </div>
-          <Button className="w-full mt-4" variant="outline">
+          <Button
+            className="w-full mt-4"
+            variant="outline"
+            onPress={() => setOpen(true)}
+          >
             Tạo buổi học mới
           </Button>
+          <CreateAttendanceModal
+            isOpen={isOpen}
+            handleOpenChange={setOpen}
+            handleCloseModal={close}
+            defaultDate={selectedDateIso}
+          />
 
           {isIndicatorsError ? (
             <p className="mt-2 text-xs text-danger">Không thể tải lịch học.</p>
           ) : null}
         </div>
 
-         <div className="rounded-2xl border border-divider bg-background p-5 shadow-sm">
+        <div className="rounded-2xl border border-divider bg-background p-5 shadow-sm">
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div>
               <h2 className="text-lg font-semibold">
@@ -365,17 +388,20 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
         <div className="rounded-2xl border border-divider bg-background p-4 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-medium text-muted">Buổi học tiếp theo</p>
-              
-                {attendanceWindow.opensAt
-                  ? (<p className="mt-1 text-lg font-semibold">{formatDateTime(attendanceWindow.opensAt)}</p>)
-                  : (
-                  <div className="space-y-3">
-                    <Skeleton className="h-3 w-2/5 rounded-lg" />
-                    <Skeleton className="h-3 w-4/5 rounded-lg" />
-                  </div>
-                  )}
-              
+              <p className="text-sm font-medium text-muted">
+                Buổi học tiếp theo
+              </p>
+
+              {attendanceWindow.opensAt ? (
+                <p className="mt-1 text-lg font-semibold">
+                  {formatDateTime(attendanceWindow.opensAt)}
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  <Skeleton className="h-3 w-2/5 rounded-lg" />
+                  <Skeleton className="h-3 w-4/5 rounded-lg" />
+                </div>
+              )}
             </div>
             {/* <Chip color={connectionTone as never} variant="soft">
                             {attendanceWindow.connectionStatus}
@@ -395,9 +421,9 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
               <div className="mt-4 rounded-xl bg-muted/40 p-4">
                 <p className="text-sm text-muted">Đếm ngược</p>
                 <p className="mt-1 text-xl font-semibold">
-                  {attendanceWindow.opensAt
-                    ? attendanceWindow.countdownLabel
-                    : (
+                  {attendanceWindow.opensAt ? (
+                    attendanceWindow.countdownLabel
+                  ) : (
                     <div className="space-y-3">
                       <Skeleton className="h-3 w-2/5 rounded-lg" />
                       <Skeleton className="h-3 w-4/5 rounded-lg" />
