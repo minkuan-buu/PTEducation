@@ -54,7 +54,7 @@ export default function AuthClient({ classOptions, nextPath }: AuthClientProps) 
         setIsMounted(true);
     }, []);
 
-    const getInputVariant = () => {
+    const getInputVariant = (): "primary" | "secondary" | undefined => {
         return isMounted && resolvedTheme === "dark" ? "secondary" : undefined;
     };
 

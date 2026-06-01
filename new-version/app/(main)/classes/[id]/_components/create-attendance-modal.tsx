@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { Button, Modal } from "@heroui/react";
+import { Button, Input, ListBox, Modal, Select } from "@heroui/react";
 
 type AttendanceSessionType = "Adhoc" | "Makeup";
 
@@ -107,37 +107,61 @@ const CreateAttendanceModal = ({
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <label className="flex flex-col gap-2 text-sm font-medium text-foreground">
                     Ngày
-                    <input
+                    <Input
+                      className="rounded-xl border border-divider bg-background px-3 text-sm outline-none transition-colors focus:border-primary"
+                      type="date"
+                      placeholder="Ngày bắt đầu"
+                      value={form.date}
+                      onChange={(e) => updateField("date", e.target.value)}
+                    />
+                    {/* <input
                       className="h-11 rounded-xl border border-divider bg-background px-3 text-sm outline-none transition-colors focus:border-primary"
                       type="date"
                       value={form.date}
                       onChange={(event) =>
                         updateField("date", event.target.value)
                       }
-                    />
+                    /> */}
                   </label>
 
                   <label className="flex flex-col gap-2 text-sm font-medium text-foreground">
                     Loại buổi học
-                    <select
-                      className="h-11 rounded-xl border border-divider bg-background px-3 text-sm outline-none transition-colors focus:border-primary"
+                    <Select
+                      className="w-full"
+                      placeholder="Chọn loại buổi học"
                       value={form.sessionType}
-                      onChange={(event) =>
-                        updateField(
-                          "sessionType",
-                          event.target.value as AttendanceSessionType,
-                        )
-                      }
+                      onChange={(value) => {
+                        if (value !== null) {
+                          updateField(
+                            "sessionType",
+                            String(value) as AttendanceSessionType,
+                          );
+                        }
+                      }}
                     >
-                      <option value="Adhoc">Bổ sung</option>
-                      <option value="Makeup">Bù</option>
-                    </select>
+                      <Select.Trigger>
+                        <Select.Value />
+                        <Select.Indicator />
+                      </Select.Trigger>
+                      <Select.Popover>
+                        <ListBox>
+                          <ListBox.Item id="Adhoc" textValue="Bổ sung">
+                            Bổ sung
+                            <ListBox.ItemIndicator />
+                          </ListBox.Item>
+                          <ListBox.Item id="Makeup" textValue="Bù">
+                            Bù
+                            <ListBox.ItemIndicator />
+                          </ListBox.Item>
+                        </ListBox>
+                      </Select.Popover>
+                    </Select>
                   </label>
 
                   <label className="flex flex-col gap-2 text-sm font-medium text-foreground">
                     Giờ bắt đầu
                     <input
-                      className="h-11 rounded-xl border border-divider bg-background px-3 text-sm outline-none transition-colors focus:border-primary"
+                      className="w-full rounded-lg border border-divider bg-background px-3 py-2 text-sm"
                       type="time"
                       value={form.startTime}
                       onChange={(event) =>
@@ -149,7 +173,7 @@ const CreateAttendanceModal = ({
                   <label className="flex flex-col gap-2 text-sm font-medium text-foreground">
                     Giờ kết thúc
                     <input
-                      className="h-11 rounded-xl border border-divider bg-background px-3 text-sm outline-none transition-colors focus:border-primary"
+                      className="w-full rounded-lg border border-divider bg-background px-3 py-2 text-sm"
                       type="time"
                       min={form.startTime || undefined}
                       value={form.endTime}
