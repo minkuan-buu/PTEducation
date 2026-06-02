@@ -98,7 +98,7 @@ const CreateAttendanceModal = ({
             </Modal.Header>
             <Modal.Body className="px-2">
               <form
-                className="mt-4 flex flex-col gap-4"
+                className="my-4 flex flex-col gap-4"
                 onSubmit={(event) => {
                   event.preventDefault();
                   handleSubmit();
@@ -192,7 +192,7 @@ const CreateAttendanceModal = ({
                 {form.sessionType === "Makeup" ? (
                   <label className="flex flex-col gap-2 text-sm font-medium text-foreground">
                     Note
-                    <input
+                    <Input
                       className="h-11 rounded-xl border border-divider bg-background px-3 text-sm outline-none transition-colors focus:border-primary"
                       type="date"
                       value={form.note}
