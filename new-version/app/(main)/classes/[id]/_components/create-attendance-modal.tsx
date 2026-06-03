@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { Button, Input, ListBox, Modal, Select } from "@heroui/react";
+import { useCreateAttendance } from "@/hooks/classes/attendance/use-create-attendance";
 
 type AttendanceSessionType = "Adhoc" | "Makeup";
 
@@ -9,6 +10,7 @@ type CreateAttendanceModalProps = {
   handleOpenChange: (isOpen: boolean) => void;
   handleCloseModal: () => void;
   defaultDate?: string;
+  classId: string;
 };
 
 type AttendanceFormState = {
@@ -49,6 +51,7 @@ const CreateAttendanceModal = ({
   handleOpenChange,
   handleCloseModal,
   defaultDate,
+  classId,
 }: CreateAttendanceModalProps) => {
   const [form, setForm] = useState<AttendanceFormState>(() =>
     createInitialForm(defaultDate),
@@ -82,8 +85,44 @@ const CreateAttendanceModal = ({
     }));
   };
 
+  const { mutate, isPending, isSuccess } = useCreateAttendance(
+    () => hanleCreateSuccess(),
+    classId,
+  );
+
   const handleSubmit = () => {
+    if (!form.date || !form.startTime || !form.endTime) {
+      alert("Vui lòng nhập đầy đủ thông tin.");
+      return;
+    }
+
+    if (!isEndTimeAfterStartTime(form.startTime, form.endTime)) {
+      alert("Giờ kết thúc phải sau giờ bắt đầu.");
+      return;
+    }
+
+    if (form.sessionType === "Makeup" && !form.note) {
+      alert("Vui lòng nhập note cho buổi học bù.");
+      return;
+    }
+
+    try {
+      mutate({
+        date: form.date,
+        startTime: form.startTime,
+        endTime: form.endTime,
+        sessionType: form.sessionType,
+        note: form.note,
+      });
+    } catch (error) {
+      console.error("Failed to create attendance session:", error);
+    }
+  };
+
+  const hanleCreateSuccess = () => {
     handleCloseModal();
+    setForm(createInitialForm(defaultDate));
+    close();
   };
 
   const isEndTimeValid = isEndTimeAfterStartTime(form.startTime, form.endTime);

@@ -10,6 +10,14 @@ export type ClassAttendanceSession = {
   status?: string;
 };
 
+export type CreateAttendancePayload = {
+  date: string;
+  startTime: string;
+  endTime: string;
+  sessionType: string;
+  note?: string;
+};
+
 type AttendanceSessionsResponse =
   | ClassAttendanceSession[]
   | ApiResponse<ClassAttendanceSession[]>
@@ -75,6 +83,17 @@ export async function getAttendanceSessionDetail(attendanceId: string) {
   const response = await api.get<AttendanceSessionDetailResponse>(
     `/attendances/${encodeURIComponent(attendanceId)}`,
   );
+
+  return normalizeAttendanceSessionDetail(response.data);
+}
+
+export async function createAttendance(
+  payload: CreateAttendancePayload,
+  classId: string,
+) {
+  const response = await api.post<
+    ClassAttendanceSession | ApiResponse<ClassAttendanceSession>
+  >(`/attendances/classes/${encodeURIComponent(classId)}`, payload);
 
   return normalizeAttendanceSessionDetail(response.data);
 }

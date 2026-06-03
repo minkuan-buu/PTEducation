@@ -286,6 +286,7 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
             handleOpenChange={setOpen}
             handleCloseModal={close}
             defaultDate={selectedDateIso}
+            classId={classId}
           />
 
           {isIndicatorsError ? (
