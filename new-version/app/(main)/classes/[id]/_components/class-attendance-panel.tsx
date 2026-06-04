@@ -5,6 +5,7 @@ import {
   Button,
   Calendar,
   Chip,
+  Input,
   Spinner,
   Skeleton,
   useOverlayState,
@@ -135,6 +136,7 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
   }, [classId, joinClassGroup, leaveClassGroup]);
 
   const queryClient = useQueryClient();
+  const [studentKeyword, setStudentKeyword] = useState("");
   const [calendarValue, setCalendarValue] = useState(() =>
     today(getLocalTimeZone()),
   );
@@ -178,8 +180,11 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(
     null,
   );
-  const { isLoading: isSessionDetailLoading, isError: isSessionDetailError } =
-    useAttendanceSessionDetail(selectedSessionId);
+  const {
+    data: selectedSessionDetail,
+    isLoading: isSessionDetailLoading,
+    isError: isSessionDetailError,
+  } = useAttendanceSessionDetail(selectedSessionId);
 
   useEffect(() => {
     if (!classId) return;
@@ -222,9 +227,31 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
     }
   }, [attendanceSessions, selectedSessionId]);
 
-  const handleOpenChange = setOpen;
-
   const handleCloseModal = close;
+  const roster = selectedSessionDetail?.attendanceDetails ?? [];
+  const filteredRoster = useMemo(() => {
+    const keyword = studentKeyword.trim().toLowerCase();
+
+    if (!keyword) {
+      return roster;
+    }
+
+    return roster.filter((student) => {
+      return (
+        student.studentName.toLowerCase().includes(keyword) ||
+        student.studentId.toLowerCase().includes(keyword) ||
+        student.attendanceStatus.toLowerCase().includes(keyword)
+      );
+    });
+  }, [roster, studentKeyword]);
+
+  const getStudentInitials = (name: string) =>
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() ?? "")
+      .join("") || "HS";
 
   return (
     <section className="grid grid-cols-1 gap-6 xl:grid-cols-12">
@@ -511,6 +538,123 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
               </p>
             </div>
           </div>
+        </div>
+
+        <div className="rounded-2xl border border-divider bg-background p-5 shadow-sm">
+          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-muted">
+                Danh sách học sinh để chấm điểm danh
+              </p>
+              <h2 className="text-lg font-semibold">Roster buổi học đã chọn</h2>
+              <p className="text-sm text-muted">
+                Roster được lấy trực tiếp từ detail endpoint của session, nên
+                không cần gọi thêm API danh sách học sinh lớp.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Chip color="default" variant="soft">
+                {filteredRoster.length} học sinh
+              </Chip>
+              <Chip color="success" variant="soft">
+                Sẵn sàng chấm
+              </Chip>
+            </div>
+          </div>
+
+          <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <Input
+              aria-label="Tìm học sinh"
+              className="md:max-w-sm"
+              placeholder="Tìm theo tên, mã, trạng thái"
+              value={studentKeyword}
+              onChange={(event) => setStudentKeyword(event.target.value)}
+            />
+            <p className="text-xs text-muted">
+              Detail endpoint đã trả roster đầy đủ. FE chỉ lọc nhanh theo tên,
+              mã hoặc trạng thái.
+            </p>
+          </div>
+
+          <div className="mt-4 space-y-3">
+            {!selectedSessionId ? (
+              <div className="rounded-2xl border border-dashed border-divider p-5 text-sm text-muted">
+                Chọn một buổi học ở cột trái để xem roster và trạng thái điểm
+                danh.
+              </div>
+            ) : isSessionDetailLoading ? (
+              <div className="space-y-3">
+                <Skeleton className="h-20 rounded-2xl" />
+                <Skeleton className="h-20 rounded-2xl" />
+                <Skeleton className="h-20 rounded-2xl" />
+              </div>
+            ) : filteredRoster.length ? (
+              filteredRoster.map((student) => {
+                const statusTone =
+                  student.attendanceStatus === "Present"
+                    ? "success"
+                    : student.attendanceStatus === "Late"
+                      ? "warning"
+                      : student.attendanceStatus === "Absent"
+                        ? "danger"
+                        : "default";
+
+                return (
+                  <div
+                    key={student.studentClassId}
+                    className="rounded-2xl border border-divider bg-background p-4 transition-shadow hover:shadow-sm"
+                  >
+                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="flex size-11 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+                          {getStudentInitials(student.studentName)}
+                        </div>
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="font-semibold text-foreground">
+                              {student.studentName}
+                            </p>
+                            <Chip color={statusTone as never} variant="soft">
+                              {student.attendanceStatus}
+                            </Chip>
+                          </div>
+                          <p className="mt-1 text-xs text-muted">
+                            {student.studentId}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 rounded-xl border border-divider p-3">
+                      <p className="text-xs uppercase tracking-wide text-muted">
+                        Ghi chú
+                      </p>
+                      <p className="mt-2 text-sm text-foreground">
+                        Nếu cần mở rộng, backend có thể trả thêm liên hệ chính
+                        hoặc lý do vắng ở endpoint riêng.
+                      </p>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="rounded-2xl border border-dashed border-divider p-5 text-sm text-muted">
+                Không tìm thấy học sinh phù hợp trong buổi học này.
+              </div>
+            )}
+
+            {isSessionDetailError ? (
+              <p className="text-xs text-danger">
+                Không thể tải chi tiết buổi học.
+              </p>
+            ) : null}
+          </div>
+
+          <p className="mt-3 text-xs text-muted">
+            Khi backend trả thêm trạng thái chấm thật theo học sinh, UI này chỉ
+            cần đổi mapping trạng thái mà không phải thay layout.
+          </p>
         </div>
       </div>
     </section>

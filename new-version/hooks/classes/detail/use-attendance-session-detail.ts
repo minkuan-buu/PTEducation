@@ -1,9 +1,10 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 import { v2 } from "@/services/api";
+import type { AttendanceSessionDetail } from "@/services/api/v2/attendances";
 
 export function useAttendanceSessionDetail(attendanceId: string | null) {
-  return useQuery({
+  return useQuery<AttendanceSessionDetail | null>({
     queryKey: ["attendance-session-detail", attendanceId],
     queryFn: () => v2.getAttendanceSessionDetail(attendanceId ?? ""),
     enabled: Boolean(attendanceId),

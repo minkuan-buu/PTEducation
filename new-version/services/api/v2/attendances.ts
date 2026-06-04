@@ -10,6 +10,26 @@ export type ClassAttendanceSession = {
   status?: string;
 };
 
+export type AttendanceSessionDetailStudent = {
+  studentClassId: string;
+  studentId: string;
+  studentName: string;
+  attendanceStatus: string;
+};
+
+export type AttendanceSessionDetail = {
+  session: {
+    id: string;
+    date: string;
+    startTime: string;
+    endTime: string;
+    sessionType: string;
+    status: string;
+    note: string | null;
+  };
+  attendanceDetails: AttendanceSessionDetailStudent[];
+};
+
 export type CreateAttendancePayload = {
   date: string;
   startTime: string;
@@ -24,9 +44,9 @@ type AttendanceSessionsResponse =
   | { data: ClassAttendanceSession[] };
 
 type AttendanceSessionDetailResponse =
-  | ClassAttendanceSession
-  | ApiResponse<ClassAttendanceSession>
-  | { data: ClassAttendanceSession };
+  | AttendanceSessionDetail
+  | ApiResponse<AttendanceSessionDetail>
+  | { data: AttendanceSessionDetail };
 
 function normalizeAttendanceSessions(
   payload: AttendanceSessionsResponse,
@@ -44,12 +64,12 @@ function normalizeAttendanceSessions(
 
 function normalizeAttendanceSessionDetail(
   payload: AttendanceSessionDetailResponse,
-): ClassAttendanceSession | null {
+): AttendanceSessionDetail | null {
   if (payload && typeof payload === "object" && "data" in payload) {
     return payload.data ?? null;
   }
 
-  return payload as ClassAttendanceSession;
+  return payload as AttendanceSessionDetail;
 }
 const api = createApiClient("v2");
 
@@ -91,9 +111,5 @@ export async function createAttendance(
   payload: CreateAttendancePayload,
   classId: string,
 ) {
-  const response = await api.post<
-    ClassAttendanceSession | ApiResponse<ClassAttendanceSession>
-  >(`/attendances/classes/${encodeURIComponent(classId)}`, payload);
-
-  return normalizeAttendanceSessionDetail(response.data);
+  await api.post(`/attendances/classes/${encodeURIComponent(classId)}`, payload);
 }
