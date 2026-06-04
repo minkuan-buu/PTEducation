@@ -111,5 +111,8 @@ export async function createAttendance(
   payload: CreateAttendancePayload,
   classId: string,
 ) {
-  await api.post(`/attendances/classes/${encodeURIComponent(classId)}`, payload);
+  await api.post(
+    `/attendances/classes/${encodeURIComponent(classId)}`,
+    payload,
+  );
 }
