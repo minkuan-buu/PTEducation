@@ -229,6 +229,7 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
 
   const handleCloseModal = close;
   const roster = selectedSessionDetail?.attendanceDetails ?? [];
+  const sessionStatus = selectedSessionDetail?.session?.status ?? null;
   const filteredRoster = useMemo(() => {
     const keyword = studentKeyword.trim().toLowerCase();
 
@@ -255,7 +256,7 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
 
   return (
     <section className="grid grid-cols-1 gap-6 xl:grid-cols-12">
-      <div className="xl:col-span-3 space-y-4">
+      <div className="xl:col-span-3 space-y-4 h-full">
         <div className="rounded-2xl border border-divider bg-background p-6 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <div>
@@ -342,11 +343,10 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
                       ? "success"
                       : "default";
                 const isSelected = selectedSessionId === session.id;
-                const cardClassName = `w-full text-left rounded-xl border border-divider p-4 transition-all duration-200 ease-out ${
-                  isSelected
-                    ? "border-primary/60 bg-primary/5 shadow-sm ring-1 ring-primary/20"
-                    : "bg-background"
-                } hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md`;
+                const cardClassName = `w-full text-left rounded-xl border border-divider p-4 transition-all duration-200 ease-out ${isSelected
+                  ? "border-primary/60 bg-primary/5 shadow-sm ring-1 ring-primary/20"
+                  : "bg-background"
+                  } hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md`;
 
                 return (
                   <button
@@ -406,7 +406,7 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
         </div>
       </div>
 
-      <div className="xl:col-span-9 space-y-4">
+      <div className="xl:col-span-9 space-y-4 h-full flex flex-col">
         {/* <Card
                     logo={<span className="text-lg font-semibold">{classData.totalSessions}</span>}
                     title="Tổng buổi học"
@@ -425,10 +425,13 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
                   {formatDateTime(attendanceWindow.opensAt)}
                 </p>
               ) : (
-                <div className="space-y-3">
-                  <Skeleton className="h-3 w-2/5 rounded-lg" />
-                  <Skeleton className="h-3 w-4/5 rounded-lg" />
-                </div>
+                // <div className="space-y-3">
+                //   <Skeleton className="h-3 w-2/5 rounded-lg" />
+                //   <Skeleton className="h-3 w-4/5 rounded-lg" />
+                // </div>
+                <p className="mt-1 text-lg font-semibold">
+                  Chưa có buổi học tiếp theo
+                </p>
               )}
             </div>
             {/* <Chip color={connectionTone as never} variant="soft">
@@ -501,7 +504,7 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
                     description={attendanceWindow.statusLabel}
                 /> */}
 
-        <div className="rounded-2xl border border-divider bg-background p-5 shadow-sm">
+        {/* <div className="rounded-2xl border border-divider bg-background p-5 shadow-sm">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
               <h2 className="text-lg font-semibold">Điểm danh realtime</h2>
@@ -538,124 +541,130 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
               </p>
             </div>
           </div>
-        </div>
+        </div> */}
 
-        <div className="rounded-2xl border border-divider bg-background p-5 shadow-sm">
-          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-muted">
-                Danh sách học sinh để chấm điểm danh
-              </p>
-              <h2 className="text-lg font-semibold">Roster buổi học đã chọn</h2>
-              <p className="text-sm text-muted">
-                Roster được lấy trực tiếp từ detail endpoint của session, nên
-                không cần gọi thêm API danh sách học sinh lớp.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <Chip color="default" variant="soft">
-                {filteredRoster.length} học sinh
-              </Chip>
-              <Chip color="success" variant="soft">
-                Sẵn sàng chấm
-              </Chip>
-            </div>
+        {!selectedSessionId ? (
+          <div className="flex-1 flex justify-center items-center gap-2 text-xl text-muted">
+            <p>Chọn một buổi học ở cột trái để xem trạng thái điểm danh.</p>
           </div>
-
-          <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <Input
-              aria-label="Tìm học sinh"
-              className="md:max-w-sm"
-              placeholder="Tìm theo tên, mã, trạng thái"
-              value={studentKeyword}
-              onChange={(event) => setStudentKeyword(event.target.value)}
-            />
-            <p className="text-xs text-muted">
-              Detail endpoint đã trả roster đầy đủ. FE chỉ lọc nhanh theo tên,
-              mã hoặc trạng thái.
-            </p>
-          </div>
-
-          <div className="mt-4 space-y-3">
-            {!selectedSessionId ? (
-              <div className="rounded-2xl border border-dashed border-divider p-5 text-sm text-muted">
-                Chọn một buổi học ở cột trái để xem roster và trạng thái điểm
-                danh.
+        ) : (
+          <div className="rounded-2xl border border-divider bg-background p-5 shadow-sm">
+            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted">
+                  Danh sách học sinh
+                </p>
               </div>
-            ) : isSessionDetailLoading ? (
-              <div className="space-y-3">
-                <Skeleton className="h-20 rounded-2xl" />
-                <Skeleton className="h-20 rounded-2xl" />
-                <Skeleton className="h-20 rounded-2xl" />
-              </div>
-            ) : filteredRoster.length ? (
-              filteredRoster.map((student) => {
-                const statusTone =
-                  student.attendanceStatus === "Present"
-                    ? "success"
-                    : student.attendanceStatus === "Late"
-                      ? "warning"
-                      : student.attendanceStatus === "Absent"
-                        ? "danger"
-                        : "default";
 
-                return (
-                  <div
-                    key={student.studentClassId}
-                    className="rounded-2xl border border-divider bg-background p-4 transition-shadow hover:shadow-sm"
+              <div className="flex flex-wrap items-center gap-2">
+                <Chip color="default" variant="soft">
+                  {filteredRoster.length} học sinh
+                </Chip>
+                {sessionStatus ? (
+                  <Chip
+                    color={
+                      sessionStatus === "Pending"
+                        ? "warning"
+                        : sessionStatus === "Opening"
+                          ? "success"
+                          : "default"
+                    }
+                    variant="soft"
                   >
-                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="flex size-11 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
-                          {getStudentInitials(student.studentName)}
-                        </div>
-                        <div>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <p className="font-semibold text-foreground">
-                              {student.studentName}
-                            </p>
-                            <Chip color={statusTone as never} variant="soft">
-                              {student.attendanceStatus}
-                            </Chip>
+                    {sessionStatus === "Pending"
+                      ? "Chưa mở"
+                      : sessionStatus === "Opening"
+                        ? "Đang mở"
+                        : "Đã đóng"}
+                  </Chip>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <Input
+                aria-label="Tìm học sinh"
+                className="md:max-w-sm"
+                placeholder="Tìm theo tên, mã, trạng thái"
+                value={studentKeyword}
+                onChange={(event) => setStudentKeyword(event.target.value)}
+              />
+            </div>
+            <div className="mt-4 space-y-3">
+              {isSessionDetailLoading ? (
+                <div className="space-y-3">
+                  <Skeleton className="h-20 rounded-2xl" />
+                  <Skeleton className="h-20 rounded-2xl" />
+                  <Skeleton className="h-20 rounded-2xl" />
+                </div>
+              ) : filteredRoster.length ? (
+                filteredRoster.map((student) => {
+                  const statusTone =
+                    student.attendanceStatus === "Present"
+                      ? "success"
+                      : student.attendanceStatus === "Late"
+                        ? "warning"
+                        : student.attendanceStatus === "Absent"
+                          ? "danger"
+                          : "default";
+
+                  return (
+                    <div
+                      key={student.studentClassId}
+                      className="rounded-2xl border border-divider bg-background p-4 transition-shadow hover:shadow-sm"
+                    >
+                      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="flex size-11 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+                            {getStudentInitials(student.studentName)}
                           </div>
-                          <p className="mt-1 text-xs text-muted">
-                            {student.studentId}
-                          </p>
+                          <div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="font-semibold text-foreground">
+                                {student.studentName}
+                              </p>
+                              <Chip color={statusTone as never} variant="soft">
+                                {student.attendanceStatus}
+                              </Chip>
+                            </div>
+                            <p className="mt-1 text-xs text-muted">
+                              {student.studentId}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="mt-4 rounded-xl border border-divider p-3">
-                      <p className="text-xs uppercase tracking-wide text-muted">
-                        Ghi chú
-                      </p>
-                      <p className="mt-2 text-sm text-foreground">
-                        Nếu cần mở rộng, backend có thể trả thêm liên hệ chính
-                        hoặc lý do vắng ở endpoint riêng.
-                      </p>
+                      <div className="mt-4 rounded-xl border border-divider p-3">
+                        <p className="text-xs uppercase tracking-wide text-muted">
+                          Ghi chú
+                        </p>
+                        <p className="mt-2 text-sm text-foreground">
+                          Nếu cần mở rộng, backend có thể trả thêm liên hệ chính
+                          hoặc lý do vắng ở endpoint riêng.
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="rounded-2xl border border-dashed border-divider p-5 text-sm text-muted">
-                Không tìm thấy học sinh phù hợp trong buổi học này.
-              </div>
-            )}
+                  );
+                })
+              ) : (
+                <div className="rounded-2xl border border-dashed border-divider p-5 text-sm text-muted">
+                  Không tìm thấy học sinh phù hợp trong buổi học này.
+                </div>
+              )}
 
-            {isSessionDetailError ? (
-              <p className="text-xs text-danger">
-                Không thể tải chi tiết buổi học.
-              </p>
-            ) : null}
+              {isSessionDetailError ? (
+                <p className="text-xs text-danger">
+                  Không thể tải chi tiết buổi học.
+                </p>
+              ) : null}
+            </div>
+
+            <p className="mt-3 text-xs text-muted">
+              Khi backend trả thêm trạng thái chấm thật theo học sinh, UI này
+              chỉ cần đổi mapping trạng thái mà không phải thay layout.
+            </p>
           </div>
-
-          <p className="mt-3 text-xs text-muted">
-            Khi backend trả thêm trạng thái chấm thật theo học sinh, UI này chỉ
-            cần đổi mapping trạng thái mà không phải thay layout.
-          </p>
-        </div>
+        )}
       </div>
     </section>
   );
