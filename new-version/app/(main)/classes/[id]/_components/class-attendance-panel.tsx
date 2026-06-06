@@ -9,6 +9,8 @@ import {
   Spinner,
   Skeleton,
   useOverlayState,
+  Accordion,
+  Avatar,
 } from "@heroui/react";
 import {
   endOfMonth,
@@ -25,6 +27,7 @@ import { useClassCalendarIndicators } from "@/hooks/classes/detail/use-class-cal
 import { useClassAttendanceSessions } from "@/hooks/classes/detail/use-class-attendance-sessions";
 import { useAttendanceSessionDetail } from "@/hooks/classes/detail/use-attendance-session-detail";
 import CreateAttendanceModal from "./create-attendance-modal";
+import { FaChevronDown } from "react-icons/fa6";
 
 const parseDate = (value: string | Date | null) => {
   if (!value) {
@@ -117,6 +120,8 @@ const formatTimeRange = (
 
   return `${formatTimeOnly(start)} - ${formatTimeOnly(end)}`;
 };
+
+import styles from "./class-attendance-panel.module.css";
 
 export function ClassAttendancePanel({ classId }: { classId: string }) {
   const { joinClassGroup, leaveClassGroup } = useAttendanceRealtime();
@@ -256,157 +261,164 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
 
   return (
     <section className="grid grid-cols-1 gap-6 xl:grid-cols-12">
-      <div className="xl:col-span-3 space-y-4 h-full">
-        <div className="rounded-2xl border border-divider bg-background p-6 shadow-sm">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-sm font-medium text-muted">Lịch học</p>
-            </div>
-            {isIndicatorsLoading ? <Spinner size="sm" /> : null}
-          </div>
-
-          <div className="mt-4 items-center justify-center flex">
-            <Calendar
-              aria-label="Lịch học"
-              className="w-full"
-              focusedValue={calendarFocusedValue}
-              value={calendarValue}
-              onChange={setCalendarValue}
-              onFocusChange={setCalendarFocusedValue}
-            >
-              <Calendar.Header>
-                <Calendar.Heading />
-                <div className="flex items-center gap-2">
-                  <Calendar.NavButton slot="previous" />
-                  <Calendar.NavButton slot="next" />
+      <div className="xl:col-span-3 space-y-4 self-start sticky top-5">
+        <div className="relative max-h-[95vh]">
+          <div className={`overflow-auto max-h-[95vh] pr-2 space-y-4 ${styles.scrollable} py-4`}>
+            <div className="rounded-2xl border border-divider bg-background p-6 shadow-sm">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium text-muted">Lịch học</p>
                 </div>
-              </Calendar.Header>
-              <Calendar.Grid>
-                <Calendar.GridHeader>
-                  {(day) => <Calendar.HeaderCell>{day}</Calendar.HeaderCell>}
-                </Calendar.GridHeader>
-                <Calendar.GridBody>
-                  {(date) => (
-                    <Calendar.Cell date={date}>
-                      {({ formattedDate }) => (
-                        <>
-                          {formattedDate}
-                          {indicatorSet.has(date.toString()) ? (
-                            <Calendar.CellIndicator />
-                          ) : null}
-                        </>
-                      )}
-                    </Calendar.Cell>
-                  )}
-                </Calendar.GridBody>
-              </Calendar.Grid>
-            </Calendar>
-          </div>
-          <Button
-            className="w-full mt-4"
-            variant="outline"
-            onPress={() => setOpen(true)}
-          >
-            Tạo buổi học mới
-          </Button>
-          <CreateAttendanceModal
-            isOpen={isOpen}
-            handleOpenChange={setOpen}
-            handleCloseModal={close}
-            defaultDate={selectedDateIso}
-            classId={classId}
-          />
+                {isIndicatorsLoading ? <Spinner size="sm" /> : null}
+              </div>
 
-          {isIndicatorsError ? (
-            <p className="mt-2 text-xs text-danger">Không thể tải lịch học.</p>
-          ) : null}
-        </div>
-
-        <div className="rounded-2xl border border-divider bg-background p-5 shadow-sm">
-          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h2 className="text-lg font-semibold">
-                Các buổi học trong ngày {selectedDateLabel}
-              </h2>
-              {/* <p className="mt-1 text-sm text-muted">{selectedDateLabel}</p> */}
-            </div>
-            {isSessionsLoading ? <Spinner size="sm" /> : null}
-          </div>
-
-          <div className="mt-4 space-y-3">
-            {attendanceSessions.length ? (
-              attendanceSessions.map((session) => {
-                const chipTone =
-                  session.status === "Pending"
-                    ? "warning"
-                    : session.status === "Opening"
-                      ? "success"
-                      : "default";
-                const isSelected = selectedSessionId === session.id;
-                const cardClassName = `w-full text-left rounded-xl border border-divider p-4 transition-all duration-200 ease-out ${isSelected
-                  ? "border-primary/60 bg-primary/5 shadow-sm ring-1 ring-primary/20"
-                  : "bg-background"
-                  } hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md`;
-
-                return (
-                  <button
-                    key={session.id}
-                    aria-pressed={isSelected}
-                    className={cardClassName}
-                    type="button"
-                    onClick={() => setSelectedSessionId(session.id)}
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold">
-                          {formatTimeRange(session.startTime, session.endTime)}
-                        </p>
-                        <p className="mt-1 text-xs text-muted">
-                          {session.sessionType === "Makeup"
-                            ? "Buổi học bù"
-                            : session.sessionType === "Adhoc"
-                              ? "Buổi học bổ  sung"
-                              : "Buổi học cố định"}
-                        </p>
-                      </div>
-                      {session.status ? (
-                        <Chip color={chipTone as never} variant="soft">
-                          {session.status === "Pending"
-                            ? "Chưa mở"
-                            : session.status === "Opening"
-                              ? "Đang mở"
-                              : "Đã đóng"}
-                        </Chip>
-                      ) : null}
+              <div className="mt-4 items-center justify-center flex">
+                <Calendar
+                  aria-label="Lịch học"
+                  className="w-full"
+                  focusedValue={calendarFocusedValue}
+                  value={calendarValue}
+                  onChange={setCalendarValue}
+                  onFocusChange={setCalendarFocusedValue}
+                >
+                  <Calendar.Header>
+                    <Calendar.Heading />
+                    <div className="flex items-center gap-2">
+                      <Calendar.NavButton slot="previous" />
+                      <Calendar.NavButton slot="next" />
                     </div>
-                  </button>
-                );
-              })
-            ) : (
-              <p className="text-sm text-muted">
-                Chưa có buổi học trong ngày này.
-              </p>
-            )}
-            {isSessionsError ? (
-              <p className="text-xs text-danger">
-                Không thể tải danh sách buổi học.
-              </p>
-            ) : null}
-            {selectedSessionId && isSessionDetailLoading ? (
-              <p className="text-xs text-muted">
-                Đang tải chi tiết điểm danh của buổi học...
-              </p>
-            ) : null}
-            {selectedSessionId && isSessionDetailError ? (
-              <p className="text-xs text-danger">
-                Không thể tải chi tiết buổi học.
-              </p>
-            ) : null}
+                  </Calendar.Header>
+                  <Calendar.Grid>
+                    <Calendar.GridHeader>
+                      {(day) => <Calendar.HeaderCell>{day}</Calendar.HeaderCell>}
+                    </Calendar.GridHeader>
+                    <Calendar.GridBody>
+                      {(date) => (
+                        <Calendar.Cell date={date}>
+                          {({ formattedDate }) => (
+                            <>
+                              {formattedDate}
+                              {indicatorSet.has(date.toString()) ? (
+                                <Calendar.CellIndicator />
+                              ) : null}
+                            </>
+                          )}
+                        </Calendar.Cell>
+                      )}
+                    </Calendar.GridBody>
+                  </Calendar.Grid>
+                </Calendar>
+              </div>
+              <Button
+                className="w-full mt-4"
+                variant="outline"
+                onPress={() => setOpen(true)}
+              >
+                Tạo buổi học mới
+              </Button>
+              <CreateAttendanceModal
+                isOpen={isOpen}
+                handleOpenChange={setOpen}
+                handleCloseModal={close}
+                defaultDate={selectedDateIso}
+                classId={classId}
+              />
+
+              {isIndicatorsError ? (
+                <p className="mt-2 text-xs text-danger">Không thể tải lịch học.</p>
+              ) : null}
+            </div>
+
+            <div className="rounded-2xl border border-divider bg-background p-5 shadow-sm">
+              <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold">
+                    Các buổi học trong ngày {selectedDateLabel}
+                  </h2>
+                  {/* <p className="mt-1 text-sm text-muted">{selectedDateLabel}</p> */}
+                </div>
+                {isSessionsLoading ? <Spinner size="sm" /> : null}
+              </div>
+
+              <div className="mt-4 space-y-3">
+                {attendanceSessions.length ? (
+                  attendanceSessions.map((session) => {
+                    const chipTone =
+                      session.status === "Pending"
+                        ? "warning"
+                        : session.status === "Opening"
+                          ? "success"
+                          : "default";
+                    const isSelected = selectedSessionId === session.id;
+                    const cardClassName = `w-full text-left rounded-xl border border-divider p-4 transition-all duration-200 ease-out ${isSelected
+                      ? "border-primary/60 bg-primary/5 shadow-sm ring-1 ring-primary/20"
+                      : "bg-background"
+                      } hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md`;
+
+                    return (
+                      <button
+                        key={session.id}
+                        aria-pressed={isSelected}
+                        className={cardClassName}
+                        type="button"
+                        onClick={() => setSelectedSessionId(session.id)}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-semibold">
+                              {formatTimeRange(session.startTime, session.endTime)}
+                            </p>
+                            <p className="mt-1 text-xs text-muted">
+                              {session.sessionType === "Makeup"
+                                ? "Buổi học bù"
+                                : session.sessionType === "Adhoc"
+                                  ? "Buổi học bổ  sung"
+                                  : "Buổi học cố định"}
+                            </p>
+                          </div>
+                          {session.status ? (
+                            <Chip color={chipTone as never} variant="soft">
+                              {session.status === "Pending"
+                                ? "Chưa mở"
+                                : session.status === "Opening"
+                                  ? "Đang mở"
+                                  : "Đã đóng"}
+                            </Chip>
+                          ) : null}
+                        </div>
+                      </button>
+                    );
+                  })
+                ) : (
+                  <p className="text-sm text-muted">
+                    Chưa có buổi học trong ngày này.
+                  </p>
+                )}
+                {isSessionsError ? (
+                  <p className="text-xs text-danger">
+                    Không thể tải danh sách buổi học.
+                  </p>
+                ) : null}
+                {selectedSessionId && isSessionDetailLoading ? (
+                  <p className="text-xs text-muted">
+                    Đang tải chi tiết điểm danh của buổi học...
+                  </p>
+                ) : null}
+                {selectedSessionId && isSessionDetailError ? (
+                  <p className="text-xs text-danger">
+                    Không thể tải chi tiết buổi học.
+                  </p>
+                ) : null}
+              </div>
+            </div>
           </div>
+
+          <div className="pointer-events-none absolute top-0 left-0 right-0 h-6 bg-gradient-to-b from-background/95 to-transparent" />
+          <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-background/95 to-transparent" />
         </div>
       </div>
 
-      <div className="xl:col-span-9 space-y-4 h-full flex flex-col">
+      <div className="xl:col-span-9 space-y-4 h-full flex flex-col py-4">
         {/* <Card
                     logo={<span className="text-lg font-semibold">{classData.totalSessions}</span>}
                     title="Tổng buổi học"
@@ -611,20 +623,35 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
                   return (
                     <div
                       key={student.studentClassId}
-                      className="rounded-2xl border border-divider bg-background p-4 transition-shadow hover:shadow-sm"
+                      className="group rounded-2xl border border-divider bg-background p-4 transition-shadow hover:shadow-sm overflow-hidden"
                     >
                       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                         <div className="flex items-center gap-3">
-                          <div className="flex size-11 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+                          {/* <div className="flex size-11 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
                             {getStudentInitials(student.studentName)}
-                          </div>
+                          </div> */}
+                          <Avatar size="md">
+                            <Avatar.Image
+                              alt={student.studentName}
+                              src={undefined}
+                            />
+                            <Avatar.Fallback className="border-none bg-gradient-to-br from-[#00b4d8] to-[#90e0ef] text-white">
+                              {getStudentInitials(student.studentName)}
+                            </Avatar.Fallback>
+                          </Avatar>
                           <div>
                             <div className="flex flex-wrap items-center gap-2">
                               <p className="font-semibold text-foreground">
                                 {student.studentName}
                               </p>
                               <Chip color={statusTone as never} variant="soft">
-                                {student.attendanceStatus}
+                                {student.attendanceStatus === "Present"
+                                  ? "Đã điểm danh"
+                                  : student.attendanceStatus === "Late"
+                                    ? "Trễ"
+                                    : student.attendanceStatus === "Absent"
+                                      ? "Vắng mặt"
+                                      : "Chưa điểm danh"}
                               </Chip>
                             </div>
                             <p className="mt-1 text-xs text-muted">
@@ -632,16 +659,75 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
                             </p>
                           </div>
                         </div>
+                        <Button className="rounded-xl" variant="primary">
+                          Điểm danh
+                        </Button>
                       </div>
 
-                      <div className="mt-4 rounded-xl border border-divider p-3">
-                        <p className="text-xs uppercase tracking-wide text-muted">
+                      {/* <p className="text-xs uppercase tracking-wide text-muted">
                           Ghi chú
                         </p>
                         <p className="mt-2 text-sm text-foreground">
                           Nếu cần mở rộng, backend có thể trả thêm liên hệ chính
                           hoặc lý do vắng ở endpoint riêng.
-                        </p>
+                        </p> */}
+                      <div className="mt-4">
+                        <Accordion
+                          className="w-full transition-all duration-100 rounded-xl overflow-hidden"
+                          variant="surface"
+                        >
+                          <Accordion.Item id={student.studentClassId} className="border-none">
+                            <Accordion.Heading>
+                              {/* Thay đổi ở đây: Chỉ hiện background xám khi aria-expanded là false (nghĩa là đang đóng) */}
+                              <Accordion.Trigger className="w-full flex items-center justify-between py-3 px-4 m-0 rounded-xl transition-colors aria-[expanded=false]:hover:bg-gray-200">
+                                Thông tin liên hệ
+                                <Accordion.Indicator>
+                                  <FaChevronDown />
+                                </Accordion.Indicator>
+                              </Accordion.Trigger>
+                            </Accordion.Heading>
+                            <Accordion.Panel>
+                              <Accordion.Body className="px-4 py-3">
+                                {student.guardians.length ? (
+                                  student.guardians.map((guardian) => (
+                                    <div
+                                      key={guardian.id}
+                                      className="mb-3 last:mb-0 rounded-lg border border-divider p-3 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-sm"
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        <p className="font-medium text-foreground">
+                                          {guardian.name}
+                                        </p>
+                                        {guardian.isPrimary ? (
+                                          <Chip
+                                            color="default"
+                                            variant="soft"
+                                          >
+                                            Liên hệ chính
+                                          </Chip>
+                                        ) : null}
+                                      </div>
+
+                                      <p className="text-sm text-muted">
+                                        Mối quan hệ: {guardian.relationship}
+                                      </p>
+                                      <p className="text-sm text-muted">
+                                        Email: {guardian.email}
+                                      </p>
+                                      <p className="text-sm text-muted">
+                                        Số điện thoại: {guardian.phone}
+                                      </p>
+                                    </div>
+                                  ))
+                                ) : (
+                                  <p className="text-sm text-muted">
+                                    Không có thông tin người giám hộ.
+                                  </p>
+                                )}
+                              </Accordion.Body>
+                            </Accordion.Panel>
+                          </Accordion.Item>
+                        </Accordion>
                       </div>
                     </div>
                   );

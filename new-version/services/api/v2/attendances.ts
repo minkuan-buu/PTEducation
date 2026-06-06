@@ -15,6 +15,14 @@ export type AttendanceSessionDetailStudent = {
   studentId: string;
   studentName: string;
   attendanceStatus: string;
+  guardians: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    relationship: string;
+    isPrimary: boolean;
+  }[];
 };
 
 export type AttendanceSessionDetail = {
