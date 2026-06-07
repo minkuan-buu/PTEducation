@@ -122,6 +122,8 @@ const formatTimeRange = (
 };
 
 import styles from "./class-attendance-panel.module.css";
+import { useCreateAttendance } from "@/hooks/classes/attendance/use-create-attendance";
+import { useCheckAttendance } from "@/hooks/classes/attendance/use-check-attendance";
 
 export function ClassAttendancePanel({ classId }: { classId: string }) {
   const { joinClassGroup, leaveClassGroup } = useAttendanceRealtime();
@@ -185,6 +187,7 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(
     null,
   );
+  const [pendingStudentClassId, setPendingStudentClassId] = useState<string | null>(null);
   const {
     data: selectedSessionDetail,
     isLoading: isSessionDetailLoading,
@@ -250,6 +253,33 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
       );
     });
   }, [roster, studentKeyword]);
+
+  const { mutateAsync, isPending, isSuccess } = useCheckAttendance(
+    selectedSessionId ?? "",
+  );
+
+  const pendingCheckAttendanceByStudentClassId = useMemo<Record<string, boolean>>(() => {
+    if (!isPending || !pendingStudentClassId) {
+      return {};
+    }
+
+    return {
+      [pendingStudentClassId]: true,
+    };
+  }, [isPending, pendingStudentClassId]);
+
+  const handleCheckAttendance = async (studentClassId: string) => {
+    try {
+      setPendingStudentClassId(studentClassId);
+      await mutateAsync({
+        studentClassId,
+      });
+    } catch (error) {
+      console.error("Failed to create attendance session:", error);
+    } finally {
+      setPendingStudentClassId(null);
+    }
+  }
 
   const getStudentInitials = (name: string) =>
     name
@@ -429,22 +459,25 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-sm font-medium text-muted">
-                Buổi học tiếp theo
+                {attendanceWindow.windowTitle}
               </p>
 
-              {attendanceWindow.opensAt ? (
+              {attendanceWindow.windowKind !== "None" ? (
                 <p className="mt-1 text-lg font-semibold">
-                  {formatDateTime(attendanceWindow.opensAt)}
+                  {attendanceWindow.windowKind === "Current" && attendanceWindow.opensAt && attendanceWindow.closesAt
+                    ? formatTimeRange(attendanceWindow.opensAt, attendanceWindow.closesAt)
+                    : formatDateTime(attendanceWindow.opensAt)}
                 </p>
               ) : (
-                // <div className="space-y-3">
-                //   <Skeleton className="h-3 w-2/5 rounded-lg" />
-                //   <Skeleton className="h-3 w-4/5 rounded-lg" />
-                // </div>
                 <p className="mt-1 text-lg font-semibold">
                   Chưa có buổi học tiếp theo
                 </p>
               )}
+              {attendanceWindow.windowKind !== "None" ? (
+                <p className="mt-1 text-xs text-muted">
+                  {attendanceWindow.statusLabel}
+                </p>
+              ) : null}
             </div>
             {/* <Chip color={connectionTone as never} variant="soft">
                             {attendanceWindow.connectionStatus}
@@ -454,8 +487,9 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
           {(() => {
             const ONE_HOUR = 60 * 60 * 1000;
             const shows =
-              attendanceWindow.opensAt &&
-              (attendanceWindow.isOpen ||
+              attendanceWindow.windowKind === "Current" ||
+              (attendanceWindow.windowKind === "Upcoming" &&
+                attendanceWindow.opensAt &&
                 attendanceWindow.opensAt.getTime() - Date.now() <= ONE_HOUR);
 
             if (!shows) return null;
@@ -464,14 +498,7 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
               <div className="mt-4 rounded-xl bg-muted/40 p-4">
                 <p className="text-sm text-muted">Đếm ngược</p>
                 <p className="mt-1 text-xl font-semibold">
-                  {attendanceWindow.opensAt ? (
-                    attendanceWindow.countdownLabel
-                  ) : (
-                    <div className="space-y-3">
-                      <Skeleton className="h-3 w-2/5 rounded-lg" />
-                      <Skeleton className="h-3 w-4/5 rounded-lg" />
-                    </div>
-                  )}
+                  {attendanceWindow.countdownLabel}
                 </p>
               </div>
             );
@@ -659,9 +686,21 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
                             </p>
                           </div>
                         </div>
-                        <Button className="rounded-xl" variant="primary">
-                          Điểm danh
-                        </Button>
+                        {sessionStatus === "Opening" && (
+                          <Button
+                            className="rounded-xl"
+                            isDisabled={Boolean(
+                              pendingCheckAttendanceByStudentClassId[student.studentClassId] ||
+                              student.attendanceStatus === "Present",
+                            )}
+                            variant="primary"
+                            onPress={() => handleCheckAttendance(student.studentClassId)}
+                          >
+                            {pendingCheckAttendanceByStudentClassId[student.studentClassId]
+                              ? <Spinner size="sm" />
+                              : "Điểm danh"}
+                          </Button>
+                        )}
                       </div>
 
                       {/* <p className="text-xs uppercase tracking-wide text-muted">

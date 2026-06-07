@@ -156,7 +156,10 @@ export async function getStudentsInClass(
   },
 ) {
   const response = await api.get<
-    AdminStudent[] | ApiListResponse<AdminStudent> | ApiResponse<AdminStudent[]>
+    | AdminStudent[]
+    | ApiListResponse<AdminStudent>
+    | ApiResponse<AdminStudent[]>
+    | StudentsPage
   >(`/classes/${encodeURIComponent(classId)}/students`, {
     params: {
       pageIndex: params?.pageIndex,
@@ -176,6 +179,14 @@ export async function getStudentsInClass(
       pageSize: payload.length,
       totalPages: 1,
     } as StudentsPage;
+  }
+
+  if (
+    "pageNumber" in payload &&
+    "pageSize" in payload &&
+    "totalPages" in payload
+  ) {
+    return payload;
   }
 
   const data = payload.data ?? [];

@@ -5,6 +5,8 @@ import { useAttendanceRealtime } from "@/context/attendance-context";
 type AttendanceWindowSnapshot = {
   isOpen: boolean;
   source: "clock" | "signalr";
+  windowKind: "Current" | "Upcoming" | "None";
+  windowTitle: string;
   statusLabel: string;
   countdownLabel: string;
   connectionStatus:
@@ -35,6 +37,10 @@ function parseDateTime(value?: string) {
 }
 
 function formatCountdown(ms: number) {
+  if (ms <= 0) {
+    return "đang cập nhật";
+  }
+
   const safeMs = Math.max(0, ms);
   const totalSeconds = Math.floor(safeMs / 1000);
   const days = Math.floor(totalSeconds / 86400);
@@ -75,6 +81,39 @@ export function useAttendanceWindow(classId: string) {
     [serverWindow?.serverTime],
   );
 
+  const windowKind = useMemo<AttendanceWindowSnapshot["windowKind"]>(() => {
+    const payloadKind = serverWindow?.windowKind?.toLowerCase();
+
+    if (payloadKind === "current") {
+      return "Current";
+    }
+
+    if (payloadKind === "upcoming") {
+      return "Upcoming";
+    }
+
+    if (payloadKind === "none") {
+      return "None";
+    }
+
+    if (opensAt && closesAt && now >= opensAt && now <= closesAt) {
+      return "Current";
+    }
+
+    if (opensAt) {
+      return "Upcoming";
+    }
+
+    return "None";
+  }, [closesAt, opensAt, now, serverWindow?.windowKind]);
+
+  const windowTitle =
+    windowKind === "Current"
+      ? "Buổi học hiện tại"
+      : windowKind === "Upcoming"
+        ? "Buổi học tiếp theo"
+        : "Chưa có buổi học tiếp theo";
+
   useEffect(() => {
     const timerId = window.setInterval(() => {
       setNow(new Date());
@@ -94,26 +133,28 @@ export function useAttendanceWindow(classId: string) {
     serverWindow?.closesAt,
   ]);
 
-  const isOpen =
-    serverWindow?.isOpen ??
-    (opensAt ? now.getTime() >= opensAt.getTime() : false);
+  const isOpen = windowKind === "Current";
   const source: AttendanceWindowSnapshot["source"] = serverWindow
     ? "signalr"
     : "clock";
-  const statusLabel = isOpen
-    ? "Đang mở điểm danh"
-    : opensAt
-      ? "Chưa đến giờ điểm danh"
-      : "Chưa có lịch điểm danh";
-  const countdownLabel = opensAt
-    ? isOpen
-      ? "Đã đến giờ"
-      : `Còn ${formatCountdown(opensAt.getTime() - now.getTime())}`
-    : "Chưa có thời gian mở";
+  const targetAt = windowKind === "Current" ? closesAt : opensAt;
+  const statusLabel =
+    windowKind === "Current"
+      ? "Đang diễn ra"
+      : windowKind === "Upcoming"
+        ? "Sắp diễn ra"
+        : "Chưa có buổi học nào";
+  const countdownLabel = targetAt
+    ? windowKind === "Current"
+      ? `Kết thúc sau ${formatCountdown(targetAt.getTime() - now.getTime())}`
+      : `Bắt đầu sau ${formatCountdown(targetAt.getTime() - now.getTime())}`
+    : "Chưa có buổi học tiếp theo";
 
   return {
     isOpen,
     source,
+    windowKind,
+    windowTitle,
     statusLabel,
     countdownLabel,
     connectionStatus: attendanceRealtime.connectionStatus,

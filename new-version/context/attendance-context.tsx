@@ -123,7 +123,7 @@ export function AttendanceProvider({ children }: { children: React.ReactNode }) 
             try {
                 // eslint-disable-next-line no-console
                 console.debug("[Attendance] windowStateChanged", payload);
-            } catch {}
+            } catch { }
 
             setWindowsByClassId((prev) => ({
                 ...prev,
@@ -134,6 +134,12 @@ export function AttendanceProvider({ children }: { children: React.ReactNode }) 
             try {
                 queryClient.invalidateQueries({ queryKey: ["class-attendance-sessions", payload.classId] });
                 queryClient.invalidateQueries({ queryKey: ["classes", payload.classId] });
+                queryClient.invalidateQueries({
+                    predicate: (query) => {
+                        const key = query.queryKey;
+                        return Array.isArray(key) && key[0] === "attendance-session-detail";
+                    },
+                });
                 // Invalidate any calendar indicators queries that match this classId (they include start/end in key)
                 queryClient.invalidateQueries({
                     predicate: (query) => {
@@ -148,7 +154,7 @@ export function AttendanceProvider({ children }: { children: React.ReactNode }) 
 
                 // eslint-disable-next-line no-console
                 console.debug("[Attendance] invalidated class metadata, attendance sessions and calendar indicators for class", payload.classId);
-            } catch {}
+            } catch { }
         };
 
         const applyServerTime = (payload: ServerTimeSyncedPayload) => {
@@ -173,7 +179,7 @@ export function AttendanceProvider({ children }: { children: React.ReactNode }) 
         try {
             // eslint-disable-next-line no-console
             console.debug("[Attendance] starting SignalR connection to", buildAttendanceHubUrl());
-        } catch {}
+        } catch { }
         connection.onreconnecting(() => setConnectionStatus("reconnecting"));
         connection.onreconnected(() => {
             setConnectionStatus("connected");
@@ -188,7 +194,7 @@ export function AttendanceProvider({ children }: { children: React.ReactNode }) 
             try {
                 // eslint-disable-next-line no-console
                 console.debug("[Attendance] connection closed", connectionError);
-            } catch {}
+            } catch { }
         });
 
         connection
@@ -200,7 +206,7 @@ export function AttendanceProvider({ children }: { children: React.ReactNode }) 
                 try {
                     // eslint-disable-next-line no-console
                     console.debug("[Attendance] connected");
-                } catch {}
+                } catch { }
             })
             .catch((connectionError: unknown) => {
                 const message = connectionError instanceof Error ? connectionError.message : "Không thể kết nối SignalR";
@@ -209,7 +215,7 @@ export function AttendanceProvider({ children }: { children: React.ReactNode }) 
                 try {
                     // eslint-disable-next-line no-console
                     console.debug("[Attendance] connect error", connectionError);
-                } catch {}
+                } catch { }
             });
 
         return () => {

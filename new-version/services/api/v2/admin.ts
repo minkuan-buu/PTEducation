@@ -38,7 +38,8 @@ function normalizeStudents(
   payload:
     | AdminStudent[]
     | ApiListResponse<AdminStudent>
-    | ApiResponse<AdminStudent[]>,
+    | ApiResponse<AdminStudent[]>
+    | StudentsPage,
 ): StudentsPage {
   if (Array.isArray(payload)) {
     return {
@@ -47,6 +48,14 @@ function normalizeStudents(
       pageSize: payload.length,
       totalPages: 1,
     };
+  }
+
+  if (
+    "pageNumber" in payload &&
+    "pageSize" in payload &&
+    "totalPages" in payload
+  ) {
+    return payload;
   }
 
   const data = payload.data ?? [];
@@ -72,7 +81,10 @@ export async function getAdminStudents(params?: {
   keyword?: string;
 }) {
   const response = await api.get<
-    AdminStudent[] | ApiListResponse<AdminStudent> | ApiResponse<AdminStudent[]>
+    | AdminStudent[]
+    | ApiListResponse<AdminStudent>
+    | ApiResponse<AdminStudent[]>
+    | StudentsPage
   >("/admin/students", {
     params: {
       pageIndex: params?.pageIndex,
@@ -86,7 +98,10 @@ export async function getAdminStudents(params?: {
 
 export async function approveStudent(studentId: string, accessStatus: string) {
   const response = await api.patch<
-    AdminStudent[] | ApiListResponse<AdminStudent> | ApiResponse<AdminStudent[]>
+    | AdminStudent[]
+    | ApiListResponse<AdminStudent>
+    | ApiResponse<AdminStudent[]>
+    | StudentsPage
   >(`/admin/students/${studentId}`, {
     accessStatus,
   });
@@ -96,7 +111,10 @@ export async function approveStudent(studentId: string, accessStatus: string) {
 
 export async function deleteStudent(studentId: string) {
   const response = await api.delete<
-    AdminStudent[] | ApiListResponse<AdminStudent> | ApiResponse<AdminStudent[]>
+    | AdminStudent[]
+    | ApiListResponse<AdminStudent>
+    | ApiResponse<AdminStudent[]>
+    | StudentsPage
   >(`/admin/students/${studentId}`);
 
   return normalizeStudents(response.data);

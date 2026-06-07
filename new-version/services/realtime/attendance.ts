@@ -9,6 +9,7 @@ export const ATTENDANCE_SIGNALR_EVENTS = {
 export type AttendanceWindowStatePayload = {
   classId: string;
   isOpen: boolean;
+  windowKind?: "Current" | "Upcoming" | "None";
   opensAt?: string;
   closesAt?: string;
   serverTime?: string;

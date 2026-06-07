@@ -1,6 +1,10 @@
 import { createApiClient } from "../client";
 import type { ApiResponse } from "../types";
 
+export type CheckAttendancePayload = {
+  studentClassId: string;
+};
+
 export type ClassAttendanceSession = {
   id: string;
   date: string;
@@ -121,6 +125,16 @@ export async function createAttendance(
 ) {
   await api.post(
     `/attendances/classes/${encodeURIComponent(classId)}`,
+    payload,
+  );
+}
+
+export async function checkAttendance(
+  attendanceId: string,
+  payload: CheckAttendancePayload,
+) {
+  await api.post(
+    `/attendances/${encodeURIComponent(attendanceId)}/check-attendance`,
     payload,
   );
 }

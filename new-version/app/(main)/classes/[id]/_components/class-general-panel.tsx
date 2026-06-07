@@ -415,7 +415,7 @@ export function ClassGeneralPanel({ classId, classData }: { classId: string; cla
                 <div className="md:col-span-4">
                     <div className="flex flex-col gap-4">
                         <div>
-                            <Card logo={<CgCalendarToday className="h-5 w-5" />} title="Lịch học tiếp theo sẽ bắt đầu vào" description={`${formatDateTimeNextSession(classData.nextSession)}`} />
+                            <Card logo={<CgCalendarToday className="h-5 w-5" />} title="Buổi học tiếp theo sẽ bắt đầu vào" description={`${classData.nextSession != null ? formatDateTimeNextSession(classData.nextSession) : "Chưa có buổi học tiếp theo"}`} />
                         </div>
                         <div>
                             <div className="mb-4 flex items-center justify-between">
