@@ -252,19 +252,19 @@ export const Sidebar = () => {
                                             : pathname === item.href || pathname.startsWith(`${item.href}/`);
 
                                     return (
-                                        <Button
-                                            key={item.href}
-                                            className={
-                                                isActive
-                                                    ? "w-full min-h-[7vh] justify-start rounded-xl border border-primary/20 bg-primary/10 px-3 py-2 text-sm font-semibold text-primary bg-gradient-to-tr from-[#48cae4] to-[#00b4d8]"
-                                                    : "w-full min-h-[7vh] justify-start rounded-xl px-3 py-2 text-sm font-medium text-foreground"
-                                            }
-                                            fullWidth
-                                            onPress={() => router.push(item.href)}
-                                            variant="ghost"
-                                        >
-                                            {item.label}
-                                        </Button>
+                                        <NextLink key={item.href} href={item.href} className="w-full">
+                                            <Button
+                                                className={
+                                                    isActive
+                                                        ? "w-full min-h-[7vh] justify-start rounded-xl border border-primary/20 bg-primary/10 px-3 py-2 text-sm font-semibold text-primary bg-gradient-to-tr from-[#48cae4] to-[#00b4d8]"
+                                                        : "w-full min-h-[7vh] justify-start rounded-xl px-3 py-2 text-sm font-medium text-foreground"
+                                                }
+                                                fullWidth
+                                                variant="ghost"
+                                            >
+                                                {item.label}
+                                            </Button>
+                                        </NextLink>
                                     );
                                 })}
                             </div>

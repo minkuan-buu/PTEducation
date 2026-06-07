@@ -11,6 +11,9 @@ import {
   useOverlayState,
   Accordion,
   Avatar,
+  Modal,
+  Select,
+  ListBox,
 } from "@heroui/react";
 import {
   endOfMonth,
@@ -19,6 +22,7 @@ import {
   today,
 } from "@internationalized/date";
 import { useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 
 import { v2 } from "@/services/api";
 import { useAttendanceRealtime } from "@/context/attendance-context";
@@ -126,6 +130,7 @@ import { useCreateAttendance } from "@/hooks/classes/attendance/use-create-atten
 import { useCheckAttendance } from "@/hooks/classes/attendance/use-check-attendance";
 
 export function ClassAttendancePanel({ classId }: { classId: string }) {
+  const router = useRouter();
   const { joinClassGroup, leaveClassGroup } = useAttendanceRealtime();
   const attendanceWindow = useAttendanceWindow(classId);
   const { isOpen, setOpen, close } = useOverlayState();
@@ -187,6 +192,10 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(
     null,
   );
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editedStatuses, setEditedStatuses] = useState<Record<string, string>>({});
+  const { isOpen: isWarningModalOpen, setOpen: setWarningModalOpen, close: closeWarningModal } = useOverlayState();
+  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
   const [pendingStudentClassId, setPendingStudentClassId] = useState<string | null>(null);
   const {
     data: selectedSessionDetail,
@@ -221,6 +230,7 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
 
   useEffect(() => {
     setSelectedSessionId(null);
+    setIsEditMode(false);
   }, [selectedDateIso]);
 
   useEffect(() => {
@@ -232,8 +242,126 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
 
     if (!stillExists) {
       setSelectedSessionId(null);
+      setIsEditMode(false);
     }
   }, [attendanceSessions, selectedSessionId]);
+
+  useEffect(() => {
+    if (!isEditMode) return;
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "Bạn có thay đổi chưa lưu, có chắc muốn thoát?";
+      return e.returnValue;
+    };
+
+    const handleClick = (e: MouseEvent) => {
+      const target = (e.target as Element).closest('a');
+      if (target && target.href && !target.hasAttribute('download') && target.target !== "_blank") {
+        const url = new URL(target.href);
+        if (url.origin === window.location.origin && url.pathname !== window.location.pathname) {
+          e.preventDefault();
+          e.stopPropagation();
+          setPendingAction(() => () => {
+            router.push(url.pathname + url.search + url.hash);
+          });
+          setWarningModalOpen(true);
+        }
+      }
+    };
+
+    const currentUrl = window.location.href;
+    const handlePopState = (e: PopStateEvent) => {
+      e.stopImmediatePropagation();
+      e.preventDefault();
+
+      window.history.pushState(null, "", currentUrl);
+      setPendingAction(() => () => {
+        window.history.back();
+      });
+      setWarningModalOpen(true);
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    document.addEventListener("click", handleClick, { capture: true });
+    window.addEventListener("popstate", handlePopState, { capture: true });
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      document.removeEventListener("click", handleClick, { capture: true });
+      window.removeEventListener("popstate", handlePopState, { capture: true });
+    };
+  }, [isEditMode, router]);
+
+  const executePendingAction = () => {
+    if (pendingAction) {
+      setIsEditMode(false);
+      pendingAction();
+      setPendingAction(null);
+    }
+    closeWarningModal();
+  };
+
+  const cancelPendingAction = () => {
+    setPendingAction(null);
+    closeWarningModal();
+  };
+
+  const handleSelectSession = (id: string) => {
+    if (isEditMode && id !== selectedSessionId) {
+      setPendingAction(() => () => setSelectedSessionId(id));
+      setWarningModalOpen(true);
+    } else {
+      setSelectedSessionId(id);
+    }
+  };
+
+  const handleCalendarValueChange = (value: Parameters<typeof setCalendarValue>[0]) => {
+    if (isEditMode) {
+      setPendingAction(() => () => setCalendarValue(value));
+      setWarningModalOpen(true);
+    } else {
+      setCalendarValue(value);
+    }
+  };
+
+  const handleOpenCreateModal = () => {
+    if (isEditMode) {
+      setPendingAction(() => () => setOpen(true));
+      setWarningModalOpen(true);
+    } else {
+      setOpen(true);
+    }
+  };
+
+  const handleToggleEditMode = () => {
+    if (isEditMode) {
+      setPendingAction(() => () => {
+        setIsEditMode(false);
+        setEditedStatuses({});
+      });
+      setWarningModalOpen(true);
+    } else {
+      setIsEditMode(true);
+      setEditedStatuses({});
+    }
+  };
+
+  const handleUpdateAttendance = (studentClassId: string, newStatus: string) => {
+    // Tìm trạng thái gốc từ server
+    const original = roster.find((s) => s.studentClassId === studentClassId);
+    const originalStatus = original?.attendanceStatus ?? "";
+
+    setEditedStatuses((prev) => {
+      // Nếu giá trị mới giống gốc → xóa khỏi list (không cần cập nhật)
+      if (newStatus === originalStatus) {
+        const { [studentClassId]: _, ...rest } = prev;
+        return rest;
+      }
+      // Nếu khác gốc → thêm/cập nhật vào list
+      return { ...prev, [studentClassId]: newStatus };
+    });
+  };
 
   const handleCloseModal = close;
   const roster = selectedSessionDetail?.attendanceDetails ?? [];
@@ -308,7 +436,7 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
                   className="w-full"
                   focusedValue={calendarFocusedValue}
                   value={calendarValue}
-                  onChange={setCalendarValue}
+                  onChange={handleCalendarValueChange}
                   onFocusChange={setCalendarFocusedValue}
                 >
                   <Calendar.Header>
@@ -342,7 +470,7 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
               <Button
                 className="w-full mt-4"
                 variant="outline"
-                onPress={() => setOpen(true)}
+                onPress={handleOpenCreateModal}
               >
                 Tạo buổi học mới
               </Button>
@@ -391,7 +519,7 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
                         aria-pressed={isSelected}
                         className={cardClassName}
                         type="button"
-                        onClick={() => setSelectedSessionId(session.id)}
+                        onClick={() => handleSelectSession(session.id)}
                       >
                         <div className="flex items-center justify-between gap-3">
                           <div>
@@ -591,11 +719,20 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
             <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted">
-                  Danh sách học sinh
+                  Danh sách điểm danh
                 </p>
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
+                {sessionStatus === "Closed" && (
+                  <Button
+                    size="sm"
+                    variant={isEditMode ? "primary" : "secondary"}
+                    onPress={handleToggleEditMode}
+                  >
+                    {isEditMode ? "Hoàn tất" : "Sửa điểm danh"}
+                  </Button>
+                )}
                 <Chip color="default" variant="soft">
                   {filteredRoster.length} học sinh
                 </Chip>
@@ -701,6 +838,52 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
                               : "Điểm danh"}
                           </Button>
                         )}
+                        {isEditMode && (
+                          <div className="flex flex-col gap-2">
+                            <div className="text-sm">
+                              <span>Trạng thái điểm danh</span>
+                            </div>
+                            <div>
+                              <Select
+                                className="rounded-lg min-w-50"
+                                placeholder="Trạng thái"
+                                value={editedStatuses[student.studentClassId] ?? student.attendanceStatus}
+                                onChange={(value) => {
+                                  if (value !== null) {
+                                    handleUpdateAttendance(student.studentClassId, String(value));
+                                  }
+                                }}
+                              >
+                                <Select.Trigger>
+                                  <Select.Value />
+                                  <Select.Indicator />
+                                </Select.Trigger>
+                                <Select.Popover className="rounded-xl">
+                                  <ListBox>
+                                    <ListBox.Item id="Present" textValue="Có mặt" className="hover:rounded-xl">
+                                      <div className="flex w-full items-center justify-between gap-2">
+                                        <span>Có mặt</span>
+                                        <ListBox.ItemIndicator />
+                                      </div>
+                                    </ListBox.Item>
+                                    <ListBox.Item id="Late" textValue="Trễ" className="hover:rounded-xl">
+                                      <div className="flex w-full items-center justify-between gap-2">
+                                        <span>Trễ</span>
+                                        <ListBox.ItemIndicator />
+                                      </div>
+                                    </ListBox.Item>
+                                    <ListBox.Item id="Absent" textValue="Vắng mặt" className="hover:rounded-xl">
+                                      <div className="flex w-full items-center justify-between gap-2">
+                                        <span>Vắng mặt</span>
+                                        <ListBox.ItemIndicator />
+                                      </div>
+                                    </ListBox.Item>
+                                  </ListBox>
+                                </Select.Popover>
+                              </Select>
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       {/* <p className="text-xs uppercase tracking-wide text-muted">
@@ -792,6 +975,29 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
           </div>
         )}
       </div>
+
+      <Modal>
+        <Modal.Backdrop isOpen={isWarningModalOpen} onOpenChange={setWarningModalOpen}>
+          <Modal.Container>
+            <Modal.Dialog>
+              <Modal.Header>
+                <Modal.Heading>Cảnh báo</Modal.Heading>
+              </Modal.Header>
+              <Modal.Body className="py-2 text-md">
+                Bạn đang ở chế độ sửa điểm danh. Mọi thay đổi chưa được lưu sẽ bị mất vĩnh viễn. Bạn có chắc chắn muốn rời đi?
+              </Modal.Body>
+              <Modal.Footer>
+                <Button variant="ghost" onPress={cancelPendingAction}>
+                  Hủy
+                </Button>
+                <Button variant="danger" onPress={executePendingAction}>
+                  Đồng ý rời đi
+                </Button>
+              </Modal.Footer>
+            </Modal.Dialog>
+          </Modal.Container>
+        </Modal.Backdrop>
+      </Modal>
     </section>
   );
 }
