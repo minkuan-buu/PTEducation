@@ -34,6 +34,7 @@ export type ClassDetail = {
   totalStudent: number;
   totalPendingStudent: number;
   averageScore: number;
+  attendanceRate: number;
   totalSessions: number;
   completedSessions: number;
   weeklySchedules: ClassSchedule[];

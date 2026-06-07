@@ -785,8 +785,9 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
             </div>
 
             <p className="mt-3 text-xs text-muted">
-              Khi backend trả thêm trạng thái chấm thật theo học sinh, UI này
-              chỉ cần đổi mapping trạng thái mà không phải thay layout.
+              {/* Khi backend trả thêm trạng thái chấm thật theo học sinh, UI này
+              chỉ cần đổi mapping trạng thái mà không phải thay layout. */}
+              Học sinh sẽ được tự động bị đánh "Vắng mặt" khi buổi học kết thúc mà chưa được điểm danh.
             </p>
           </div>
         )}

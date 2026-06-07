@@ -141,7 +141,7 @@ export default function ClassDetailPage() {
           <Card
             description={
               classData.totalSessions > 0
-                ? `${Math.round((classData.completedSessions / classData.totalSessions) * 100)}%`
+                ? /*`${Math.round((classData.completedSessions / classData.totalSessions) * 100)}%`*/ `${classData.attendanceRate.toFixed(1)}%`
                 : "0%"
             }
             logo={<TbPresentationAnalytics className="h-5 w-5" />}
