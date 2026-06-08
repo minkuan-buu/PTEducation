@@ -967,7 +967,7 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
                           <Accordion.Item id={student.studentClassId} className="border-none">
                             <Accordion.Heading>
                               {/* Thay đổi ở đây: Chỉ hiện background xám khi aria-expanded là false (nghĩa là đang đóng) */}
-                              <Accordion.Trigger className="w-full flex items-center justify-between py-3 px-4 m-0 rounded-xl transition-colors aria-[expanded=false]:hover:bg-gray-200">
+                              <Accordion.Trigger className="w-full flex items-center justify-between py-3 px-4 m-0 rounded-xl transition-colors aria-[expanded=false]:hover:bg-gray-200 dark:aria-[expanded=false]:hover:bg-zinc-800">
                                 Thông tin liên hệ
                                 <Accordion.Indicator>
                                   <FaChevronDown />
