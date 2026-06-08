@@ -5,6 +5,11 @@ export type CheckAttendancePayload = {
   studentClassId: string;
 };
 
+export type UpdateAttendancePayload = {
+  studentClassId: string;
+  attendanceStatus: string;
+};
+
 export type ClassAttendanceSession = {
   id: string;
   date: string;
@@ -12,6 +17,7 @@ export type ClassAttendanceSession = {
   endTime: string;
   sessionType: string;
   status?: string;
+  note?: string | null;
 };
 
 export type AttendanceSessionDetailStudent = {
@@ -138,3 +144,26 @@ export async function checkAttendance(
     payload,
   );
 }
+
+export async function updateAttendance(
+  attendanceId: string,
+  payload: UpdateAttendancePayload[],
+) {
+  await api.patch(`/attendances/${encodeURIComponent(attendanceId)}`, payload);
+}
+
+export type UpdateAttendanceSessionPayload = {
+  id: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  sessionType: string;
+  note?: string;
+};
+
+export async function updateAttendanceSession(
+  payload: UpdateAttendanceSessionPayload,
+) {
+  await api.put(`/attendances/update`, payload);
+}
+

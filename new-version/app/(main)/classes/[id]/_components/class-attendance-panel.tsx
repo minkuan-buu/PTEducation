@@ -128,6 +128,7 @@ const formatTimeRange = (
 import styles from "./class-attendance-panel.module.css";
 import { useCreateAttendance } from "@/hooks/classes/attendance/use-create-attendance";
 import { useCheckAttendance } from "@/hooks/classes/attendance/use-check-attendance";
+import { useUpdateAttendance } from "@/hooks/classes/attendance/use-update-attendance";
 
 export function ClassAttendancePanel({ classId }: { classId: string }) {
   const router = useRouter();
@@ -193,13 +194,21 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
     null,
   );
   const [isEditMode, setIsEditMode] = useState(false);
-  const [editedStatuses, setEditedStatuses] = useState<Record<string, string>>({});
+  const [editedStatuses, setEditedStatuses] = useState<{ studentClassId: string; attendanceStatus: string }[]>([]);
   const { isOpen: isWarningModalOpen, setOpen: setWarningModalOpen, close: closeWarningModal } = useOverlayState();
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
   const [pendingStudentClassId, setPendingStudentClassId] = useState<string | null>(null);
+  const [editingSession, setEditingSession] = useState<{
+    id: string;
+    date: string;
+    startTime: string;
+    endTime: string;
+    sessionType: "Adhoc" | "Makeup" | "Fixed";
+    note: string;
+  } | null>(null);
   const {
     data: selectedSessionDetail,
-    isLoading: isSessionDetailLoading,
+    isPending: isSessionDetailPending,
     isError: isSessionDetailError,
   } = useAttendanceSessionDetail(selectedSessionId);
 
@@ -326,6 +335,7 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
   };
 
   const handleOpenCreateModal = () => {
+    setEditingSession(null);
     if (isEditMode) {
       setPendingAction(() => () => setOpen(true));
       setWarningModalOpen(true);
@@ -334,16 +344,47 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
     }
   };
 
+  const handleOpenEditModal = () => {
+    if (selectedSessionDetail?.session) {
+      setEditingSession({
+        id: selectedSessionDetail.session.id,
+        date: selectedSessionDetail.session.date,
+        startTime: selectedSessionDetail.session.startTime,
+        endTime: selectedSessionDetail.session.endTime,
+        sessionType: selectedSessionDetail.session.sessionType as any,
+        note: selectedSessionDetail.session.note || "",
+      });
+      setOpen(true);
+    }
+  };
+
+  const { mutate: updateAttendanceMutate, isPending: isPendingUpdateAttendance } = useUpdateAttendance(() => handleUpdateSuccess(), selectedSessionId);
+
+  const handleUpdateSuccess = () => {
+    setIsEditMode(false);
+    setEditedStatuses([]);
+  }
+
   const handleToggleEditMode = () => {
     if (isEditMode) {
-      setPendingAction(() => () => {
-        setIsEditMode(false);
-        setEditedStatuses({});
-      });
-      setWarningModalOpen(true);
+      if (editedStatuses.length === 0) return handleUpdateSuccess();
+      // setPendingAction(() => () => {
+      //   setIsEditMode(false);
+      //   setEditedStatuses([]);
+      // });
+      // setWarningModalOpen(true);
+      // setIsEditMode(false);
+      try {
+        updateAttendanceMutate(editedStatuses);
+      } catch (error) {
+        console.error("Failed to create attendance session:", error);
+      } finally {
+        setPendingStudentClassId(null);
+      }
+      console.log(editedStatuses);
     } else {
       setIsEditMode(true);
-      setEditedStatuses({});
+      setEditedStatuses([]);
     }
   };
 
@@ -355,11 +396,17 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
     setEditedStatuses((prev) => {
       // Nếu giá trị mới giống gốc → xóa khỏi list (không cần cập nhật)
       if (newStatus === originalStatus) {
-        const { [studentClassId]: _, ...rest } = prev;
-        return rest;
+        return prev.filter((e) => e.studentClassId !== studentClassId);
       }
+
       // Nếu khác gốc → thêm/cập nhật vào list
-      return { ...prev, [studentClassId]: newStatus };
+      const idx = prev.findIndex((e) => e.studentClassId === studentClassId);
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = { ...copy[idx], attendanceStatus: newStatus };
+        return copy;
+      }
+      return [...prev, { studentClassId, attendanceStatus: newStatus }];
     });
   };
 
@@ -382,24 +429,24 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
     });
   }, [roster, studentKeyword]);
 
-  const { mutateAsync, isPending, isSuccess } = useCheckAttendance(
+  const { mutateAsync: checkAttendanceMutateAsync, isPending: isPendingCheckAttendance, isSuccess: isCheckAttendanceSuccess } = useCheckAttendance(
     selectedSessionId ?? "",
   );
 
   const pendingCheckAttendanceByStudentClassId = useMemo<Record<string, boolean>>(() => {
-    if (!isPending || !pendingStudentClassId) {
+    if (!isPendingCheckAttendance || !pendingStudentClassId) {
       return {};
     }
 
     return {
       [pendingStudentClassId]: true,
     };
-  }, [isPending, pendingStudentClassId]);
+  }, [isPendingCheckAttendance, pendingStudentClassId]);
 
   const handleCheckAttendance = async (studentClassId: string) => {
     try {
       setPendingStudentClassId(studentClassId);
-      await mutateAsync({
+      await checkAttendanceMutateAsync({
         studentClassId,
       });
     } catch (error) {
@@ -475,9 +522,18 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
                 Tạo buổi học mới
               </Button>
               <CreateAttendanceModal
+                data={editingSession}
                 isOpen={isOpen}
-                handleOpenChange={setOpen}
-                handleCloseModal={close}
+                handleOpenChange={(open) => {
+                  setOpen(open);
+                  if (!open) {
+                    setEditingSession(null);
+                  }
+                }}
+                handleCloseModal={() => {
+                  close();
+                  setEditingSession(null);
+                }}
                 defaultDate={selectedDateIso}
                 classId={classId}
               />
@@ -528,7 +584,7 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
                             </p>
                             <p className="mt-1 text-xs text-muted">
                               {session.sessionType === "Makeup"
-                                ? "Buổi học bù"
+                                ? `Buổi học bù (${formatDateOnly(session.note)})`
                                 : session.sessionType === "Adhoc"
                                   ? "Buổi học bổ  sung"
                                   : "Buổi học cố định"}
@@ -557,7 +613,7 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
                     Không thể tải danh sách buổi học.
                   </p>
                 ) : null}
-                {selectedSessionId && isSessionDetailLoading ? (
+                {selectedSessionId && isSessionDetailPending ? (
                   <p className="text-xs text-muted">
                     Đang tải chi tiết điểm danh của buổi học...
                   </p>
@@ -724,15 +780,6 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                {sessionStatus === "Closed" && (
-                  <Button
-                    size="sm"
-                    variant={isEditMode ? "primary" : "secondary"}
-                    onPress={handleToggleEditMode}
-                  >
-                    {isEditMode ? "Hoàn tất" : "Sửa điểm danh"}
-                  </Button>
-                )}
                 <Chip color="default" variant="soft">
                   {filteredRoster.length} học sinh
                 </Chip>
@@ -757,7 +804,7 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
               </div>
             </div>
 
-            <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="mt-4 flex flex-col gap-3 md:flex-row items-center md:justify-between">
               <Input
                 aria-label="Tìm học sinh"
                 className="md:max-w-sm"
@@ -765,9 +812,28 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
                 value={studentKeyword}
                 onChange={(event) => setStudentKeyword(event.target.value)}
               />
+              {sessionStatus === "Pending" && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onPress={handleOpenEditModal}
+                >
+                  Sửa thông tin buổi học
+                </Button>
+              )}
+              {sessionStatus === "Closed" && (
+                <Button
+                  size="sm"
+                  variant={isEditMode ? "primary" : "secondary"}
+                  onPress={handleToggleEditMode}
+                  isPending={isPendingUpdateAttendance}
+                >
+                  {isEditMode ? "Hoàn tất" : "Sửa điểm danh"}
+                </Button>
+              )}
             </div>
             <div className="mt-4 space-y-3">
-              {isSessionDetailLoading ? (
+              {isSessionDetailPending ? (
                 <div className="space-y-3">
                   <Skeleton className="h-20 rounded-2xl" />
                   <Skeleton className="h-20 rounded-2xl" />
@@ -810,7 +876,7 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
                               </p>
                               <Chip color={statusTone as never} variant="soft">
                                 {student.attendanceStatus === "Present"
-                                  ? "Đã điểm danh"
+                                  ? "Có mặt"
                                   : student.attendanceStatus === "Late"
                                     ? "Trễ"
                                     : student.attendanceStatus === "Absent"
@@ -847,7 +913,7 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
                               <Select
                                 className="rounded-lg min-w-50"
                                 placeholder="Trạng thái"
-                                value={editedStatuses[student.studentClassId] ?? student.attendanceStatus}
+                                value={editedStatuses.find((e) => e.studentClassId === student.studentClassId)?.attendanceStatus ?? student.attendanceStatus}
                                 onChange={(value) => {
                                   if (value !== null) {
                                     handleUpdateAttendance(student.studentClassId, String(value));

@@ -2,10 +2,19 @@ import { useEffect, useState } from "react";
 
 import { Button, Input, ListBox, Modal, Select } from "@heroui/react";
 import { useCreateAttendance } from "@/hooks/classes/attendance/use-create-attendance";
+import { useUpdateAttendanceSession } from "@/hooks/classes/attendance/use-update-attendance-session";
 
-type AttendanceSessionType = "Adhoc" | "Makeup";
+type AttendanceSessionType = "Adhoc" | "Makeup" | "Fixed";
 
 type CreateAttendanceModalProps = {
+  data: {
+    id: string;
+    date: string;
+    startTime: string;
+    endTime: string;
+    sessionType: AttendanceSessionType;
+    note: string;
+  } | null;
   isOpen: boolean;
   handleOpenChange: (isOpen: boolean) => void;
   handleCloseModal: () => void;
@@ -47,6 +56,7 @@ const isEndTimeAfterStartTime = (startTime: string, endTime: string) => {
 };
 
 const CreateAttendanceModal = ({
+  data,
   isOpen,
   handleOpenChange,
   handleCloseModal,
@@ -54,7 +64,15 @@ const CreateAttendanceModal = ({
   classId,
 }: CreateAttendanceModalProps) => {
   const [form, setForm] = useState<AttendanceFormState>(() =>
-    createInitialForm(defaultDate),
+    data != null
+      ? {
+        date: data.date,
+        startTime: data.startTime,
+        endTime: data.endTime,
+        sessionType: data.sessionType,
+        note: data.note,
+      }
+      : createInitialForm(defaultDate)
   );
 
   useEffect(() => {
@@ -62,8 +80,18 @@ const CreateAttendanceModal = ({
       return;
     }
 
-    setForm(createInitialForm(defaultDate));
-  }, [defaultDate, isOpen]);
+    if (data != null) {
+      setForm({
+        date: data.date,
+        startTime: data.startTime,
+        endTime: data.endTime,
+        sessionType: data.sessionType,
+        note: data.note || "",
+      });
+    } else {
+      setForm(createInitialForm(defaultDate));
+    }
+  }, [data, defaultDate, isOpen]);
 
   useEffect(() => {
     if (form.sessionType === "Makeup") {
@@ -85,10 +113,17 @@ const CreateAttendanceModal = ({
     }));
   };
 
-  const { mutate, isPending, isSuccess } = useCreateAttendance(
-    () => hanleCreateSuccess(),
+  const { mutate: createMutate, isPending: isCreating } = useCreateAttendance(
+    () => handleSuccess(),
     classId,
   );
+
+  const { mutate: updateMutate, isPending: isUpdating } = useUpdateAttendanceSession(
+    () => handleSuccess(),
+    classId,
+  );
+
+  const isPending = isCreating || isUpdating;
 
   const handleSubmit = () => {
     if (!form.date || !form.startTime || !form.endTime) {
@@ -107,22 +142,32 @@ const CreateAttendanceModal = ({
     }
 
     try {
-      mutate({
-        date: form.date,
-        startTime: form.startTime,
-        endTime: form.endTime,
-        sessionType: form.sessionType,
-        note: form.note,
-      });
+      if (data != null) {
+        updateMutate({
+          id: data.id,
+          date: form.date,
+          startTime: form.startTime,
+          endTime: form.endTime,
+          sessionType: form.sessionType,
+          note: form.note,
+        });
+      } else {
+        createMutate({
+          date: form.date,
+          startTime: form.startTime,
+          endTime: form.endTime,
+          sessionType: form.sessionType,
+          note: form.note,
+        });
+      }
     } catch (error) {
-      console.error("Failed to create attendance session:", error);
+      console.error("Failed to submit attendance session:", error);
     }
   };
 
-  const hanleCreateSuccess = () => {
+  const handleSuccess = () => {
     handleCloseModal();
     setForm(createInitialForm(defaultDate));
-    close();
   };
 
   const isEndTimeValid = isEndTimeAfterStartTime(form.startTime, form.endTime);
@@ -133,7 +178,7 @@ const CreateAttendanceModal = ({
         <Modal.Container size="lg">
           <Modal.Dialog>
             <Modal.Header>
-              <Modal.Heading>Tạo buổi học mới</Modal.Heading>
+              <Modal.Heading>{data != null ? "Chỉnh sửa buổi học" : "Tạo buổi học mới"}</Modal.Heading>
             </Modal.Header>
             <Modal.Body className="px-2">
               <form
@@ -192,6 +237,12 @@ const CreateAttendanceModal = ({
                             Bù
                             <ListBox.ItemIndicator />
                           </ListBox.Item>
+                          {form.sessionType === "Fixed" && (
+                            <ListBox.Item id="Fixed" textValue="Cố định">
+                              Cố định
+                              <ListBox.ItemIndicator />
+                            </ListBox.Item>
+                          )}
                         </ListBox>
                       </Select.Popover>
                     </Select>
@@ -257,11 +308,12 @@ const CreateAttendanceModal = ({
                   !form.startTime ||
                   !form.endTime ||
                   !isEndTimeValid ||
-                  (form.sessionType === "Makeup" && !form.note)
+                  (form.sessionType === "Makeup" && !form.note) ||
+                  isPending
                 }
                 onPress={handleSubmit}
               >
-                Tạo buổi học
+                {data != null ? "Cập nhật" : "Tạo buổi học"}
               </Button>
             </Modal.Footer>
           </Modal.Dialog>
