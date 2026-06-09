@@ -146,7 +146,8 @@ export function ClassScorePanel({ classId }: { classId: string }) {
     if (!selectedScoreId) return;
 
     const scoreReqList = Object.entries(editedScores).map(([studentClassId, val]) => {
-      const scoreVal = Number(val.score);
+      const normalizedScore = val.score.replace(",", ".");
+      const scoreVal = Number(normalizedScore);
       return {
         studentClassId,
         score: isNaN(scoreVal) || !val.score ? 0 : scoreVal,
@@ -199,7 +200,7 @@ export function ClassScorePanel({ classId }: { classId: string }) {
       <div className="xl:col-span-4 space-y-4 self-start sticky top-5">
         <div className="rounded-2xl border border-divider bg-background p-5 shadow-sm">
           <div className="flex items-center justify-between gap-3 mb-4">
-            <h2 className="text-lg font-semibold">Bài kiểm tra</h2>
+            <h2 className="text-lg font-semibold">Điểm kiểm tra</h2>
             <Button
               size="sm"
               variant="outline"
@@ -207,7 +208,7 @@ export function ClassScorePanel({ classId }: { classId: string }) {
               onPress={() => setCreateOpen(true)}
             >
               <FaPlus className="h-3 w-3" />
-              Tạo bài kiểm tra
+              Tạo điểm kiểm tra
             </Button>
           </div>
 
@@ -219,7 +220,7 @@ export function ClassScorePanel({ classId }: { classId: string }) {
                 <Skeleton className="h-20 rounded-2xl" />
               </div>
             ) : groupedMonths.length === 0 ? (
-              <p className="text-sm text-muted py-4 text-center">Chưa có bài kiểm tra nào.</p>
+              <p className="text-sm text-muted py-4 text-center">Chưa có điểm kiểm tra nào.</p>
             ) : (
               <Accordion variant="surface" className="w-full transition-all duration-100 rounded-xl overflow-hidden">
                 {groupedMonths.map((group) => (
@@ -266,7 +267,7 @@ export function ClassScorePanel({ classId }: { classId: string }) {
                                   </p>
                                 </div>
                                 <Chip size="sm" color={scoreTone} variant="soft">
-                                  TB: {test.averageScore.toFixed(1)}
+                                  TB: {test.averageScore.toFixed(2)}
                                 </Chip>
                               </div>
                             </button>
@@ -279,7 +280,7 @@ export function ClassScorePanel({ classId }: { classId: string }) {
               </Accordion>
             )}
             {isScoresError && (
-              <p className="text-xs text-danger text-center">Không thể tải danh sách bài kiểm tra.</p>
+              <p className="text-xs text-danger text-center">Không thể tải danh sách điểm kiểm tra.</p>
             )}
           </div>
         </div>
@@ -289,8 +290,8 @@ export function ClassScorePanel({ classId }: { classId: string }) {
       <div className="xl:col-span-8 space-y-4 h-full flex flex-col">
         {!selectedScoreId ? (
           <div className="flex-1 flex flex-col justify-center items-center gap-2 text-muted border border-dashed border-divider rounded-2xl min-h-[50vh] p-8 bg-background">
-            <p className="text-lg font-medium">Chi tiết bài kiểm tra</p>
-            <p className="text-sm text-muted">Chọn một bài kiểm tra ở cột trái để xem điểm số chi tiết của cả lớp.</p>
+            <p className="text-lg font-medium">Chi tiết điểm kiểm tra</p>
+            <p className="text-sm text-muted">Chọn một điểm kiểm tra ở cột trái để xem điểm số chi tiết của cả lớp.</p>
           </div>
         ) : isDetailPending ? (
           <div className="rounded-2xl border border-divider bg-background p-6 shadow-sm space-y-4">
@@ -300,7 +301,7 @@ export function ClassScorePanel({ classId }: { classId: string }) {
           </div>
         ) : isDetailError || !scoreDetail ? (
           <div className="rounded-2xl border border-divider bg-background p-6 shadow-sm text-center text-danger">
-            Không thể tải thông tin chi tiết bài kiểm tra.
+            Không thể tải thông tin chi tiết điểm kiểm tra.
           </div>
         ) : (
           <div className="rounded-2xl border border-divider bg-background p-6 shadow-sm space-y-4">
@@ -308,7 +309,7 @@ export function ClassScorePanel({ classId }: { classId: string }) {
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between border-b border-divider pb-4">
               <div>
                 <h2 className="text-xl font-bold">
-                  Bài kiểm tra ngày {formatDateOnly(scoreDetail.testDateAt)}
+                  Điểm kiểm tra ngày {formatDateOnly(scoreDetail.testDateAt)}
                 </h2>
               </div>
 
@@ -411,19 +412,19 @@ export function ClassScorePanel({ classId }: { classId: string }) {
                           <td className="p-4">
                             {isEditMode ? (
                               <Input
-                                type="number"
-                                min={0}
-                                max={10}
-                                step={0.1}
+                                type="text"
+                                inputMode="decimal"
+                                placeholder="0"
                                 value={editedScores[student.studentClassId]?.score ?? ""}
-                                onChange={(e) =>
-                                  handleEditChange(student.studentClassId, "score", e.target.value)
-                                }
+                                onChange={(e) => {
+                                  const val = e.target.value.replace(/[^0-9.,]/g, "");
+                                  handleEditChange(student.studentClassId, "score", val);
+                                }}
                                 className="w-24"
                               />
                             ) : (
                               <Chip color={scoreColor} variant="soft" className="font-semibold">
-                                {student.score.toFixed(1)}
+                                {student.score.toFixed(2)}
                               </Chip>
                             )}
                           </td>
@@ -470,7 +471,7 @@ export function ClassScorePanel({ classId }: { classId: string }) {
                 <Modal.Heading>Xác nhận xóa</Modal.Heading>
               </Modal.Header>
               <Modal.Body className="py-2 text-md">
-                Bạn có chắc chắn muốn xóa bài kiểm tra này? Hành động này sẽ xóa vĩnh viễn tất cả điểm số của học sinh trong bài kiểm tra này và không thể hoàn tác.
+                Bạn có chắc chắn muốn xóa điểm kiểm tra này? Hành động này sẽ xóa vĩnh viễn tất cả điểm số của học sinh trong điểm kiểm tra này và không thể hoàn tác.
               </Modal.Body>
               <Modal.Footer>
                 <Button variant="ghost" onPress={closeDelete}>

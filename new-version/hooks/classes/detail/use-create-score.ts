@@ -13,6 +13,9 @@ export function useCreateScore(onSuccessFn?: () => void, classId?: string) {
         queryClient.invalidateQueries({
           queryKey: ["class-scores", classId],
         });
+        queryClient.invalidateQueries({
+          queryKey: ["classes", classId],
+        });
       }
       toast.success("Tạo điểm kiểm tra thành công");
       onSuccessFn?.();
