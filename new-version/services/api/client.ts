@@ -1,6 +1,6 @@
 import axios, { type AxiosInstance } from "axios";
 
-import { buildApiBasePath, type ApiVersion } from "./config";
+import { buildApiBasePath, type ApiVersion, getApiBaseUrl } from "./config";
 
 export type UnauthorizedHandler = (error: unknown) => void;
 
@@ -10,9 +10,17 @@ export function setUnauthorizedHandler(handler: UnauthorizedHandler | null) {
   unauthorizedHandler = handler;
 }
 
-export function createApiClient(version: ApiVersion): AxiosInstance {
+export function createApiClient(version: ApiVersion | "root"): AxiosInstance {
+  const baseUrl = getApiBaseUrl().replace(/\/$/, "");
+  const baseURL =
+    version === "root"
+      ? baseUrl
+        ? `${baseUrl}/api`
+        : "/api"
+      : buildApiBasePath(version);
+
   const client = axios.create({
-    baseURL: buildApiBasePath(version),
+    baseURL,
     headers: {
       "Content-Type": "application/json",
     },

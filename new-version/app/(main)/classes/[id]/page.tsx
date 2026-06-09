@@ -10,6 +10,7 @@ import { TbPresentationAnalytics } from "react-icons/tb";
 
 import { ClassAttendancePanel } from "./_components/class-attendance-panel";
 import { ClassGeneralPanel } from "./_components/class-general-panel";
+import { ClassScorePanel } from "./_components/class-score-panel";
 
 import { Card } from "@/components/classes/card";
 import { LoadingDots } from "@/components/loading-dots";
@@ -177,7 +178,7 @@ export default function ClassDetailPage() {
             <ClassAttendancePanel classId={classId} />
           </Tabs.Panel>
           <Tabs.Panel className="pt-4" id="score">
-            <p>Generate and download detailed reports.</p>
+            <ClassScorePanel classId={classId} />
           </Tabs.Panel>
         </Tabs>
       </div>
