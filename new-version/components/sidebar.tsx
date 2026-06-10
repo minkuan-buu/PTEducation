@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Button } from "@heroui/react";
+import { Button, Skeleton } from "@heroui/react";
 
 import { useAttendanceRealtime } from "@/context/attendance-context";
 import { useUser } from "@/context/user-context";
@@ -55,7 +55,7 @@ type MenuSection = {
 export const Sidebar = () => {
     const router = useRouter();
     const pathname = usePathname();
-    const { user, isAuthenticated, clearUser } = useUser();
+    const { user, isAuthenticated, clearUser, isLoading } = useUser();
     const attendanceRealtime = useAttendanceRealtime();
     const [tick, setTick] = useState(() => new Date());
     const [isMounted, setIsMounted] = useState(false);
@@ -208,7 +208,7 @@ export const Sidebar = () => {
                 </div>
                 <ThemeSwitch />
             </div>
-            
+
             <div className="border-t border-divider/60" />
 
             <div className="flex-1 overflow-y-auto no-scrollbar py-4 space-y-5 px-3">
@@ -247,7 +247,17 @@ export const Sidebar = () => {
                 </div>
 
                 <div>
-                    <UserCard name={user?.name || "User"} role={user?.role || "User"} avatarUrl={user?.avatarUrl || ""} />
+                    {isLoading ? (
+                        <div className="w-full rounded-xl px-3 py-3 border border-divider/60 bg-content2/50 flex flex-row gap-4 items-center">
+                            <Skeleton className="size-10 rounded-full" />
+                            <div className="flex flex-col gap-2 flex-1">
+                                <Skeleton className="h-4 w-2/3 rounded-lg" />
+                                <Skeleton className="h-3 w-1/3 rounded-lg" />
+                            </div>
+                        </div>
+                    ) : (
+                        <UserCard name={user?.name || "User"} role={user?.role || "User"} avatarUrl={user?.avatarUrl || ""} />
+                    )}
                 </div>
 
                 <nav className="py-2">
@@ -265,7 +275,7 @@ export const Sidebar = () => {
                                             item.href === "/"
                                                 ? pathname === "/"
                                                 : pathname === item.href || pathname.startsWith(`${item.href}/`);
-                                        
+
                                         const Icon = item.icon;
 
                                         return (

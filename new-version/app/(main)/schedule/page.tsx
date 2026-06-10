@@ -1,7 +1,7 @@
 "use client";
 
 import { useUser } from "@/context/user-context";
-import { Card, Button, Chip } from "@heroui/react";
+import { Card, Button, Chip, Skeleton } from "@heroui/react";
 import WeeklySchedule, { EventItem } from "@/components/weekly-schedule";
 import { TbCalendarTime, TbArrowLeft, TbInfoCircle, TbClock } from "react-icons/tb";
 import NextLink from "next/link";
@@ -31,13 +31,14 @@ const classScheduleEvents: EventItem[] = [
 ];
 
 export default function SchedulePage() {
-    const { user } = useUser();
+    const { user, isLoading: isUserLoading } = useUser();
     const role = (user?.role || "student").toLowerCase();
 
     const [recentAttendance, setRecentAttendance] = useState<AttendanceStudentDetailResModel[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
+        if (isUserLoading) return;
         async function loadAttendance() {
             try {
                 const today = new Date();
@@ -67,7 +68,7 @@ export default function SchedulePage() {
         if (role === "student" || role === "guardian" || role === "admin" || role === "manager") {
             loadAttendance();
         }
-    }, [role]);
+    }, [role, isUserLoading]);
 
     if (role !== "student" && role !== "manager" && role !== "admin" && role !== "guardian") {
         return (

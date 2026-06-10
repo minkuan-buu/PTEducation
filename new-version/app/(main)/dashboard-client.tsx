@@ -17,14 +17,16 @@ import NextLink from "next/link";
 import { useStudentOverview } from "@/hooks/users/use-student-overview";
 
 export default function DashboardClient() {
-    const { user } = useUser();
+    const { user, isLoading: isUserLoading } = useUser();
     const role = (user?.role || "student").toLowerCase();
     const userName = user?.name || "Học sinh";
 
-    const { data: overview, isLoading } = useStudentOverview({
+    const { data: overview, isLoading: isOverviewLoading } = useStudentOverview({
         userId: user?.id || "",
-        enabled: role === "student" || role === "guardian",
+        enabled: !isUserLoading && (role === "student" || role === "guardian"),
     });
+
+    const isLoading = isUserLoading || isOverviewLoading;
 
     const gpa = overview?.averageScore !== undefined ? overview.averageScore.toFixed(1) : "0.0";
     const attendanceRate = overview?.attendanceRate !== undefined ? overview.attendanceRate.toFixed(1) : "0.0";
@@ -262,7 +264,7 @@ export default function DashboardClient() {
                                     <thead>
                                         <tr className="border-b border-divider text-xs text-muted-foreground uppercase tracking-wider font-semibold">
                                             <th className="pb-3 pl-2">Ngày kiểm tra</th>
-                                            <th className="pb-3">Ca thi</th>
+                                            <th className="pb-3">Ca</th>
                                             <th className="pb-3">Nhận xét từ giáo viên</th>
                                             <th className="pb-3 text-right pr-2">Điểm số</th>
                                         </tr>
@@ -272,7 +274,7 @@ export default function DashboardClient() {
                                             overview.recentScores.slice(0, 3).map((item, index) => (
                                                 <tr key={index}>
                                                     <td className="py-3 pl-2 font-semibold">{formatDateTime(item.testDateAt)}</td>
-                                                    <td className="py-3 text-muted-foreground">{item.shift || "Ca sáng"}</td>
+                                                    <td className="py-3 text-muted-foreground">{item.shift || "-"}</td>
                                                     <td className="py-3 text-muted-foreground text-xs">{item.note || "-"}</td>
                                                     <td className="py-3 text-right pr-2 font-bold text-emerald-500">{item.score}</td>
                                                 </tr>

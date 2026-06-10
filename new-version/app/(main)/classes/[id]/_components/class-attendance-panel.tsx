@@ -460,7 +460,7 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
     name
       .split(/\s+/)
       .filter(Boolean)
-      .slice(0, 2)
+      .slice(Math.max(name.split(/\s+/).length - 2, 0), name.split(/\s+/).length)
       .map((part) => part[0]?.toUpperCase() ?? "")
       .join("") || "HS";
 

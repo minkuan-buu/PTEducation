@@ -1,7 +1,7 @@
 "use client";
 
 import { useUser } from "@/context/user-context";
-import { Card, Button, Chip } from "@heroui/react";
+import { Card, Button, Chip, Skeleton } from "@heroui/react";
 import {
     TbCalendarCheck,
     TbUserCheck,
@@ -20,7 +20,7 @@ import {
 } from "@/services/api/v2/student";
 
 export default function AttendancePage() {
-    const { user } = useUser();
+    const { user, isLoading: isUserLoading } = useUser();
     const role = (user?.role || "guardian").toLowerCase();
     const studentName = role === "guardian" ? "Nguyễn Văn A" : user?.name || "Học sinh";
 
@@ -31,6 +31,7 @@ export default function AttendancePage() {
 
     // Load available months
     useEffect(() => {
+        if (isUserLoading) return;
         async function loadMonths() {
             try {
                 const monthsRes = await getStudentAttendanceMonths();
@@ -65,11 +66,11 @@ export default function AttendancePage() {
         if (role === "student" || role === "guardian") {
             loadMonths();
         }
-    }, [role]);
+    }, [role, isUserLoading]);
 
     // Load attendance for selected month
     useEffect(() => {
-        if (!selectedMonthId) return;
+        if (!selectedMonthId || isUserLoading) return;
 
         async function loadAttendance() {
             setIsLoading(true);

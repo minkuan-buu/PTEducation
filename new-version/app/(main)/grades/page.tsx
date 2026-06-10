@@ -1,7 +1,7 @@
 "use client";
 
 import { useUser } from "@/context/user-context";
-import { Card, Button, Chip } from "@heroui/react";
+import { Card, Button, Chip, Skeleton } from "@heroui/react";
 import {
     TbAward,
     TbBook,
@@ -21,7 +21,7 @@ import {
 } from "@/services/api/v2/student";
 
 export default function GradesPage() {
-    const { user } = useUser();
+    const { user, isLoading: isUserLoading } = useUser();
     const role = (user?.role || "student").toLowerCase();
     const isGuardian = role === "guardian";
     const studentName = isGuardian ? "Nguyễn Văn A" : user?.name || "Học sinh";
@@ -33,6 +33,7 @@ export default function GradesPage() {
 
     // Load available months
     useEffect(() => {
+        if (isUserLoading) return;
         async function loadMonths() {
             try {
                 const monthsRes = await getStudentScoreMonths();
@@ -67,11 +68,11 @@ export default function GradesPage() {
         if (role === "student" || role === "guardian") {
             loadMonths();
         }
-    }, [role]);
+    }, [role, isUserLoading]);
 
     // Load scores for selected month
     useEffect(() => {
-        if (!selectedMonthId) return;
+        if (!selectedMonthId || isUserLoading) return;
 
         async function loadScores() {
             setIsLoading(true);
