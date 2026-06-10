@@ -8,7 +8,18 @@ import { useAttendanceRealtime } from "@/context/attendance-context";
 import { useUser } from "@/context/user-context";
 import { v2 } from "@/services/api";
 import { UserCard } from "./user-sidebar-card";
-import { TbLogout2 } from "react-icons/tb";
+import {
+    TbLayoutDashboard,
+    TbSchool,
+    TbUsers,
+    TbReport,
+    TbCalendar,
+    TbUserCheck,
+    TbAward,
+    TbClipboardCheck,
+    TbReportAnalytics,
+    TbLogout2
+} from "react-icons/tb";
 import NextLink from "next/link";
 import OpenIcon from '@iconify-react/majesticons/open';
 import { ThemeSwitch } from "./theme-switch";
@@ -33,6 +44,7 @@ function formatDateLabel(date: Date) {
 type MenuItem = {
     label: string;
     href: string;
+    icon: React.ComponentType<{ className?: string }>;
 };
 
 type MenuSection = {
@@ -106,58 +118,57 @@ export const Sidebar = () => {
                 {
                     title: "",
                     items: [
-                        { label: "Trang tổng quan", href: "/" },
+                        { label: "Trang tổng quan", href: "/", icon: TbLayoutDashboard },
                     ],
                 },
                 {
                     title: "Quản lý",
                     items: [
-                        { label: "Người dùng", href: "/users" },
-                        { label: "Lớp học", href: "/classes" },
-                        { label: "Báo cáo", href: "/reports" },
+                        { label: "Người dùng", href: "/users", icon: TbUsers },
+                        { label: "Lớp học", href: "/classes", icon: TbSchool },
+                        { label: "Báo cáo", href: "/reports", icon: TbReport },
                     ],
                 },
             ],
             student: [
                 {
-                    title: "Classes",
+                    title: "Lớp học",
                     items: [
-                        { label: "Overview", href: "/" },
-                        { label: "My Classes", href: "/classes" },
-                        { label: "Grades & Attendance", href: "/grades" },
+                        { label: "Tổng quan", href: "/", icon: TbLayoutDashboard },
+                        { label: "Điểm số & Chuyên cần", href: "/grades", icon: TbAward },
                     ],
                 },
                 {
-                    title: "Schedule",
+                    title: "Lịch trình",
                     items: [
-                        { label: "Calendar", href: "/schedule" },
+                        { label: "Lịch học", href: "/schedule", icon: TbCalendar },
                     ],
                 },
             ],
             guardian: [
                 {
-                    title: "Student",
+                    title: "Học sinh",
                     items: [
-                        { label: "Overview", href: "/" },
-                        { label: "Attendance", href: "/attendance" },
-                        { label: "Grades", href: "/grades" },
+                        { label: "Tổng quan", href: "/", icon: TbLayoutDashboard },
+                        { label: "Chuyên cần", href: "/attendance", icon: TbUserCheck },
+                        { label: "Điểm số", href: "/grades", icon: TbAward },
                     ],
                 },
             ],
             manager: [
                 {
-                    title: "Operations",
+                    title: "Vận hành",
                     items: [
-                        { label: "Overview", href: "/" },
-                        { label: "Classes", href: "/classes" },
-                        { label: "Schedule", href: "/schedule" },
+                        { label: "Tổng quan", href: "/", icon: TbLayoutDashboard },
+                        { label: "Lớp học", href: "/classes", icon: TbSchool },
+                        { label: "Lịch học", href: "/schedule", icon: TbCalendar },
                     ],
                 },
                 {
-                    title: "Reports",
+                    title: "Báo cáo",
                     items: [
-                        { label: "Attendance", href: "/reports/attendance" },
-                        { label: "Scores", href: "/reports/scores" },
+                        { label: "Điểm danh", href: "/reports/attendance", icon: TbClipboardCheck },
+                        { label: "Điểm số", href: "/reports/scores", icon: TbReportAnalytics },
                     ],
                 },
             ],
@@ -189,21 +200,23 @@ export const Sidebar = () => {
     }
 
     return (
-        <aside className="fixed left-0 top-0 z-50 h-screen w-72 border-r border-separator bg-background/95 backdrop-blur-md">
-            <div className="flex h-18 items-center justify-between px-6">
+        <aside className="fixed left-0 top-0 z-50 h-screen w-72 border-r border-separator bg-background/95 backdrop-blur-md flex flex-col">
+            <div className="flex h-18 items-center justify-between px-6 shrink-0">
                 <div className="flex flex-col">
                     <p className="font-bold text-inherit">PTEducation</p>
                     <span className="text-xs text-muted">Biological Sciences</span>
                 </div>
                 <ThemeSwitch />
             </div>
-            <div className="space-y-4 border-t border-divider pt-4" />
-            <div className="px-3 pb-3">
-                <div className="rounded-2xl border border-divider bg-content1/80 p-4 shadow-sm backdrop-blur-md">
+            
+            <div className="border-t border-divider/60" />
+
+            <div className="flex-1 overflow-y-auto no-scrollbar py-4 space-y-5 px-3">
+                <div className="rounded-2xl border border-divider bg-content1/80 p-4 shadow-sm backdrop-blur-md transition-all duration-300 hover:border-divider/80">
                     <div className="flex items-center justify-between gap-2">
                         <div>
                             {/* <p className="text-xs uppercase tracking-wide text-muted">Đồng hồ hệ thống</p> */}
-                            <p className="text-2xl font-semibold tabular-nums">{displayNow ? formatClock(displayNow) : "--:--:--"}</p>
+                            <p className="text-2xl font-semibold tabular-nums tracking-tight">{displayNow ? formatClock(displayNow) : "--:--:--"}</p>
                         </div>
                         <span
                             aria-label={attendanceRealtime.connectionStatus}
@@ -232,46 +245,52 @@ export const Sidebar = () => {
                         {attendanceRealtime.serverTime ? "Đang sync giờ từ BE" : "Đang dùng giờ máy tạm thời"}
                     </p> */}
                 </div>
-            </div>
-            <div className="px-3">
-                <UserCard name={user?.name || "User"} role={user?.role || "User"} avatarUrl={user?.avatarUrl || ""} />
-            </div>
 
-            <nav className="px-3 py-4">
-                <div className="flex flex-col gap-4">
-                    {sections.map((section) => (
-                        <div key={section.title} className="flex flex-col gap-2">
-                            <p className="px-3 text-xs font-semibold uppercase tracking-wide text-muted">
-                                {section.title}
-                            </p>
-                            <div className="flex flex-col gap-1">
-                                {section.items.map((item) => {
-                                    const isActive =
-                                        item.href === "/"
-                                            ? pathname === "/"
-                                            : pathname === item.href || pathname.startsWith(`${item.href}/`);
-
-                                    return (
-                                        <NextLink key={item.href} href={item.href} className="w-full">
-                                            <Button
-                                                className={
-                                                    isActive
-                                                        ? "w-full min-h-[7vh] justify-start rounded-xl border border-primary/20 bg-primary/10 px-3 py-2 text-sm font-semibold text-primary bg-gradient-to-tr from-[#48cae4] to-[#00b4d8]"
-                                                        : "w-full min-h-[7vh] justify-start rounded-xl px-3 py-2 text-sm font-medium text-foreground"
-                                                }
-                                                fullWidth
-                                                variant="ghost"
-                                            >
-                                                {item.label}
-                                            </Button>
-                                        </NextLink>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    ))}
+                <div>
+                    <UserCard name={user?.name || "User"} role={user?.role || "User"} avatarUrl={user?.avatarUrl || ""} />
                 </div>
-            </nav>
+
+                <nav className="py-2">
+                    <div className="flex flex-col gap-5">
+                        {sections.map((section) => (
+                            <div key={section.title} className="flex flex-col gap-2">
+                                {section.title && (
+                                    <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
+                                        {section.title}
+                                    </p>
+                                )}
+                                <div className="flex flex-col gap-1">
+                                    {section.items.map((item) => {
+                                        const isActive =
+                                            item.href === "/"
+                                                ? pathname === "/"
+                                                : pathname === item.href || pathname.startsWith(`${item.href}/`);
+                                        
+                                        const Icon = item.icon;
+
+                                        return (
+                                            <NextLink key={item.href} href={item.href} className="w-full">
+                                                <Button
+                                                    className={
+                                                        isActive
+                                                            ? "group w-full h-11 justify-start rounded-xl px-4 text-sm font-semibold text-white bg-gradient-to-tr from-[#48cae4] to-[#00b4d8] shadow-md shadow-[#00b4d8]/20 transition-all duration-300 transform scale-[1.01] flex items-center gap-3"
+                                                            : "group w-full h-11 justify-start rounded-xl px-4 text-sm font-medium text-foreground hover:bg-content2 hover:text-foreground transition-all duration-200 flex items-center gap-3"
+                                                    }
+                                                    fullWidth
+                                                    variant="ghost"
+                                                >
+                                                    <Icon className="size-5 shrink-0 transition-transform duration-200 group-hover:scale-110" />
+                                                    <span>{item.label}</span>
+                                                </Button>
+                                            </NextLink>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </nav>
+            </div>
             <div className="absolute bottom-0 left-0 w-full border-t border-divider p-4">
                 <div className="flex flex-col gap-2">
                     <NextLink className="flex items-center gap-1" href="https://pteducation.edu.vn/" target="_blank" rel="noopener noreferrer">

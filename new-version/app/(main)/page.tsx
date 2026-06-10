@@ -1,6 +1,7 @@
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import DashboardClient from './dashboard-client';
 
 export default async function Home() {
   const cookieStore = await cookies();
@@ -10,11 +11,8 @@ export default async function Home() {
   }
 
   return (
-    <main className="min-h-screen pt-15 flex flex-col items-center justify-center">
-      <div className="text-center p-8">
-        <h1 className="text-2xl font-bold">PT Education</h1>
-        <p className="text-muted mt-2">Bạn đã đăng nhập — đây là trang chủ.</p>
-      </div>
+    <main className="min-h-screen py-8">
+      <DashboardClient />
     </main>
   );
 }
