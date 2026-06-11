@@ -6,10 +6,7 @@ import WeeklySchedule, { EventItem } from "@/components/weekly-schedule";
 import { TbCalendarTime, TbArrowLeft, TbInfoCircle, TbClock } from "react-icons/tb";
 import NextLink from "next/link";
 import { useEffect, useState } from "react";
-import {
-    getStudentAttendanceByMonth,
-    type AttendanceStudentDetailResModel
-} from "@/services/api/v2/student";
+import { useStudentAttendanceMonths, useStudentAttendanceByMonth } from "@/hooks/users/use-student-attendance";
 
 const classScheduleEvents: EventItem[] = [
     {
@@ -34,41 +31,33 @@ export default function SchedulePage() {
     const { user, isLoading: isUserLoading } = useUser();
     const role = (user?.role || "student").toLowerCase();
 
-    const [recentAttendance, setRecentAttendance] = useState<AttendanceStudentDetailResModel[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [selectedMonthId, setSelectedMonthId] = useState<string>("");
+
+    const {
+        data: monthsData,
+        isLoading: isMonthsLoading
+    } = useStudentAttendanceMonths({ enabled: !isUserLoading && ["student", "guardian", "admin", "manager"].includes(role) });
+
+    const months = monthsData || [];
 
     useEffect(() => {
-        if (isUserLoading) return;
-        async function loadAttendance() {
-            try {
-                const today = new Date();
-                const month = today.getMonth() + 1;
-                const year = today.getFullYear();
-                const res = await getStudentAttendanceByMonth(month, year);
-                if (res && res.attendances && res.attendances.length > 0) {
-                    setRecentAttendance(res.attendances.slice(0, 5));
-                } else {
-                    // Fallback logs
-                    setRecentAttendance([
-                        { date: "2026-06-08T08:00:00Z", startTime: "08:00", endTime: "10:00", isPresent: true },
-                        { date: "2026-06-03T08:00:00Z", startTime: "08:00", endTime: "10:00", isPresent: true },
-                        { date: "2026-06-01T08:00:00Z", startTime: "08:00", endTime: "10:00", isPresent: true }
-                    ]);
-                }
-            } catch (err) {
-                console.error("Error loading attendance in schedule page:", err);
-                setRecentAttendance([
-                    { date: "2026-06-08T08:00:00Z", startTime: "08:00", endTime: "10:00", isPresent: true }
-                ]);
-            } finally {
-                setIsLoading(false);
-            }
+        if (months.length > 0 && !selectedMonthId) {
+            setSelectedMonthId(months[0].id);
         }
+    }, [months, selectedMonthId]);
 
-        if (role === "student" || role === "guardian" || role === "admin" || role === "manager") {
-            loadAttendance();
-        }
-    }, [role, isUserLoading]);
+    const selectedMonth = selectedMonthId ? parseInt(selectedMonthId.split("/")[0], 10) : 0;
+    const selectedYear = selectedMonthId ? parseInt(selectedMonthId.split("/")[1], 10) : 0;
+
+    const {
+        data: attendanceData,
+        isLoading: isAttendanceLoading,
+    } = useStudentAttendanceByMonth(selectedMonth, selectedYear, {
+        enabled: !isUserLoading && !!selectedMonthId && ["student", "guardian", "admin", "manager"].includes(role)
+    });
+
+    const attendanceLogs = attendanceData?.attendances || [];
+    const isLoading = isUserLoading || isMonthsLoading || isAttendanceLoading;
 
     if (role !== "student" && role !== "manager" && role !== "admin" && role !== "guardian") {
         return (
@@ -91,7 +80,7 @@ export default function SchedulePage() {
     };
 
     return (
-        <div className="w-full max-w-6xl mx-auto space-y-8 p-6 md:p-8">
+        <div className="w-full px-6 space-y-8 py-6">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
@@ -122,33 +111,52 @@ export default function SchedulePage() {
                 {/* Side Card: Attendance sessions list */}
                 <div className="space-y-6">
                     <Card className="p-6 border border-divider bg-background/50 backdrop-blur-md rounded-2xl flex flex-col justify-start">
-                        <h3 className="text-lg font-bold flex items-center gap-2 mb-6">
-                            <TbInfoCircle className="text-[#00b4d8] size-5" />
-                            Các buổi học gần đây
-                        </h3>
-                        <div className="space-y-4">
+                        <div className="flex flex-col gap-4 mb-6">
+                            <h3 className="text-lg font-bold flex items-center gap-2">
+                                <TbInfoCircle className="text-[#00b4d8] size-5" />
+                                Lịch sử điểm danh
+                            </h3>
+                            <select
+                                value={selectedMonthId}
+                                onChange={(e) => setSelectedMonthId(e.target.value)}
+                                className="w-full rounded-xl border border-divider bg-content1 px-3 py-2 text-sm font-semibold text-foreground focus:outline-none focus:border-primary"
+                            >
+                                {months.map((m) => (
+                                    <option key={m.id} value={m.id}>
+                                        Tháng {m.month} - Năm {m.year}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="space-y-4 overflow-y-auto max-h-[500px] pr-2">
                             {isLoading ? (
                                 <p className="text-xs text-muted-foreground">Đang tải lịch sử điểm danh...</p>
-                            ) : recentAttendance.length === 0 ? (
-                                <p className="text-xs text-muted-foreground">Chưa có lịch sử điểm danh.</p>
+                            ) : attendanceLogs.length === 0 ? (
+                                <p className="text-xs text-muted-foreground">Chưa có lịch sử điểm danh trong tháng này.</p>
                             ) : (
-                                recentAttendance.map((item, idx) => (
+                                attendanceLogs.map((log, idx) => (
                                     <div key={idx} className="flex items-center justify-between p-3 border border-divider/60 rounded-xl bg-content1/20">
                                         <div>
-                                            <p className="text-sm font-semibold">{formatDateTime(item.date)}</p>
+                                            <p className="text-sm font-semibold">{formatDateTime(log.date)}</p>
                                             <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
-                                                <TbClock className="size-3.5" /> {item.startTime} - {item.endTime}
+                                                <TbClock className="size-3.5" /> {log.startTime} - {log.endTime}
                                             </p>
                                         </div>
                                         <Chip
                                             size="sm"
                                             className={
-                                                item.isPresent
+                                                log.attendanceStatus === "Present"
                                                     ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-semibold"
-                                                    : "bg-rose-500/15 text-rose-600 dark:text-rose-400 font-semibold"
+                                                    : log.attendanceStatus === "Absent"
+                                                        ? "bg-rose-500/15 text-rose-600 dark:text-rose-400 font-semibold"
+                                                        : log.attendanceStatus === "Late"
+                                                            ? "bg-yellow-500/15 text-yellow-600 dark:text-yellow-400 font-semibold"
+                                                            : log.attendanceStatus === "Excused"
+                                                                ? "bg-purple-500/15 text-purple-600 dark:text-purple-400 font-semibold"
+                                                                : "bg-content3/30 text-foreground font-semibold"
                                             }
                                         >
-                                            {item.isPresent ? "Có mặt" : "Vắng"}
+                                            {log.attendanceStatus === "Present" ? "Có mặt" : log.attendanceStatus === "Absent" ? "Vắng mặt" : log.attendanceStatus === "Late" ? "Trễ" : log.attendanceStatus === "Excused" ? "Vắng có phép" : "Không rõ"}
                                         </Chip>
                                     </div>
                                 ))

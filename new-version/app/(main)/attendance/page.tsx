@@ -8,7 +8,9 @@ import {
     TbUserX,
     TbClock,
     TbArrowLeft,
-    TbActivity
+    TbActivity,
+    TbCalendarTime,
+    TbInfoCircle
 } from "react-icons/tb";
 import NextLink from "next/link";
 import { useEffect, useState } from "react";
@@ -20,6 +22,27 @@ import {
 } from "@/services/api/v2/student";
 
 import { useStudentAttendanceMonths, useStudentAttendanceByMonth } from "@/hooks/users/use-student-attendance";
+import WeeklySchedule, { EventItem } from "@/components/weekly-schedule";
+import { MdHistory } from "react-icons/md";
+
+const classScheduleEvents: EventItem[] = [
+    {
+        id: "fixed-1",
+        title: "Lịch Học Cố Định (Lớp 11 Sinh)",
+        day: 1, // Thứ 2
+        start: "08:00",
+        end: "10:00",
+        colorTheme: "blue"
+    },
+    {
+        id: "fixed-2",
+        title: "Lịch Học Cố Định (Lớp 11 Sinh)",
+        day: 3, // Thứ 4
+        start: "08:00",
+        end: "10:00",
+        colorTheme: "blue"
+    }
+];
 
 export default function AttendancePage() {
     const { user, isLoading: isUserLoading } = useUser();
@@ -71,9 +94,9 @@ export default function AttendancePage() {
         return `${hours}:${minutes}`;
     };
 
-    const { 
-        data: monthsData, 
-        isLoading: isMonthsLoading 
+    const {
+        data: monthsData,
+        isLoading: isMonthsLoading
     } = useStudentAttendanceMonths({ enabled: isStudentOrGuardian && !isUserLoading });
 
     const months = monthsData || [];
@@ -91,8 +114,8 @@ export default function AttendancePage() {
     const {
         data: attendanceData,
         isLoading: isAttendanceLoading,
-    } = useStudentAttendanceByMonth(selectedMonth, selectedYear, { 
-        enabled: isStudentOrGuardian && !isUserLoading && !!selectedMonthId 
+    } = useStudentAttendanceByMonth(selectedMonth, selectedYear, {
+        enabled: isStudentOrGuardian && !isUserLoading && !!selectedMonthId
     });
 
     const attendanceLogs = attendanceData?.attendances || [];
@@ -196,7 +219,7 @@ export default function AttendancePage() {
             </div>
 
             {/* Attendance Logs Table */}
-            <Card className="p-6 border border-divider bg-background/50 backdrop-blur-md rounded-2xl">
+            {/* <Card className="p-6 border border-divider bg-background/50 backdrop-blur-md rounded-2xl">
                 <div className="flex items-center gap-2 mb-6">
                     <TbCalendarCheck className="text-[#00b4d8] size-5" />
                     <h2 className="text-lg font-bold">Lịch sử điểm danh chi tiết trong tháng</h2>
@@ -250,7 +273,77 @@ export default function AttendancePage() {
                         </table>
                     </div>
                 )}
-            </Card>
+            </Card> */}
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Weekly Calendar Grid */}
+                <div className="lg:col-span-2 space-y-6">
+                    <Card className="p-6 border border-divider bg-background/50 backdrop-blur-md rounded-2xl shadow-sm">
+                        <div className="flex items-center gap-2 mb-6">
+                            <TbCalendarTime className="text-[#00b4d8] size-5" />
+                            <h2 className="text-lg font-bold">Khung lịch cố định hàng tuần</h2>
+                        </div>
+                        <WeeklySchedule events={classScheduleEvents} hoursStart={7} hoursEnd={18} />
+                    </Card>
+                </div>
+
+                {/* Side Card: Attendance sessions list */}
+                <div className="space-y-6">
+                    <Card className="p-6 border border-divider bg-background/50 backdrop-blur-md rounded-2xl flex flex-col justify-start">
+                        <div className="flex flex-col gap-4 mb-6">
+                            <h3 className="text-lg font-bold flex items-center gap-2">
+                                <MdHistory className="text-[#00b4d8] size-5" />
+                                Lịch sử điểm danh
+                            </h3>
+                            <select
+                                value={selectedMonthId}
+                                onChange={(e) => setSelectedMonthId(e.target.value)}
+                                className="w-full rounded-xl border border-divider bg-content1 px-3 py-2 text-sm font-semibold text-foreground focus:outline-none focus:border-primary"
+                            >
+                                {months.map((m) => (
+                                    <option key={m.id} value={m.id}>
+                                        Tháng {m.month} - Năm {m.year}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="space-y-4 overflow-y-auto max-h-[500px] pr-2">
+                            {isLoading ? (
+                                <p className="text-xs text-muted-foreground">Đang tải lịch sử điểm danh...</p>
+                            ) : attendanceLogs.length === 0 ? (
+                                <p className="text-xs text-muted-foreground">Chưa có lịch sử điểm danh trong tháng này.</p>
+                            ) : (
+                                attendanceLogs.map((log, idx) => (
+                                    <div key={idx} className="flex items-center justify-between p-3 border border-divider/60 rounded-xl bg-content1/20">
+                                        <div>
+                                            <p className="text-sm font-semibold">{formatDateTime(log.date)}</p>
+                                            <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
+                                                <TbClock className="size-3.5" /> {log.startTime} - {log.endTime}
+                                            </p>
+                                        </div>
+                                        <Chip
+                                            size="sm"
+                                            className={
+                                                log.attendanceStatus === "Present"
+                                                    ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-semibold"
+                                                    : log.attendanceStatus === "Absent"
+                                                        ? "bg-rose-500/15 text-rose-600 dark:text-rose-400 font-semibold"
+                                                        : log.attendanceStatus === "Late"
+                                                            ? "bg-yellow-500/15 text-yellow-600 dark:text-yellow-400 font-semibold"
+                                                            : log.attendanceStatus === "Excused"
+                                                                ? "bg-purple-500/15 text-purple-600 dark:text-purple-400 font-semibold"
+                                                                : "bg-content3/30 text-foreground font-semibold"
+                                            }
+                                        >
+                                            {log.attendanceStatus === "Present" ? "Có mặt" : log.attendanceStatus === "Absent" ? "Vắng mặt" : log.attendanceStatus === "Late" ? "Trễ" : log.attendanceStatus === "Excused" ? "Vắng có phép" : "Không rõ"}
+                                        </Chip>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </Card>
+                </div>
+            </div>
         </div>
     );
 }
