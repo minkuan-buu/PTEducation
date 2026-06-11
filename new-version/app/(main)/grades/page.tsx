@@ -47,7 +47,7 @@ export default function GradesPage() {
                     const currentYear = today.getFullYear();
                     const prevMonth = currentMonth === 1 ? 12 : currentMonth - 1;
                     const prevYear = currentMonth === 1 ? currentYear - 1 : currentYear;
-                    
+
                     const mockMonths: ScoreMonthResModel[] = [
                         { id: `${currentMonth}/${currentYear}`, month: currentMonth, year: currentYear },
                         { id: `${prevMonth}/${prevYear}`, month: prevMonth, year: prevYear }
@@ -127,21 +127,18 @@ export default function GradesPage() {
     };
 
     // Calculate dynamic GPA for display
-    const gpa = scores.length > 0 
+    const gpa = scores.length > 0
         ? (scores.reduce((sum, s) => sum + s.score, 0) / scores.length).toFixed(1)
         : "8.5";
 
     return (
-        <div className="w-full max-w-6xl mx-auto space-y-8 p-6 md:p-8">
+        <div className="w-full px-6 space-y-8 py-6">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Bảng Điểm Kiểm Tra Lớp 11 Sinh</h1>
+                    <h1 className="text-2xl font-bold tracking-tight">Bảng Điểm Kiểm Tra</h1>
                     <p className="text-muted-foreground mt-1 text-sm">
-                        {isGuardian 
-                            ? `Báo cáo kết quả điểm kiểm tra định kỳ của con: ${studentName}`
-                            : `Tra cứu điểm số chi tiết được nhập trực tiếp từ giáo viên quản nhiệm.`
-                        }
+                        Tra cứu điểm số chi tiết
                     </p>
                 </div>
                 <NextLink href="/">

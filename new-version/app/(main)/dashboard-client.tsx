@@ -1,6 +1,7 @@
 "use client";
 
 import { useUser } from "@/context/user-context";
+import { Card as StatsCard } from "@/components/classes/card";
 import { Card, Button, Chip, Skeleton } from "@heroui/react";
 import {
     TbUser,
@@ -92,6 +93,22 @@ export default function DashboardClient() {
         return `${hours}:${minutes}`;
     };
 
+    const formatDateTimeNextSession = (value: string) => {
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+            return "-";
+        }
+
+        const pad = (n: number) => n.toString().padStart(2, "0");
+        const hours = pad(date.getHours());
+        const minutes = pad(date.getMinutes());
+        const day = pad(date.getDate());
+        const month = pad(date.getMonth() + 1);
+        const year = date.getFullYear();
+
+        return `${hours}:${minutes}, ${day}/${month}/${year}`;
+    };
+
     if (isLoading) {
         const isGuardian = role === "guardian";
         return (
@@ -144,44 +161,34 @@ export default function DashboardClient() {
 
                 {/* Quick stats grid */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <Card className="p-5 flex flex-row items-center gap-4 border border-divider bg-background/50 backdrop-blur-md rounded-2xl hover:border-primary/20 transition-all duration-200">
-                        <div className="p-3.5 rounded-xl bg-purple-500/10 text-purple-500 shrink-0">
-                            <TbBook className="size-6" />
-                        </div>
-                        <div>
-                            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Lớp Học Hiện Tại</p>
-                            <p className="text-2xl font-bold mt-1 text-purple-500">{overview?.className || "Chưa tham gia lớp"}</p>
-                        </div>
-                    </Card>
-                    <Card className="p-5 flex flex-row items-center gap-4 border border-divider bg-background/50 backdrop-blur-md rounded-2xl hover:border-primary/20 transition-all duration-200">
-                        <div className="p-3.5 rounded-xl bg-emerald-500/10 text-emerald-500 shrink-0">
-                            <TbAward className="size-6" />
-                        </div>
-                        <div>
-                            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Điểm Trung Bình (GPA)</p>
-                            <p className="text-2xl font-bold mt-1 text-emerald-500">{gpa} / 10</p>
-                        </div>
-                    </Card>
-                    <Card className="p-5 flex flex-row items-center gap-4 border border-divider bg-background/50 backdrop-blur-md rounded-2xl hover:border-primary/20 transition-all duration-200">
-                        <div className="p-3.5 rounded-xl bg-[#00b4d8]/10 text-[#00b4d8] shrink-0">
-                            <TbCalendarCheck className="size-6" />
-                        </div>
-                        <div>
-                            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Tỷ Lệ Điểm Danh</p>
-                            <p className="text-2xl font-bold mt-1 text-[#00b4d8]">{attendanceRate}%</p>
-                        </div>
-                    </Card>
-                    <Card className="p-5 flex flex-row items-center gap-4 border border-divider bg-background/50 backdrop-blur-md rounded-2xl hover:border-primary/20 transition-all duration-200">
-                        <div className="p-3.5 rounded-xl bg-amber-500/10 text-amber-500 shrink-0">
-                            <TbMessageReport className="size-6" />
-                        </div>
-                        <div>
-                            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Đánh Giá Gần Nhất</p>
-                            <p className="text-sm font-semibold mt-2.5 text-amber-500 truncate max-w-[150px]" title={overview?.recentScores?.[0]?.note || "Chưa có"}>
-                                {overview?.recentScores?.[0]?.note || "Chưa có"}
-                            </p>
-                        </div>
-                    </Card>
+                    <StatsCard
+                        color="purple"
+                        logo={<TbBook className="size-6" />}
+                        title="Lớp Học Hiện Tại"
+                        description={overview?.className || "Chưa tham gia lớp"}
+                    />
+                    <StatsCard
+                        color="emerald"
+                        logo={<TbAward className="size-6" />}
+                        title="Điểm Trung Bình (GPA)"
+                        description={`${gpa} / 10`}
+                    />
+                    <StatsCard
+                        color="cyan"
+                        logo={<TbCalendarCheck className="size-6" />}
+                        title="Tỷ Lệ Điểm Danh"
+                        description={`${attendanceRate}%`}
+                    />
+                    <StatsCard
+                        color="amber"
+                        logo={<TbMessageReport className="size-6" />}
+                        title="Buổi học tiếp theo"
+                        description={
+                            <span title={formatDateTimeNextSession(overview?.nextSession || "Chưa có")}>
+                                {formatDateTimeNextSession(overview?.nextSession || "Chưa có")}
+                            </span>
+                        }
+                    />
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -347,36 +354,30 @@ export default function DashboardClient() {
 
                 {/* Quick stats of Child */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <Card className="p-5 flex flex-row items-center gap-4 border border-divider bg-background/50 backdrop-blur-md rounded-2xl hover:border-primary/20 transition-all duration-200">
-                        <div className="p-3.5 rounded-xl bg-purple-500/10 text-purple-500 shrink-0">
-                            <TbBook className="size-6" />
-                        </div>
-                        <div>
-                            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Lớp Học Của Con</p>
-                            <p className="text-2xl font-bold mt-1 text-purple-500">{overview?.className || "Chưa tham gia lớp"}</p>
-                        </div>
-                    </Card>
-                    <Card className="p-5 flex flex-row items-center gap-4 border border-divider bg-background/50 backdrop-blur-md rounded-2xl hover:border-primary/20 transition-all duration-200">
-                        <div className="p-3.5 rounded-xl bg-emerald-500/10 text-emerald-500 shrink-0">
-                            <TbAward className="size-6" />
-                        </div>
-                        <div>
-                            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">GPA Lũy Kế</p>
-                            <div className="flex items-baseline gap-2 mt-1">
-                                <span className="text-2xl font-bold text-emerald-500">{gpa}</span>
+                    <StatsCard
+                        color="purple"
+                        logo={<TbBook className="size-6" />}
+                        title="Lớp Học Của Con"
+                        description={overview?.className || "Chưa tham gia lớp"}
+                    />
+                    <StatsCard
+                        color="emerald"
+                        logo={<TbAward className="size-6" />}
+                        title="GPA Lũy Kế"
+                        description={
+                            <div className="flex items-baseline gap-2">
+                                <span>{gpa}</span>
                                 <Chip size="sm" className="bg-emerald-500/10 text-emerald-500 border-none font-semibold">Giỏi</Chip>
                             </div>
-                        </div>
-                    </Card>
-                    <Card className="p-5 flex flex-row items-center gap-4 border border-divider bg-background/50 backdrop-blur-md rounded-2xl hover:border-primary/20 transition-all duration-200">
-                        <div className="p-3.5 rounded-xl bg-[#00b4d8]/10 text-[#00b4d8] shrink-0">
-                            <TbCalendarCheck className="size-6" />
-                        </div>
-                        <div>
-                            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Tỷ Lệ Chuyên Cần</p>
-                            <p className="text-2xl font-bold mt-1 text-[#00b4d8]">{attendanceRate}%</p>
-                        </div>
-                    </Card>
+                        }
+                        descriptionClassName="mt-1"
+                    />
+                    <StatsCard
+                        color="cyan"
+                        logo={<TbCalendarCheck className="size-6" />}
+                        title="Tỷ Lệ Chuyên Cần"
+                        description={`${attendanceRate}%`}
+                    />
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -441,9 +442,9 @@ export default function DashboardClient() {
                                             overview.recentScores.slice(0, 3).map((item, index) => (
                                                 <tr key={index}>
                                                     <td className="py-3 pl-2 font-semibold">{formatDateTime(item.testDateAt)}</td>
-                                                    <td className="py-3 text-muted-foreground">{item.shift || "Ca sáng"}</td>
+                                                    <td className="py-3 text-muted-foreground">{item.shift || "-"}</td>
                                                     <td className="py-3 text-center font-bold text-emerald-500">{item.score}</td>
-                                                    <td className="py-3 text-right pr-2 text-xs text-muted-foreground">{item.note || "Đạt yêu cầu"}</td>
+                                                    <td className="py-3 text-right pr-2 text-xs text-muted-foreground">{item.note || "-"}</td>
                                                 </tr>
                                             ))
                                         ) : (
