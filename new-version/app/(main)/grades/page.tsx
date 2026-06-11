@@ -20,91 +20,43 @@ import {
     type ScoreMonthResModel
 } from "@/services/api/v2/student";
 
+import { useStudentScoreMonths, useStudentScoresByMonth } from "@/hooks/users/use-student-scores";
+
 export default function GradesPage() {
     const { user, isLoading: isUserLoading } = useUser();
     const role = (user?.role || "student").toLowerCase();
     const isGuardian = role === "guardian";
     const studentName = isGuardian ? "Nguyễn Văn A" : user?.name || "Học sinh";
+    const isStudentOrGuardian = role === "student" || role === "guardian";
 
-    const [months, setMonths] = useState<ScoreMonthResModel[]>([]);
     const [selectedMonthId, setSelectedMonthId] = useState<string>("");
-    const [scores, setScores] = useState<ScoreStudentDetailResModel[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
 
-    // Load available months
+    const { 
+        data: monthsData, 
+        isLoading: isMonthsLoading 
+    } = useStudentScoreMonths({ enabled: isStudentOrGuardian && !isUserLoading });
+
+    const months = monthsData || [];
+
+    // Auto-select first month when loaded
     useEffect(() => {
-        if (isUserLoading) return;
-        async function loadMonths() {
-            try {
-                const monthsRes = await getStudentScoreMonths();
-                if (monthsRes && monthsRes.length > 0) {
-                    setMonths(monthsRes);
-                    setSelectedMonthId(monthsRes[0].id);
-                } else {
-                    // Fallback months if backend has no tests logged yet
-                    const today = new Date();
-                    const currentMonth = today.getMonth() + 1;
-                    const currentYear = today.getFullYear();
-                    const prevMonth = currentMonth === 1 ? 12 : currentMonth - 1;
-                    const prevYear = currentMonth === 1 ? currentYear - 1 : currentYear;
-
-                    const mockMonths: ScoreMonthResModel[] = [
-                        { id: `${currentMonth}/${currentYear}`, month: currentMonth, year: currentYear },
-                        { id: `${prevMonth}/${prevYear}`, month: prevMonth, year: prevYear }
-                    ];
-                    setMonths(mockMonths);
-                    setSelectedMonthId(mockMonths[0].id);
-                }
-            } catch (err) {
-                console.error("Error fetching score months:", err);
-                const today = new Date();
-                const m = today.getMonth() + 1;
-                const y = today.getFullYear();
-                setMonths([{ id: `${m}/${y}`, month: m, year: y }]);
-                setSelectedMonthId(`${m}/${y}`);
-            }
+        if (months.length > 0 && !selectedMonthId) {
+            setSelectedMonthId(months[0].id);
         }
+    }, [months, selectedMonthId]);
 
-        if (role === "student" || role === "guardian") {
-            loadMonths();
-        }
-    }, [role, isUserLoading]);
+    const selectedMonth = selectedMonthId ? parseInt(selectedMonthId.split("/")[0], 10) : 0;
+    const selectedYear = selectedMonthId ? parseInt(selectedMonthId.split("/")[1], 10) : 0;
 
-    // Load scores for selected month
-    useEffect(() => {
-        if (!selectedMonthId || isUserLoading) return;
+    const {
+        data: scoresData,
+        isLoading: isScoresLoading,
+    } = useStudentScoresByMonth(selectedMonth, selectedYear, { 
+        enabled: isStudentOrGuardian && !isUserLoading && !!selectedMonthId 
+    });
 
-        async function loadScores() {
-            setIsLoading(true);
-            try {
-                const [monthStr, yearStr] = selectedMonthId.split("/");
-                const month = parseInt(monthStr, 10);
-                const year = parseInt(yearStr, 10);
-
-                const scoresRes = await getStudentScoresByMonth(month, year);
-                if (scoresRes && scoresRes.scores && scoresRes.scores.length > 0) {
-                    setScores(scoresRes.scores);
-                } else {
-                    // Fallback mock scores if API is empty for selected month
-                    if (month === 6 || month === 5) {
-                        setScores([
-                            { testDateAt: `${year}-${String(month).padStart(2, '0')}-08T08:00:00Z`, shift: "Ca sáng", score: 9.0, note: "Làm tốt bài thực tế" },
-                            { testDateAt: `${year}-${String(month).padStart(2, '0')}-02T13:30:00Z`, shift: "Ca chiều", score: 8.5, note: "Nắm vững lý thuyết tế bào" }
-                        ]);
-                    } else {
-                        setScores([]);
-                    }
-                }
-            } catch (err) {
-                console.error("Error fetching student scores:", err);
-                setScores([]);
-            } finally {
-                setIsLoading(false);
-            }
-        }
-
-        loadScores();
-    }, [selectedMonthId]);
+    const scores = scoresData?.scores || [];
+    const isLoading = isUserLoading || isMonthsLoading || isScoresLoading;
 
     if (role !== "student" && role !== "guardian") {
         return (
@@ -174,7 +126,7 @@ export default function GradesPage() {
                         <TbAward className="size-6" />
                     </div>
                     <div>
-                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">GPA Tháng Chọn</p>
+                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">GPA Tháng {selectedMonthId}</p>
                         <div className="flex items-baseline gap-2 mt-1">
                             <span className="text-2xl font-bold text-emerald-500">{scores.length > 0 ? gpa : "-"}</span>
                             {scores.length > 0 && (
@@ -226,7 +178,7 @@ export default function GradesPage() {
                                     <tr key={idx} className="hover:bg-content1/20 transition-colors">
                                         <td className="py-4 pl-2 font-semibold text-muted-foreground">{idx + 1}</td>
                                         <td className="py-4 font-semibold text-foreground">{formatDateTime(detail.testDateAt)}</td>
-                                        <td className="py-4 text-muted-foreground">{detail.shift || "Ca sáng"}</td>
+                                        <td className="py-4 text-muted-foreground">{detail.shift || "-"}</td>
                                         <td className="py-4 text-xs text-muted-foreground max-w-sm leading-relaxed">
                                             {detail.note || "-"}
                                         </td>

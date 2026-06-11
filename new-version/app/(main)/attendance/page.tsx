@@ -19,92 +19,84 @@ import {
     type AttendanceMonthResModel
 } from "@/services/api/v2/student";
 
+import { useStudentAttendanceMonths, useStudentAttendanceByMonth } from "@/hooks/users/use-student-attendance";
+
 export default function AttendancePage() {
     const { user, isLoading: isUserLoading } = useUser();
     const role = (user?.role || "guardian").toLowerCase();
     const studentName = role === "guardian" ? "Nguyễn Văn A" : user?.name || "Học sinh";
+    const isStudentOrGuardian = role === "student" || role === "guardian";
 
-    const [months, setMonths] = useState<AttendanceMonthResModel[]>([]);
     const [selectedMonthId, setSelectedMonthId] = useState<string>("");
-    const [attendanceLogs, setAttendanceLogs] = useState<AttendanceStudentDetailResModel[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
 
-    // Load available months
-    useEffect(() => {
-        if (isUserLoading) return;
-        async function loadMonths() {
-            try {
-                const monthsRes = await getStudentAttendanceMonths();
-                if (monthsRes && monthsRes.length > 0) {
-                    setMonths(monthsRes);
-                    setSelectedMonthId(monthsRes[0].id);
-                } else {
-                    // Fallback mock months
-                    const today = new Date();
-                    const currentMonth = today.getMonth() + 1;
-                    const currentYear = today.getFullYear();
-                    const prevMonth = currentMonth === 1 ? 12 : currentMonth - 1;
-                    const prevYear = currentMonth === 1 ? currentYear - 1 : currentYear;
+    const pad2 = (value: number) => value.toString().padStart(2, "0");
+    const parseDate = (value: string | Date | null) => {
+        if (!value) {
+            return null;
+        }
+        const date = value instanceof Date ? value : new Date(value);
 
-                    const mockMonths: AttendanceMonthResModel[] = [
-                        { id: `${currentMonth}/${currentYear}`, month: currentMonth, year: currentYear },
-                        { id: `${prevMonth}/${prevYear}`, month: prevMonth, year: prevYear }
-                    ];
-                    setMonths(mockMonths);
-                    setSelectedMonthId(mockMonths[0].id);
-                }
-            } catch (err) {
-                console.error("Error loading attendance months:", err);
-                const today = new Date();
-                const m = today.getMonth() + 1;
-                const y = today.getFullYear();
-                setMonths([{ id: `${m}/${y}`, month: m, year: y }]);
-                setSelectedMonthId(`${m}/${y}`);
+        if (Number.isNaN(date.getTime())) {
+            return null;
+        }
+
+        return date;
+    };
+
+    const formatTimeOnly = (value: string | Date | null) => {
+        if (!value) {
+            return "-";
+        }
+
+        if (typeof value === "string") {
+            const timeMatch = value.trim().match(/^(\d{1,2}):(\d{2})/);
+
+            if (timeMatch) {
+                const hours = pad2(Number(timeMatch[1]));
+                const minutes = timeMatch[2];
+
+                return `${hours}:${minutes}`;
             }
         }
 
-        if (role === "student" || role === "guardian") {
-            loadMonths();
-        }
-    }, [role, isUserLoading]);
+        const date = parseDate(value);
 
-    // Load attendance for selected month
+        if (!date) {
+            return "-";
+        }
+
+        const hours = pad2(date.getHours());
+        const minutes = pad2(date.getMinutes());
+
+        return `${hours}:${minutes}`;
+    };
+
+    const { 
+        data: monthsData, 
+        isLoading: isMonthsLoading 
+    } = useStudentAttendanceMonths({ enabled: isStudentOrGuardian && !isUserLoading });
+
+    const months = monthsData || [];
+
+    // Auto-select first month when loaded
     useEffect(() => {
-        if (!selectedMonthId || isUserLoading) return;
-
-        async function loadAttendance() {
-            setIsLoading(true);
-            try {
-                const [monthStr, yearStr] = selectedMonthId.split("/");
-                const month = parseInt(monthStr, 10);
-                const year = parseInt(yearStr, 10);
-
-                const res = await getStudentAttendanceByMonth(month, year);
-                if (res && res.attendances && res.attendances.length > 0) {
-                    setAttendanceLogs(res.attendances);
-                } else {
-                    // Fallback logs
-                    if (month === 6 || month === 5) {
-                        setAttendanceLogs([
-                            { date: `${year}-${String(month).padStart(2, '0')}-08T08:00:00Z`, startTime: "08:00", endTime: "10:00", isPresent: true },
-                            { date: `${year}-${String(month).padStart(2, '0')}-03T08:00:00Z`, startTime: "08:00", endTime: "10:00", isPresent: true },
-                            { date: `${year}-${String(month).padStart(2, '0')}-01T08:00:00Z`, startTime: "08:00", endTime: "10:00", isPresent: true },
-                            { date: `${year}-${String(month).padStart(2, '0')}-28T13:30:00Z`, startTime: "13:30", endTime: "15:30", isPresent: false }
-                        ]);
-                    } else {
-                        setAttendanceLogs([]);
-                    }
-                }
-            } catch (err) {
-                console.error("Error fetching student attendance logs:", err);
-                setAttendanceLogs([]);
-            } finally {
-                setIsLoading(false);
-            }
+        if (months.length > 0 && !selectedMonthId) {
+            setSelectedMonthId(months[0].id);
         }
+    }, [months, selectedMonthId]);
 
-        loadAttendance();
-    }, [selectedMonthId]);
+    const selectedMonth = selectedMonthId ? parseInt(selectedMonthId.split("/")[0], 10) : 0;
+    const selectedYear = selectedMonthId ? parseInt(selectedMonthId.split("/")[1], 10) : 0;
+
+    const {
+        data: attendanceData,
+        isLoading: isAttendanceLoading,
+    } = useStudentAttendanceByMonth(selectedMonth, selectedYear, { 
+        enabled: isStudentOrGuardian && !isUserLoading && !!selectedMonthId 
+    });
+
+    const attendanceLogs = attendanceData?.attendances || [];
+    const isLoading = isUserLoading || isMonthsLoading || isAttendanceLoading;
 
     if (role !== "guardian" && role !== "student" && role !== "admin") {
         return (
@@ -127,14 +119,14 @@ export default function AttendancePage() {
     };
 
     const totalSessions = attendanceLogs.length;
-    const presentSessions = attendanceLogs.filter(a => a.isPresent).length;
+    const presentSessions = attendanceLogs.filter(a => a.attendanceStatus === "Present").length;
     const absentSessions = totalSessions - presentSessions;
     const attendanceRate = totalSessions > 0
         ? ((presentSessions / totalSessions) * 100).toFixed(1)
         : "100";
 
     return (
-        <div className="w-full max-w-6xl mx-auto space-y-8 p-6 md:p-8">
+        <div className="w-full px-6 space-y-8 py-6">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
@@ -209,7 +201,7 @@ export default function AttendancePage() {
                     <TbCalendarCheck className="text-[#00b4d8] size-5" />
                     <h2 className="text-lg font-bold">Lịch sử điểm danh chi tiết trong tháng</h2>
                 </div>
-                
+
                 {isLoading ? (
                     <div className="py-10 text-center text-sm text-muted-foreground">Đang tải nhật ký điểm danh...</div>
                 ) : attendanceLogs.length === 0 ? (
@@ -232,19 +224,24 @@ export default function AttendancePage() {
                                         <td className="py-4 font-semibold text-foreground">{formatDateTime(log.date)}</td>
                                         <td className="py-4 text-muted-foreground">
                                             <span className="inline-flex items-center gap-1.5">
-                                                <TbClock className="size-4" /> {log.startTime} - {log.endTime}
+                                                <TbClock className="size-4" /> {formatTimeOnly(log.startTime)} - {formatTimeOnly(log.endTime)}
                                             </span>
                                         </td>
                                         <td className="py-4 text-right pr-2">
                                             <Chip
                                                 size="sm"
                                                 className={
-                                                    log.isPresent
+                                                    log.attendanceStatus === "Present"
                                                         ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-semibold"
-                                                        : "bg-rose-500/15 text-rose-600 dark:text-rose-400 font-semibold"
+                                                        : log.attendanceStatus === "Absent"
+                                                            ? "bg-rose-500/15 text-rose-600 dark:text-rose-400 font-semibold"
+                                                            : log.attendanceStatus === "Late"
+                                                                ? "bg-yellow-500/15 text-yellow-600 dark:text-yellow-400 font-semibold"
+                                                                : log.attendanceStatus === "Excused" ? "bg-purple-500/15 text-purple-600 dark:text-purple-400 font-semibold"
+                                                                    : ""
                                                 }
                                             >
-                                                {log.isPresent ? "Có mặt" : "Vắng học"}
+                                                {log.attendanceStatus === "Present" ? "Có mặt" : log.attendanceStatus === "Absent" ? "Vắng mặt" : log.attendanceStatus === "Late" ? "Trễ" : log.attendanceStatus === "Excused" ? "Vắng mặt có phép" : ""}
                                             </Chip>
                                         </td>
                                     </tr>

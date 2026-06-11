@@ -96,7 +96,7 @@ export default function DashboardClient() {
     const formatDateTimeNextSession = (value: string) => {
         const date = new Date(value);
         if (Number.isNaN(date.getTime())) {
-            return "-";
+            return "Chưa có buổi học tiếp theo";
         }
 
         const pad = (n: number) => n.toString().padStart(2, "0");
@@ -246,7 +246,21 @@ export default function DashboardClient() {
                                             <p className="text-sm font-semibold flex items-center gap-1.5 justify-end">
                                                 <TbClock className="size-4 text-muted-foreground" /> {formatTimeOnly(attendance.startTime)} - {formatTimeOnly(attendance.endTime)}
                                             </p>
-                                            <p className={`text-xs ${attendance.attendanceStatus === "Present" ? "text-emerald-500" : attendance.attendanceStatus === "Absent" ? "text-red-500" : "text-yellow-500"} font-semibold mt-1`}>{attendance.attendanceStatus === "Present" ? "Có mặt" : attendance.attendanceStatus === "Absent" ? "Vắng mặt" : attendance.attendanceStatus === "Late" ? "Muộn" : ""}</p>
+                                            <Chip
+                                                size="sm"
+                                                className={
+                                                    attendance.attendanceStatus === "Present"
+                                                        ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-semibold mt-1"
+                                                        : attendance.attendanceStatus === "Absent"
+                                                            ? "bg-rose-500/15 text-rose-600 dark:text-rose-400 font-semibold mt-1"
+                                                            : attendance.attendanceStatus === "Late"
+                                                                ? "bg-yellow-500/15 text-yellow-600 dark:text-yellow-400 font-semibold mt-1"
+                                                                : attendance.attendanceStatus === "Excused" ? "bg-purple-500/15 text-purple-600 dark:text-purple-400 font-semibold mt-1"
+                                                                    : "mt-1"
+                                                }
+                                            >
+                                                {attendance.attendanceStatus === "Present" ? "Có mặt" : attendance.attendanceStatus === "Absent" ? "Vắng mặt" : attendance.attendanceStatus === "Late" ? "Muộn" : attendance.attendanceStatus === "Excused" ? "Vắng mặt có phép" : ""}
+                                            </Chip>
                                         </div>
                                     </div>
                                 ))}
@@ -335,7 +349,7 @@ export default function DashboardClient() {
 
     if (role === "guardian") {
         return (
-            <div className="w-full max-w-6xl mx-auto space-y-8 p-6 md:p-8">
+            <div className="w-full px-6 space-y-8">
                 {/* Welcome Parent Banner */}
                 <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-purple-600 to-indigo-700 p-8 md:p-10 text-white shadow-xl shadow-purple-600/20">
                     <div className="relative z-10 max-w-2xl space-y-4">

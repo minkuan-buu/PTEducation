@@ -24,7 +24,7 @@ export type AttendanceStudentDetailResModel = {
   date: string;
   startTime: string;
   endTime: string;
-  isPresent: boolean;
+  attendanceStatus: string;
 };
 
 export type AttendanceStudentResModel = {

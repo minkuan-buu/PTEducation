@@ -841,14 +841,7 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
                 </div>
               ) : filteredRoster.length ? (
                 filteredRoster.map((student) => {
-                  const statusTone =
-                    student.attendanceStatus === "Present"
-                      ? "success"
-                      : student.attendanceStatus === "Late"
-                        ? "warning"
-                        : student.attendanceStatus === "Absent"
-                          ? "danger"
-                          : "default";
+
 
                   return (
                     <div
@@ -874,14 +867,28 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
                               <p className="font-semibold text-foreground">
                                 {student.studentName}
                               </p>
-                              <Chip color={statusTone as never} variant="soft">
+                              <Chip
+                                size="sm"
+                                className={
+                                  student.attendanceStatus === "Present"
+                                    ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-semibold"
+                                    : student.attendanceStatus === "Absent"
+                                      ? "bg-rose-500/15 text-rose-600 dark:text-rose-400 font-semibold"
+                                      : student.attendanceStatus === "Late"
+                                        ? "bg-yellow-500/15 text-yellow-600 dark:text-yellow-400 font-semibold"
+                                        : student.attendanceStatus === "Excused" ? "bg-purple-500/15 text-purple-600 dark:text-purple-400 font-semibold"
+                                          : ""
+                                }
+                              >
                                 {student.attendanceStatus === "Present"
                                   ? "Có mặt"
                                   : student.attendanceStatus === "Late"
                                     ? "Trễ"
                                     : student.attendanceStatus === "Absent"
                                       ? "Vắng mặt"
-                                      : "Chưa điểm danh"}
+                                      : student.attendanceStatus === "Excused"
+                                        ? "Vắng mặt có phép"
+                                        : "Chưa điểm danh"}
                               </Chip>
                             </div>
                             <p className="mt-1 text-xs text-muted">
@@ -941,6 +948,12 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
                                     <ListBox.Item id="Absent" textValue="Vắng mặt" className="hover:rounded-xl">
                                       <div className="flex w-full items-center justify-between gap-2">
                                         <span>Vắng mặt</span>
+                                        <ListBox.ItemIndicator />
+                                      </div>
+                                    </ListBox.Item>
+                                    <ListBox.Item id="Excused" textValue="Vắng mặt có phép" className="hover:rounded-xl">
+                                      <div className="flex w-full items-center justify-between gap-2">
+                                        <span>Vắng mặt có phép</span>
                                         <ListBox.ItemIndicator />
                                       </div>
                                     </ListBox.Item>
