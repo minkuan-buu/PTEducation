@@ -15,6 +15,13 @@ export type CreateClassPayload = {
   schedules: ClassSchedule[];
 };
 
+export type UpdateClassPayload = {
+  name: string;
+  startAt: string;
+  endAt: string;
+  schedules?: ClassSchedule[];
+};
+
 export type ClassData = {
   id: string;
   name: string;
@@ -102,6 +109,14 @@ export async function createClass(payload: CreateClassPayload) {
     payload,
   );
   return normalizeClass(response.data);
+}
+
+export async function updateClass(classId: string, payload: UpdateClassPayload) {
+  const response = await api.put<ApiResponse<any>>(
+    `/classes/${encodeURIComponent(classId)}`,
+    payload,
+  );
+  return response.data;
 }
 
 export async function deleteClass(classId: string) {

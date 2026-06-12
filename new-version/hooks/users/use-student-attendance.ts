@@ -1,21 +1,22 @@
 import { useQuery } from "@tanstack/react-query";
 import {
-    getStudentAttendanceMonths,
+    getStudentAttendanceMetadata,
     getStudentAttendanceByMonth,
     type AttendanceMonthResModel,
-    type AttendanceStudentResModel
+    type AttendanceStudentResModel,
+    type AttendanceMetadataResModel
 } from "@/services/api/v2/student";
 
-export function useStudentAttendanceMonths({ enabled = false } = {}) {
-    return useQuery<AttendanceMonthResModel[]>({
-        queryKey: ["student-attendance-months"],
+export function useStudentAttendanceMetadata({ enabled = false } = {}) {
+    return useQuery<AttendanceMetadataResModel | null>({
+        queryKey: ["student-attendance-metadata"],
         queryFn: async () => {
             try {
-                const data = await getStudentAttendanceMonths();
-                return data || [];
+                const data = await getStudentAttendanceMetadata();
+                return data || null;
             } catch (error) {
-                console.error("Error fetching attendance months:", error);
-                return [];
+                console.error("Error fetching attendance metadata:", error);
+                return null;
             }
         },
         enabled,

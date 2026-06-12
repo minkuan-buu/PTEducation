@@ -33,6 +33,24 @@ export type AttendanceStudentResModel = {
   attendances: AttendanceStudentDetailResModel[];
 };
 
+export type AttendanceMetadataResModel = {
+  classId: string;
+  className:string;
+  studentName: string;
+  attendanceRate: number;
+  presentAttendance: string;
+  absentAttendance: string;
+  totalSession: string;
+  months: AttendanceMonthResModel[];
+  weeklySchedules: ClassSchedule[];
+}
+
+export type ClassSchedule = {
+  dayOfWeek: number; // 1=Monday, 2=Tuesday, ..., 7=Sunday
+  startTime: string; // HH:mm
+  endTime: string; // HH:mm
+};
+
 export type AttendanceMonthResModel = {
   id: string;
   month: number;
@@ -87,9 +105,9 @@ export async function getStudentAttendanceByMonth(month: number, year: number): 
   return response.data?.data ?? null;
 }
 
-export async function getStudentAttendanceMonths(): Promise<AttendanceMonthResModel[]> {
-  const response = await api.get<ApiResponse<AttendanceMonthResModel[]>>("/attendance-detail/month");
-  return response.data?.data ?? [];
+export async function getStudentAttendanceMetadata(): Promise<AttendanceMetadataResModel | null> {
+  const response = await apiV2.get<ApiResponse<AttendanceMetadataResModel>>("/overview/attendance");
+  return response.data?.data ?? null;
 }
 
 export async function getStudentOverview(): Promise<StudentOverviewResModel | null> {

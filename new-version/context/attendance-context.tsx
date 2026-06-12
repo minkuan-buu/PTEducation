@@ -140,6 +140,13 @@ export function AttendanceProvider({ children }: { children: React.ReactNode }) 
                         return Array.isArray(key) && key[0] === "attendance-session-detail";
                     },
                 });
+                queryClient.invalidateQueries({ queryKey: ["student-attendance-metadata"] });
+                queryClient.invalidateQueries({
+                    predicate: (query) => {
+                        const key = query.queryKey;
+                        return Array.isArray(key) && key[0] === "student-attendance";
+                    },
+                });
                 // Invalidate any calendar indicators queries that match this classId (they include start/end in key)
                 queryClient.invalidateQueries({
                     predicate: (query) => {

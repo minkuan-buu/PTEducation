@@ -11,6 +11,7 @@ import type { ClassDetail, ClassSchedule } from "@/services/api/v2";
 import { v2 } from "@/services/api";
 import type { AdminGuardian, AdminStudent } from "@/services/api/v2";
 import { useClassStudents } from "@/hooks/classes/detail/use-class-student";
+import { useUpdateClass } from "@/hooks/classes/detail/use-update-class";
 import { CgCalendarToday } from "react-icons/cg";
 import { Card } from "@/components/classes/card";
 
@@ -338,6 +339,10 @@ export function ClassGeneralPanel({ classId, classData }: { classId: string; cla
     const [schedules, setSchedules] = useState<ClassSchedule[]>([]);
     const [isPendingFilter, setIsPendingFilter] = useState(false);
 
+    const updateClassMutation = useUpdateClass(classId, () => {
+        handleCloseModal();
+    });
+
     const scheduleEvents = useMemo<EventItem[]>(() => {
         if (!classData.weeklySchedules || !Array.isArray(classData.weeklySchedules)) {
             return [];
@@ -383,6 +388,15 @@ export function ClassGeneralPanel({ classId, classData }: { classId: string; cla
         close();
     };
 
+    const handleUpdateSchedule = () => {
+        updateClassMutation.mutate({
+            name: classData.name,
+            startAt: classData.startAt,
+            endAt: classData.endAt,
+            schedules: schedules
+        });
+    };
+
     const formatDateTimeNextSession = (value: string) => {
         const date = new Date(value);
         if (Number.isNaN(date.getTime())) {
@@ -420,7 +434,7 @@ export function ClassGeneralPanel({ classId, classData }: { classId: string; cla
                         <div>
                             <div className="mb-4 flex items-center justify-between">
                                 <h2 className="text-lg font-semibold">Lịch học trong tuần</h2>
-                                <Button variant="primary" onPress={() => setOpen(true)}>
+                                <Button variant="primary" onPress={() => { setSchedules(classData.weeklySchedules ? [...classData.weeklySchedules] : []); setOpen(true); }}>
                                     Chỉnh sửa lịch
                                 </Button>
                             </div>
@@ -458,7 +472,9 @@ export function ClassGeneralPanel({ classId, classData }: { classId: string; cla
                                                 <Button variant="ghost" onPress={handleCloseModal}>
                                                     Hủy
                                                 </Button>
-                                                <Button variant="primary">Chỉnh sửa</Button>
+                                                <Button variant="primary" isPending={updateClassMutation.isPending} onPress={handleUpdateSchedule}>
+                                                    Chỉnh sửa
+                                                </Button>
                                             </Modal.Footer>
                                         </Modal.Dialog>
                                     </Modal.Container>

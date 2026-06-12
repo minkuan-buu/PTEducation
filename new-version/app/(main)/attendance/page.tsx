@@ -13,15 +13,16 @@ import {
     TbInfoCircle
 } from "react-icons/tb";
 import NextLink from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
     getStudentAttendanceByMonth,
-    getStudentAttendanceMonths,
+    getStudentAttendanceMetadata,
     type AttendanceStudentDetailResModel,
     type AttendanceMonthResModel
 } from "@/services/api/v2/student";
 
-import { useStudentAttendanceMonths, useStudentAttendanceByMonth } from "@/hooks/users/use-student-attendance";
+import { useStudentAttendanceMetadata, useStudentAttendanceByMonth } from "@/hooks/users/use-student-attendance";
+import { useAttendanceRealtime } from "@/context/attendance-context";
 import WeeklySchedule, { EventItem } from "@/components/weekly-schedule";
 import { MdHistory } from "react-icons/md";
 
@@ -49,6 +50,16 @@ export default function AttendancePage() {
     const role = (user?.role || "guardian").toLowerCase();
     const studentName = role === "guardian" ? "Nguyễn Văn A" : user?.name || "Học sinh";
     const isStudentOrGuardian = role === "student" || role === "guardian";
+
+    const DAY_LABELS: Record<number, string> = {
+        1: "Thứ 2",
+        2: "Thứ 3",
+        3: "Thứ 4",
+        4: "Thứ 5",
+        5: "Thứ 6",
+        6: "Thứ 7",
+        0: "Chủ nhật",
+    };
 
     const [selectedMonthId, setSelectedMonthId] = useState<string>("");
 
@@ -95,18 +106,30 @@ export default function AttendancePage() {
     };
 
     const {
-        data: monthsData,
-        isLoading: isMonthsLoading
-    } = useStudentAttendanceMonths({ enabled: isStudentOrGuardian && !isUserLoading });
+        data: metadata,
+        isLoading: isMetadataLoading
+    } = useStudentAttendanceMetadata({ enabled: isStudentOrGuardian && !isUserLoading });
 
-    const months = monthsData || [];
+    const metadataMonths = metadata?.months || [];
+    const classId = metadata?.classId;
+
+    const { joinClassGroup, leaveClassGroup } = useAttendanceRealtime();
+
+    useEffect(() => {
+        if (classId) {
+            void joinClassGroup(classId);
+            return () => {
+                void leaveClassGroup(classId);
+            };
+        }
+    }, [classId, joinClassGroup, leaveClassGroup]);
 
     // Auto-select first month when loaded
     useEffect(() => {
-        if (months.length > 0 && !selectedMonthId) {
-            setSelectedMonthId(months[0].id);
+        if (metadataMonths.length > 0 && !selectedMonthId) {
+            setSelectedMonthId(metadataMonths[0].id);
         }
-    }, [months, selectedMonthId]);
+    }, [metadataMonths, selectedMonthId]);
 
     const selectedMonth = selectedMonthId ? parseInt(selectedMonthId.split("/")[0], 10) : 0;
     const selectedYear = selectedMonthId ? parseInt(selectedMonthId.split("/")[1], 10) : 0;
@@ -119,7 +142,7 @@ export default function AttendancePage() {
     });
 
     const attendanceLogs = attendanceData?.attendances || [];
-    const isLoading = isUserLoading || isMonthsLoading || isAttendanceLoading;
+    const isLoading = isUserLoading || isMetadataLoading || isAttendanceLoading;
 
     if (role !== "guardian" && role !== "student" && role !== "admin") {
         return (
@@ -147,6 +170,23 @@ export default function AttendancePage() {
     const attendanceRate = totalSessions > 0
         ? ((presentSessions / totalSessions) * 100).toFixed(1)
         : "100";
+
+    const scheduleEvents = useMemo<EventItem[]>(() => {
+        if (!metadata?.weeklySchedules || !Array.isArray(metadata.weeklySchedules)) {
+            return [];
+        }
+
+        const colors: Array<NonNullable<EventItem["colorTheme"]>> = ["blue", "purple", "green", "orange"];
+
+        return metadata.weeklySchedules.map((schedule, index) => ({
+            id: `schedule-${index}`,
+            title: `${metadata.className} - ${DAY_LABELS[schedule.dayOfWeek] ?? `Thứ ${schedule.dayOfWeek + 1}`}`,
+            day: schedule.dayOfWeek,
+            start: schedule.startTime?.substring(0, 5) || "",
+            end: schedule.endTime?.substring(0, 5) || "",
+            colorTheme: colors[index % colors.length],
+        }));
+    }, [metadata]);
 
     return (
         <div className="w-full px-6 space-y-8 py-6">
@@ -178,7 +218,7 @@ export default function AttendancePage() {
                         onChange={(e) => setSelectedMonthId(e.target.value)}
                         className="w-full rounded-xl border border-divider bg-content1 px-3 py-2 text-sm font-semibold text-foreground focus:outline-none focus:border-primary"
                     >
-                        {months.map((m) => (
+                        {metadataMonths.map((m) => (
                             <option key={m.id} value={m.id}>
                                 Tháng {m.month} - Năm {m.year}
                             </option>
@@ -193,7 +233,7 @@ export default function AttendancePage() {
                     </div>
                     <div>
                         <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Tỷ lệ đi học</p>
-                        <p className="text-2xl font-bold mt-1 text-[#00b4d8]">{attendanceRate}%</p>
+                        <p className="text-2xl font-bold mt-1 text-[#00b4d8]">{metadata?.attendanceRate.toFixed(1) || 0}%</p>
                     </div>
                 </Card>
 
@@ -203,7 +243,7 @@ export default function AttendancePage() {
                     </div>
                     <div>
                         <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Buổi Có Mặt</p>
-                        <p className="text-2xl font-bold mt-1 text-emerald-500">{presentSessions} / {totalSessions} buổi</p>
+                        <p className="text-2xl font-bold mt-1 text-emerald-500">{metadata?.presentAttendance} / {metadata?.totalSession} buổi</p>
                     </div>
                 </Card>
 
@@ -213,7 +253,7 @@ export default function AttendancePage() {
                     </div>
                     <div>
                         <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Buổi Vắng Mặt</p>
-                        <p className="text-2xl font-bold mt-1 text-rose-500">{absentSessions} buổi</p>
+                        <p className="text-2xl font-bold mt-1 text-rose-500">{metadata?.absentAttendance} buổi</p>
                     </div>
                 </Card>
             </div>
@@ -283,29 +323,29 @@ export default function AttendancePage() {
                             <TbCalendarTime className="text-[#00b4d8] size-5" />
                             <h2 className="text-lg font-bold">Khung lịch cố định hàng tuần</h2>
                         </div>
-                        <WeeklySchedule events={classScheduleEvents} hoursStart={7} hoursEnd={18} />
+                        <WeeklySchedule events={scheduleEvents} hoursStart={7} hoursEnd={18} />
                     </Card>
                 </div>
 
                 {/* Side Card: Attendance sessions list */}
                 <div className="space-y-6">
                     <Card className="p-6 border border-divider bg-background/50 backdrop-blur-md rounded-2xl flex flex-col justify-start">
-                        <div className="flex flex-col gap-4 mb-6">
+                        <div className="flex flex-col gap-4">
                             <h3 className="text-lg font-bold flex items-center gap-2">
                                 <MdHistory className="text-[#00b4d8] size-5" />
                                 Lịch sử điểm danh
                             </h3>
-                            <select
+                            {/* <select
                                 value={selectedMonthId}
                                 onChange={(e) => setSelectedMonthId(e.target.value)}
                                 className="w-full rounded-xl border border-divider bg-content1 px-3 py-2 text-sm font-semibold text-foreground focus:outline-none focus:border-primary"
                             >
-                                {months.map((m) => (
+                                {metadataMonths.map((m) => (
                                     <option key={m.id} value={m.id}>
                                         Tháng {m.month} - Năm {m.year}
                                     </option>
                                 ))}
-                            </select>
+                            </select> */}
                         </div>
                         <div className="space-y-4 overflow-y-auto max-h-[500px] pr-2">
                             {isLoading ? (
