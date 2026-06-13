@@ -1,5 +1,6 @@
 import { createApiClient } from "../client";
 import type { ApiResponse } from "../types";
+import type { ClassSchedule } from "./classes";
 
 export type ScoreStudentDetailResModel = {
   testDateAt: string;
@@ -45,11 +46,6 @@ export type AttendanceMetadataResModel = {
   weeklySchedules: ClassSchedule[];
 }
 
-export type ClassSchedule = {
-  dayOfWeek: number; // 1=Monday, 2=Tuesday, ..., 7=Sunday
-  startTime: string; // HH:mm
-  endTime: string; // HH:mm
-};
 
 export type AttendanceMonthResModel = {
   id: string;

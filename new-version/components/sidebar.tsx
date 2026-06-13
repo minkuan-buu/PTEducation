@@ -132,25 +132,20 @@ export const Sidebar = () => {
             ],
             student: [
                 {
-                    title: "Lớp học",
+                    title: "Cổng thông tin",
                     items: [
                         { label: "Tổng quan", href: "/", icon: TbLayoutDashboard },
-                        { label: "Điểm số & Chuyên cần", href: "/grades", icon: TbAward },
-                    ],
-                },
-                {
-                    title: "Lịch trình",
-                    items: [
-                        { label: "Lịch học", href: "/schedule", icon: TbCalendar },
+                        { label: "Lịch học & Điểm danh", href: "/schedule", icon: TbCalendar },
+                        { label: "Điểm số", href: "/grades", icon: TbAward },
                     ],
                 },
             ],
             guardian: [
                 {
-                    title: "Học sinh",
+                    title: "Cổng thông tin",
                     items: [
                         { label: "Tổng quan", href: "/", icon: TbLayoutDashboard },
-                        { label: "Chuyên cần", href: "/attendance", icon: TbUserCheck },
+                        { label: "Lịch học & Điểm danh", href: "/schedule", icon: TbCalendar },
                         { label: "Điểm số", href: "/grades", icon: TbAward },
                     ],
                 },
@@ -256,7 +251,7 @@ export const Sidebar = () => {
                             </div>
                         </div>
                     ) : (
-                        <UserCard name={user?.name || "User"} role={user?.role || "User"} avatarUrl={user?.avatarUrl || ""} />
+                        <UserCard name={user?.name || "User"} role={user?.role?.toLocaleLowerCase() === "guardian" ? "Phụ huynh" : user?.role?.toLocaleLowerCase() === "admin" ? "Quản trị" : user?.role?.toLocaleLowerCase() === "manager" ? "Quản lý" : "Học sinh"} avatarUrl={user?.avatarUrl || ""} />
                     )}
                 </div>
 
