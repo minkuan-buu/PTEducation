@@ -119,6 +119,7 @@ export default function GradesPage() {
                         </select> */}
 
                         <Select
+                            aria-label="Chọn tháng xem điểm"
                             className="rounded-lg min-w-50"
                             selectedKey={selectedMonthId}
                             onSelectionChange={(key) => setSelectedMonthId(String(key))}
