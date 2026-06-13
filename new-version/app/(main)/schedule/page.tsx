@@ -196,8 +196,8 @@ export default function AttendancePage() {
                     <h1 className="text-2xl font-bold tracking-tight">Lịch học và Điểm danh</h1>
                     <p className="text-muted-foreground mt-1 text-sm">
                         {role === "guardian"
-                            ? `Lịch học và hiện diện chi tiết của học sinh: ${metadata?.studentName ?? ""}`
-                            : `Lịch học và trạng thái chuyên cần hàng ngày của bạn`
+                            ? `Lịch học và điểm danh chi tiết của học sinh: ${metadata?.studentName ?? ""}`
+                            : `Lịch học và trạng thái điểm danh của bạn`
                         }
                     </p>
                 </div>
@@ -358,7 +358,7 @@ export default function AttendancePage() {
                                         <div>
                                             <p className="text-sm font-semibold">{formatDateTime(log.date)}</p>
                                             <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
-                                                <TbClock className="size-3.5" /> {log.startTime} - {log.endTime}
+                                                <TbClock className="size-3.5" /> {formatTimeOnly(log.startTime)} - {formatTimeOnly(log.endTime)}
                                             </p>
                                         </div>
                                         <Chip

@@ -360,37 +360,41 @@ export default function DashboardClient() {
                             Chào phụ huynh, {userName}!
                         </h1>
                         <p className="text-white/90 text-sm md:text-base leading-relaxed">
-                            Đang theo dõi học tập của con: <span className="font-bold underline">{userName} (Con)</span> — {overview?.className || "Lớp 11 Sinh"}.
+                            Đang theo dõi học tập của: <span className="font-bold underline">{overview?.studentName}</span> — {overview?.className || "Chưa tham gia lớp học"}.
                         </p>
                     </div>
                     <div className="absolute right-0 bottom-0 top-0 w-1/3 bg-white/10 rounded-l-full transform translate-x-12 scale-125 pointer-events-none hidden md:block" />
                 </div>
 
                 {/* Quick stats of Child */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <StatsCard
                         color="purple"
                         logo={<TbBook className="size-6" />}
-                        title="Lớp Học Của Con"
+                        title="Lớp Học Hiện Tại"
                         description={overview?.className || "Chưa tham gia lớp"}
                     />
                     <StatsCard
                         color="emerald"
                         logo={<TbAward className="size-6" />}
-                        title="GPA Lũy Kế"
-                        description={
-                            <div className="flex items-baseline gap-2">
-                                <span>{gpa}</span>
-                                <Chip size="sm" className="bg-emerald-500/10 text-emerald-500 border-none font-semibold">Giỏi</Chip>
-                            </div>
-                        }
-                        descriptionClassName="mt-1"
+                        title="Điểm Trung Bình (GPA)"
+                        description={`${gpa} / 10`}
                     />
                     <StatsCard
                         color="cyan"
                         logo={<TbCalendarCheck className="size-6" />}
-                        title="Tỷ Lệ Chuyên Cần"
+                        title="Tỷ Lệ Điểm Danh"
                         description={`${attendanceRate}%`}
+                    />
+                    <StatsCard
+                        color="amber"
+                        logo={<TbMessageReport className="size-6" />}
+                        title="Buổi học tiếp theo"
+                        description={
+                            <span title={formatDateTimeNextSession(overview?.nextSession || "Chưa có")}>
+                                {formatDateTimeNextSession(overview?.nextSession || "Chưa có")}
+                            </span>
+                        }
                     />
                 </div>
 
@@ -402,29 +406,46 @@ export default function DashboardClient() {
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="text-lg font-bold flex items-center gap-2">
                                     <TbCalendarTime className="text-purple-600 size-5" />
-                                    Lịch Học Hôm Nay Của Con
+                                    Lịch học gần đây
                                 </h3>
                             </div>
                             <div className="space-y-4">
-                                {overview?.nextSession ? (
-                                    <div className="flex items-center justify-between p-4 border border-divider/60 rounded-xl bg-content1/40">
+                                {overview?.recentAttendances?.map((attendance, index) => (
+                                    <div key={index} className="flex items-center justify-between p-4 border border-divider/60 rounded-xl bg-content1/40 hover:bg-content1/80 transition-colors">
                                         <div className="flex items-center gap-4">
                                             <div className="w-2 h-10 rounded-full bg-[#00b4d8]" />
                                             <div>
-                                                <h4 className="font-semibold text-sm">Buổi học tiếp theo</h4>
-                                                <p className="text-xs text-muted-foreground mt-1">Lớp {overview.className}</p>
+                                                <div className="flex items-center gap-2">
+                                                    <h4 className="font-semibold text-sm">{attendance.sessionType === "Fixed" ? "Buổi học cố định" : attendance.sessionType === "Adhoc" ? "Buổi học bổ sung" : `Buổi học bù cho ${formatDateTime(attendance.note)}`}</h4>
+                                                    <Chip size="sm" variant="soft" color={attendance.status === "Pending" ? "success" : attendance.status === "Closed" ? "danger" : "accent"}>
+                                                        {attendance.status === "Pending" ? "Sắp diễn ra" : attendance.status === "Closed" ? "Đã kết thúc" : "Đang diễn ra"}
+                                                    </Chip>
+                                                </div>
+                                                <p className="text-xs text-muted-foreground mt-1">{formatDateTime(attendance.date)}</p>
                                             </div>
                                         </div>
                                         <div className="text-right">
                                             <p className="text-sm font-semibold flex items-center gap-1.5 justify-end">
-                                                <TbClock className="size-4 text-muted-foreground" /> {formatDateTime(overview.nextSession)} ({formatTime(overview.nextSession)})
+                                                <TbClock className="size-4 text-muted-foreground" /> {formatTimeOnly(attendance.startTime)} - {formatTimeOnly(attendance.endTime)}
                                             </p>
-                                            <p className="text-xs text-emerald-500 font-semibold mt-1">Sắp diễn ra</p>
+                                            <Chip
+                                                size="sm"
+                                                className={
+                                                    attendance.attendanceStatus === "Present"
+                                                        ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-semibold mt-1"
+                                                        : attendance.attendanceStatus === "Absent"
+                                                            ? "bg-rose-500/15 text-rose-600 dark:text-rose-400 font-semibold mt-1"
+                                                            : attendance.attendanceStatus === "Late"
+                                                                ? "bg-yellow-500/15 text-yellow-600 dark:text-yellow-400 font-semibold mt-1"
+                                                                : attendance.attendanceStatus === "Excused" ? "bg-purple-500/15 text-purple-600 dark:text-purple-400 font-semibold mt-1"
+                                                                    : "mt-1"
+                                                }
+                                            >
+                                                {attendance.attendanceStatus === "Present" ? "Có mặt" : attendance.attendanceStatus === "Absent" ? "Vắng mặt" : attendance.attendanceStatus === "Late" ? "Muộn" : attendance.attendanceStatus === "Excused" ? "Vắng mặt có phép" : ""}
+                                            </Chip>
                                         </div>
                                     </div>
-                                ) : (
-                                    <p className="text-sm text-muted-foreground text-center py-4">Chưa có lịch học tiếp theo</p>
-                                )}
+                                ))}
                             </div>
                         </Card>
 

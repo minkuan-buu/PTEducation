@@ -71,6 +71,7 @@ export type ScoreSessionResModel = {
 };
 
 export type StudentOverviewResModel = {
+  studentName: string;
   className: string;
   averageScore: number;
   attendanceRate: number;
