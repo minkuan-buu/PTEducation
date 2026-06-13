@@ -1,7 +1,7 @@
 "use client";
 
 import { useUser } from "@/context/user-context";
-import { Card, Button, Chip, Skeleton } from "@heroui/react";
+import { Card, Button, Chip, Skeleton, ListBox, Select } from "@heroui/react";
 import {
     TbAward,
     TbBook,
@@ -31,9 +31,9 @@ export default function GradesPage() {
 
     const [selectedMonthId, setSelectedMonthId] = useState<string>("");
 
-    const { 
-        data: monthsData, 
-        isLoading: isMonthsLoading 
+    const {
+        data: monthsData,
+        isLoading: isMonthsLoading
     } = useStudentScoreMonths({ enabled: isStudentOrGuardian && !isUserLoading });
 
     const months = monthsData || [];
@@ -51,8 +51,8 @@ export default function GradesPage() {
     const {
         data: scoresData,
         isLoading: isScoresLoading,
-    } = useStudentScoresByMonth(selectedMonth, selectedYear, { 
-        enabled: isStudentOrGuardian && !isUserLoading && !!selectedMonthId 
+    } = useStudentScoresByMonth(selectedMonth, selectedYear, {
+        enabled: isStudentOrGuardian && !isUserLoading && !!selectedMonthId
     });
 
     const scores = scoresData?.scores || [];
@@ -106,7 +106,7 @@ export default function GradesPage() {
                 <Card className="p-5 border border-divider bg-background/50 backdrop-blur-md rounded-2xl flex-1 md:max-w-xs justify-center">
                     <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider block mb-2">Chọn Tháng Xem Điểm</label>
                     <div className="relative">
-                        <select
+                        {/* <select
                             value={selectedMonthId}
                             onChange={(e) => setSelectedMonthId(e.target.value)}
                             className="w-full rounded-xl border border-divider bg-content1 px-3 py-2 text-sm font-semibold text-foreground focus:outline-none focus:border-primary"
@@ -116,7 +116,30 @@ export default function GradesPage() {
                                     Tháng {m.month} - Năm {m.year}
                                 </option>
                             ))}
-                        </select>
+                        </select> */}
+
+                        <Select
+                            className="rounded-lg min-w-50"
+                            selectedKey={selectedMonthId}
+                            onSelectionChange={(key) => setSelectedMonthId(String(key))}
+                        >
+                            <Select.Trigger>
+                                <Select.Value />
+                                <Select.Indicator />
+                            </Select.Trigger>
+                            <Select.Popover className="rounded-xl">
+                                <ListBox>
+                                    {months.map((m) => (
+                                        <ListBox.Item key={m.id} id={m.id} textValue={m.id} className="hover:rounded-xl">
+                                            <div className="flex w-full items-center justify-between gap-2">
+                                                <span>Tháng {m.month} - Năm {m.year}</span>
+                                                <ListBox.ItemIndicator />
+                                            </div>
+                                        </ListBox.Item>
+                                    ))}
+                                </ListBox>
+                            </Select.Popover>
+                        </Select>
                     </div>
                 </Card>
 
