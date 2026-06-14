@@ -1,7 +1,7 @@
 "use client";
 
 import { useUser } from "@/context/user-context";
-import { Card, Button, Chip, Skeleton } from "@heroui/react";
+import { Card, Button, Chip, Skeleton, ListBox, Select } from "@heroui/react";
 import {
     TbCalendarCheck,
     TbUserCheck,
@@ -213,7 +213,7 @@ export default function AttendancePage() {
                 {/* Selector */}
                 <Card className="p-5 border border-divider bg-background/50 backdrop-blur-md rounded-2xl flex-1 md:max-w-xs justify-center">
                     <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider block mb-2">Chọn Tháng Xem Điểm Danh</label>
-                    <select
+                    {/* <select
                         value={selectedMonthId}
                         onChange={(e) => setSelectedMonthId(e.target.value)}
                         className="w-full rounded-xl border border-divider bg-content1 px-3 py-2 text-sm font-semibold text-foreground focus:outline-none focus:border-primary"
@@ -223,7 +223,31 @@ export default function AttendancePage() {
                                 Tháng {m.month} - Năm {m.year}
                             </option>
                         ))}
-                    </select>
+                    </select> */}
+                    <Select
+                        placeholder="Chọn tháng xem điểm danh"
+                        aria-label="Chọn tháng xem điểm danh"
+                        className="rounded-lg min-w-50 font-semibold"
+                        value={selectedMonthId}
+                        onChange={(key) => setSelectedMonthId(String(key))}
+                    >
+                        <Select.Trigger>
+                            <Select.Value />
+                            <Select.Indicator />
+                        </Select.Trigger>
+                        <Select.Popover className="rounded-xl">
+                            <ListBox>
+                                {metadataMonths.map((m) => (
+                                    <ListBox.Item key={m.id} id={m.id} textValue={m.id} className="hover:rounded-xl">
+                                        <div className="flex w-full items-center justify-between gap-2">
+                                            <span>Tháng {m.month} - Năm {m.year}</span>
+                                            <ListBox.ItemIndicator />
+                                        </div>
+                                    </ListBox.Item>
+                                ))}
+                            </ListBox>
+                        </Select.Popover>
+                    </Select>
                 </Card>
 
                 {/* Metrics */}

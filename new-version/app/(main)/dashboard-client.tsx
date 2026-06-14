@@ -146,7 +146,7 @@ export default function DashboardClient() {
                 <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#00b4d8] to-[#48cae4] p-8 md:p-10 text-white shadow-xl shadow-[#00b4d8]/20">
                     <div className="relative z-10 max-w-xl space-y-4">
                         <span className="inline-block rounded-full bg-white/20 px-3 py-1 text-xs font-semibold uppercase tracking-wider backdrop-blur-sm">
-                            Cổng Học Sinh
+                            Cổng thông tin dành cho Học sinh
                         </span>
                         <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">
                             Chào mừng trở lại, {userName}!
@@ -354,7 +354,7 @@ export default function DashboardClient() {
                 <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-purple-600 to-indigo-700 p-8 md:p-10 text-white shadow-xl shadow-purple-600/20">
                     <div className="relative z-10 max-w-2xl space-y-4">
                         <span className="inline-block rounded-full bg-white/20 px-3 py-1 text-xs font-semibold uppercase tracking-wider backdrop-blur-sm">
-                            Cổng Phụ Huynh (Guardian Portal)
+                            Cổng thông tin dành cho Phụ huynh
                         </span>
                         <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">
                             Chào phụ huynh, {userName}!
