@@ -27,21 +27,18 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { RegisterPayload } from "@/services/api/v2";
 import { FaRegEye, FaRegEyeSlash } from "react-icons/fa";
 
-type ClassOption = {
-    id: string;
-    name: string;
-};
+import { useClassOptions } from "@/hooks/classes/use-class-options";
 
 type AuthClientProps = {
-    classOptions: ClassOption[];
     nextPath?: string;
 };
 
-export default function AuthClient({ classOptions, nextPath }: AuthClientProps) {
+export default function AuthClient({ nextPath }: AuthClientProps) {
     const { resolvedTheme } = useTheme();
     const { setUser } = useUser();
     const router = useRouter();
     const searchParams = useSearchParams();
+    const { data: classOptions = [] } = useClassOptions();
     const [isMounted, setIsMounted] = useState(false);
     const [isRegistering, setIsRegistering] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);

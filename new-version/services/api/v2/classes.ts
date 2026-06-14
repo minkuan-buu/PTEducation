@@ -60,6 +60,11 @@ type CalendarIndicatorsResponse =
   | ApiResponse<string[]>
   | { data: string[] };
 
+export type ClassOption = {
+  id: string;
+  name: string;
+};
+
 const api = createApiClient("v2");
 
 function normalizeClasses(
@@ -215,4 +220,12 @@ export async function getStudentsInClass(
       : 1;
 
   return { data, pageNumber, pageSize, totalPages } as StudentsPage;
+}
+
+export async function getClassOptions(): Promise<ClassOption[]> {
+  const response = await api.get<{ data?: ClassOption[] }>("/classes/select");
+  const options = Array.isArray(response.data?.data) ? response.data.data : [];
+  return options.sort((a, b) =>
+    a.name.localeCompare(b.name, "vi", { numeric: true, sensitivity: "base" }),
+  );
 }
