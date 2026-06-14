@@ -126,7 +126,7 @@ export const Sidebar = () => {
                     items: [
                         { label: "Người dùng", href: "/users", icon: TbUsers },
                         { label: "Lớp học", href: "/classes", icon: TbSchool },
-                        { label: "Báo cáo", href: "/reports", icon: TbReport },
+                        // { label: "Báo cáo", href: "/reports", icon: TbReport },
                     ],
                 },
             ],
@@ -150,23 +150,23 @@ export const Sidebar = () => {
                     ],
                 },
             ],
-            manager: [
-                {
-                    title: "Vận hành",
-                    items: [
-                        { label: "Tổng quan", href: "/", icon: TbLayoutDashboard },
-                        { label: "Lớp học", href: "/classes", icon: TbSchool },
-                        { label: "Lịch học", href: "/schedule", icon: TbCalendar },
-                    ],
-                },
-                {
-                    title: "Báo cáo",
-                    items: [
-                        { label: "Điểm danh", href: "/reports/attendance", icon: TbClipboardCheck },
-                        { label: "Điểm số", href: "/reports/scores", icon: TbReportAnalytics },
-                    ],
-                },
-            ],
+            // manager: [
+            //     {
+            //         title: "Vận hành",
+            //         items: [
+            //             { label: "Tổng quan", href: "/", icon: TbLayoutDashboard },
+            //             { label: "Lớp học", href: "/classes", icon: TbSchool },
+            //             { label: "Lịch học", href: "/schedule", icon: TbCalendar },
+            //         ],
+            //     },
+            //     {
+            //         title: "Báo cáo",
+            //         items: [
+            //             { label: "Điểm danh", href: "/reports/attendance", icon: TbClipboardCheck },
+            //             { label: "Điểm số", href: "/reports/scores", icon: TbReportAnalytics },
+            //         ],
+            //     },
+            // ],
             null: []
         }),
         [],
