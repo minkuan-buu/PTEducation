@@ -282,8 +282,13 @@ export default function UserClient({ initialData }: UserClientProps) {
     return (
         <main className="min-h-screen pt-4 flex flex-col justify-start">
             <div className="p-8">
-                <h1 className="text-2xl font-bold">Người dùng</h1>
-                <p className="text-muted mt-2">Trang quản lý người dùng</p>
+                <div className="flex flex-row justify-between items-center gap-2">
+                    <div>
+                        <h1 className="text-2xl font-bold">Người dùng</h1>
+                        <p className="text-muted mt-2">Trang quản lý người dùng</p>
+                    </div>
+                    <Button variant="primary">Thêm mới</Button>
+                </div>
                 <div className="mt-4">
                     <Tabs className="w-full">
                         <Tabs.ListContainer>
