@@ -254,7 +254,7 @@ export default function ClassClient() {
             <h1 className="text-2xl font-bold">Lớp học</h1>
             <p className="text-muted mt-2">Trang quản lý lớp học</p>
           </div>
-          <Button variant="primary" onPress={open}>
+          <Button aria-label="create-classe" variant="primary" onPress={open}>
             <Icon icon="lucide:plus" width="20" />
             Tạo lớp học
           </Button>

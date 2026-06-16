@@ -251,7 +251,7 @@ export const Sidebar = () => {
                             </div>
                         </div>
                     ) : (
-                        <UserCard name={user?.name || "User"} role={user?.role?.toLocaleLowerCase() === "guardian" ? "Phụ huynh" : user?.role?.toLocaleLowerCase() === "admin" ? "Quản trị" : user?.role?.toLocaleLowerCase() === "manager" ? "Quản lý" : "Học sinh"} avatarUrl={user?.avatarUrl || ""} />
+                        <UserCard name={user?.name || "User"} role={user?.role?.toLocaleLowerCase() === "guardian" ? "Phụ huynh" : user?.role?.toLocaleLowerCase() === "admin" ? "Quản trị viên" : user?.role?.toLocaleLowerCase() === "manager" ? "Quản lý" : "Học sinh"} avatarUrl={user?.avatarUrl || ""} />
                     )}
                 </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Chip, cn, Pagination, Spinner, Table, Tabs, Tooltip } from "@heroui/react";
+import { Button, Chip, cn, Pagination, Spinner, Table, Tabs, Tooltip, useOverlayState } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import type { Key } from "@react-types/shared";
 import { useEffect, useMemo, useState } from "react";
@@ -147,6 +147,7 @@ export default function UserClient({ initialData }: UserClientProps) {
     const tableData = useMemo(() => data?.data ?? [], [data]);
     const totalPages = Math.max(1, data?.totalPages ?? 1);
     const hasNextPage = (data?.pageNumber ?? 1) < totalPages;
+    const { isOpen, setOpen, open, close } = useOverlayState();
 
     useEffect(() => {
         setPageIndex((prev) => (prev === 1 ? prev : 1));
@@ -287,7 +288,10 @@ export default function UserClient({ initialData }: UserClientProps) {
                         <h1 className="text-2xl font-bold">Người dùng</h1>
                         <p className="text-muted mt-2">Trang quản lý người dùng</p>
                     </div>
-                    <Button variant="primary">Thêm mới</Button>
+                    <Button aria-label="create-user" variant="primary" onPress={open}>
+                        <Icon icon="lucide:plus" width="20" />
+                        Thêm người dùng
+                    </Button>
                 </div>
                 <div className="mt-4">
                     <Tabs className="w-full">
