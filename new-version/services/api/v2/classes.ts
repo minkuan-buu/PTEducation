@@ -33,7 +33,7 @@ export type ClassData = {
     id: string;
     name: string;
   };
-  schedules: ClassSchedule[];
+  weeklySchedules: ClassSchedule[];
 };
 
 export type ClassDetail = {

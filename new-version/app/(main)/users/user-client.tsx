@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Chip, cn, Pagination, Spinner, Table, Tabs, Tooltip, useOverlayState } from "@heroui/react";
+import { Button, Chip, cn, Description, FieldError, Fieldset, FieldsetLegend, Input, Label, Modal, Pagination, Spinner, Table, Tabs, TextField, Tooltip, useOverlayState } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import type { Key } from "@react-types/shared";
 import { useEffect, useMemo, useState } from "react";
@@ -9,6 +9,7 @@ import { v2 } from "@/services/api";
 import type { AdminGuardian, AdminStudent } from "@/services/api/v2";
 import { useUsers } from "@/hooks/users/use-users";
 import { useQueryClient } from "@tanstack/react-query";
+import { useTheme } from "next-themes";
 
 type UserClientProps = {
     initialData?: UserData[];
@@ -148,6 +149,17 @@ export default function UserClient({ initialData }: UserClientProps) {
     const totalPages = Math.max(1, data?.totalPages ?? 1);
     const hasNextPage = (data?.pageNumber ?? 1) < totalPages;
     const { isOpen, setOpen, open, close } = useOverlayState();
+    const [newUser, setNewUser] = useState({
+        email: "",
+        phone: "",
+        name: "",
+    });
+
+    const [formErrors, setFormErrors] = useState({
+        email: "",
+        phone: "",
+        name: "",
+    });
 
     useEffect(() => {
         setPageIndex((prev) => (prev === 1 ? prev : 1));
@@ -278,6 +290,16 @@ export default function UserClient({ initialData }: UserClientProps) {
         );
     };
 
+    const [isMounted, setIsMounted] = useState(false);
+    const { resolvedTheme } = useTheme();
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
+    const getInputVariant = (): "primary" | "secondary" | undefined => {
+        return isMounted && resolvedTheme === "dark" ? "secondary" : undefined;
+    };
+
     const [expandedKeys, setExpandedKeys] = useState<Set<Key>>(() => new Set(["1"]));
 
     return (
@@ -292,6 +314,98 @@ export default function UserClient({ initialData }: UserClientProps) {
                         <Icon icon="lucide:plus" width="20" />
                         Thêm người dùng
                     </Button>
+                    <Modal>
+                        <Modal.Backdrop isOpen={isOpen} onOpenChange={setOpen}>
+                            <Modal.Container size="lg">
+                                <Modal.Dialog>
+                                    {/* <Modal.Header>
+                                        <Modal.Heading>Thêm người dùng mới</Modal.Heading>
+                                    </Modal.Header> */}
+                                    <Modal.Body className="px-2 pb-2">
+                                        <Fieldset className="w-full">
+                                            <FieldsetLegend className="text-xl font-bold text-foreground">Người dùng mới</FieldsetLegend>
+                                            <Description className="text-muted">Điền thông tin của người dùng</Description>
+                                            <Fieldset.Group>
+                                                <TextField
+                                                    isRequired
+                                                    name="reg-username"
+                                                >
+                                                    <Label htmlFor="reg-username" className="font-medium text-foreground/80">
+                                                        Họ và tên
+                                                    </Label>
+                                                    <Input
+                                                        suppressHydrationWarning
+                                                        variant={getInputVariant()}
+                                                        autoComplete="name"
+                                                        id="reg-username"
+                                                        value={newUser.name}
+                                                        onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                                                        fullWidth
+                                                        name="reg-username"
+                                                        placeholder="Họ và tên"
+                                                        type="text"
+                                                    />
+                                                    <FieldError />
+                                                </TextField>
+                                                <TextField
+                                                    isRequired
+                                                    name="email"
+                                                >
+                                                    <Label htmlFor="email" className="font-medium text-foreground/80">
+                                                        Email
+                                                    </Label>
+                                                    <Input
+                                                        suppressHydrationWarning
+                                                        variant={getInputVariant()}
+                                                        autoComplete="email"
+                                                        id="email"
+                                                        value={newUser.email}
+                                                        onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                                                        fullWidth
+                                                        name="email"
+                                                        placeholder="Nhập email"
+                                                        type="email"
+                                                    />
+                                                    <FieldError />
+                                                </TextField>
+                                                <TextField
+                                                    isRequired
+                                                    name="phone"
+                                                >
+                                                    <Label htmlFor="phone" className="font-medium text-foreground/80">
+                                                        Số điện thoại
+                                                    </Label>
+                                                    <div className="flex gap-2">
+                                                        <Input
+                                                            suppressHydrationWarning
+                                                            variant={getInputVariant()}
+                                                            id="phone"
+                                                            fullWidth
+                                                            name="phone"
+                                                            placeholder="Vị dụ: 0909xxxxxx"
+                                                            type="tel"
+                                                            value={newUser.phone}
+                                                            onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
+                                                        />
+                                                    </div>
+                                                    <FieldError />
+                                                </TextField>
+                                            </Fieldset.Group>
+                                        </Fieldset>
+
+                                    </Modal.Body>
+                                    <Modal.Footer>
+                                        <Button variant="ghost" /* onPress={setOpen} */>
+                                            Hủy
+                                        </Button>
+                                        <Button variant="primary" /* onPress={setOpen} */>
+                                            Thêm
+                                        </Button>
+                                    </Modal.Footer>
+                                </Modal.Dialog>
+                            </Modal.Container>
+                        </Modal.Backdrop>
+                    </Modal>
                 </div>
                 <div className="mt-4">
                     <Tabs className="w-full">

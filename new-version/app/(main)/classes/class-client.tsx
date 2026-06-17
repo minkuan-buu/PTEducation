@@ -113,6 +113,48 @@ export default function ClassClient() {
   const pageSize = 10;
   const keyword = searchTerm.trim();
 
+  const pad2 = (value: number) => value.toString().padStart(2, "0");
+  const parseDate = (value: string | Date | null) => {
+    if (!value) {
+      return null;
+    }
+    const date = value instanceof Date ? value : new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return null;
+    }
+
+    return date;
+  };
+
+  const formatTimeOnly = (value: string | Date | null) => {
+    if (!value) {
+      return "-";
+    }
+
+    if (typeof value === "string") {
+      const timeMatch = value.trim().match(/^(\d{1,2}):(\d{2})/);
+
+      if (timeMatch) {
+        const hours = pad2(Number(timeMatch[1]));
+        const minutes = timeMatch[2];
+
+        return `${hours}:${minutes}`;
+      }
+    }
+
+    const date = parseDate(value);
+
+    if (!date) {
+      return "-";
+    }
+
+    const hours = pad2(date.getHours());
+    const minutes = pad2(date.getMinutes());
+
+    return `${hours}:${minutes}`;
+  };
+
   // const loadClasses = async () => {
   //     try {
   //         setIsLoading(true);
@@ -402,14 +444,13 @@ export default function ClassClient() {
                     <span>Kết thúc: {formatDateTime(classItem.endAt)}</span>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {classItem.schedules && classItem.schedules.length > 0 ? (
-                      classItem.schedules.map((schedule, index) => (
+                    {classItem.weeklySchedules && classItem.weeklySchedules.length > 0 ? (
+                      classItem.weeklySchedules.sort((a, b) => a.dayOfWeek - b.dayOfWeek).map((schedule, index) => (
                         <span
                           key={`${classItem.id}-${index}`}
                           className="rounded-full border border-divider px-2 py-1 text-xs text-muted"
                         >
-                          {getDayLabel(schedule.dayOfWeek)} {schedule.startTime}
-                          -{schedule.endTime}
+                          {getDayLabel(schedule.dayOfWeek)}: {formatTimeOnly(schedule.startTime)} - {formatTimeOnly(schedule.endTime)}
                         </span>
                       ))
                     ) : (
