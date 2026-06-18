@@ -14,7 +14,7 @@ type UserClientProps = {
 };
 
 export default function UserClient({ initialData }: UserClientProps) {
-    const { isOpen, setOpen, open, close } = useOverlayState();
+    const { isOpen: isOpenAdd, setOpen: setOpenAdd, open: openAdd, close: closeAdd } = useOverlayState();
     const [newUser, setNewUser] = useState({
         email: "",
         phone: "",
@@ -72,7 +72,7 @@ export default function UserClient({ initialData }: UserClientProps) {
     };
 
     const handleCreateSuccess = () => {
-        setOpen(false);
+        setOpenAdd(false);
         toast.success("Tạo người dùng thành công!");
         resetForm();
     };
@@ -103,12 +103,12 @@ export default function UserClient({ initialData }: UserClientProps) {
                         <h1 className="text-2xl font-bold">Người dùng</h1>
                         <p className="text-muted mt-2">Trang quản lý người dùng</p>
                     </div>
-                    <Button aria-label="create-user" variant="primary" onPress={open}>
+                    <Button aria-label="create-user" variant="primary" onPress={openAdd}>
                         <Icon icon="lucide:plus" width="20" />
                         Thêm người dùng
                     </Button>
                     <Modal>
-                        <Modal.Backdrop isOpen={isOpen} onOpenChange={setOpen}>
+                        <Modal.Backdrop isOpen={isOpenAdd} onOpenChange={setOpenAdd}>
                             <Modal.Container size="lg">
                                 <Modal.Dialog>
                                     <Modal.Body className="px-2 pb-2">

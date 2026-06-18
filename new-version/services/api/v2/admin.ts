@@ -32,6 +32,23 @@ export type ApproveStudentPayload = {
   accessStatus: string;
 };
 
+export type UserEditResModel = {
+  name: string,
+  email: string,
+  phone: string,
+  schoolInfo: string,
+  guardians: Guardian[],
+}
+
+export type Guardian = {
+  id: string,
+  name: string,
+  email: string,
+  phone: string,
+  relationship?: string,
+  isPrimary: boolean,
+}
+
 const api = createApiClient("v2");
 
 function normalizeStudents(
@@ -73,6 +90,16 @@ function normalizeStudents(
     pageSize,
     totalPages,
   };
+}
+
+export async function getUserEdits(id: string) {
+  const response = await api.get<ApiResponse<UserEditResModel>>(`/admin/users/${id}/`);
+  return response.data.data;
+}
+
+export async function updateUserEdits(id: string, payload: UserEditResModel) {
+  const response = await api.put<ApiResponse<any>>(`/admin/users/${id}/`, payload);
+  return response.data.data;
 }
 
 export async function getAdminStudents(params?: {

@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Chip, cn, Pagination, Spinner, Table, Tooltip } from "@heroui/react";
+import { Button, Chip, cn, Pagination, Spinner, Table, Tooltip, useOverlayState } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import type { Key } from "@react-types/shared";
 import { useEffect, useMemo, useState } from "react";
@@ -9,6 +9,7 @@ import { v2 } from "@/services/api";
 import type { AdminGuardian, AdminStudent } from "@/services/api/v2";
 import { useUsers } from "@/hooks/users/use-users";
 import { useQueryClient } from "@tanstack/react-query";
+import ModalEditStudent from "@/components/users/modal-edit-student";
 
 export type GuardianData = AdminGuardian;
 export type UserData = AdminStudent;
@@ -76,10 +77,12 @@ const StudentApproveActions = ({
 
 const StudentActions = ({
     studentId,
-    onAction
+    onAction,
+    onEdit
 }: {
     studentId: string,
-    onAction: (id: string) => Promise<void>
+    onAction: (id: string) => Promise<void>,
+    onEdit: (id: string) => void
 }) => {
     const [isProcessing, setIsProcessing] = useState(false);
 
@@ -92,6 +95,10 @@ const StudentActions = ({
         }
     };
 
+    const handleEditPressed = () => {
+        onEdit(studentId);
+    }
+
     if (isProcessing) {
         return (
             <div className="flex h-10 min-w-[88px] items-center">
@@ -103,7 +110,7 @@ const StudentActions = ({
     return (
         <div className="flex gap-2 h-10">
             <Tooltip delay={0}>
-                <Button className="rounded-full" size="md" variant="outline">
+                <Button className="rounded-full" size="md" variant="outline" onPress={() => handleEditPressed()}>
                     <Icon icon="lucide:edit" width="1024" height="1024" />
                     <Tooltip.Content placement="bottom">
                         <p>Chỉnh sửa</p>
@@ -140,6 +147,9 @@ export function StudentsTab() {
     const tableData = useMemo(() => data?.data ?? [], [data]);
     const totalPages = Math.max(1, data?.totalPages ?? 1);
     const hasNextPage = (data?.pageNumber ?? 1) < totalPages;
+    const [selectedEditId, setSelectedEditId] = useState<string>();
+
+    const { isOpen: isOpenEdit, setOpen: setOpenEdit, open: openEdit, close: closeEdit } = useOverlayState();
 
     useEffect(() => {
         setPageIndex((prev) => (prev === 1 ? prev : 1));
@@ -241,6 +251,7 @@ export function StudentsTab() {
                                 <StudentActions
                                     studentId={item.id}
                                     onAction={handleDeleteStudent}
+                                    onEdit={handleSelectEdit}
                                 />
                             )}
                         </>
@@ -252,6 +263,11 @@ export function StudentsTab() {
                 </Table.Collection>
             </Table.Row>
         );
+    };
+
+    const handleSelectEdit = (studentId: string) => {
+        openEdit();
+        setSelectedEditId(studentId);
     };
 
     const [expandedKeys, setExpandedKeys] = useState<Set<Key>>(() => new Set(["1"]));
@@ -328,6 +344,14 @@ export function StudentsTab() {
                 </Table.Footer>
             </Table>
             {isLoading ? <p className="mt-3 text-sm text-center text-muted-foreground">Đang tải dữ liệu...</p> : null}
+            {selectedEditId && (
+                <ModalEditStudent
+                    isOpen={isOpenEdit}
+                    setOpen={setOpenEdit}
+                    close={closeEdit}
+                    studentId={selectedEditId}
+                />
+            )}
         </div>
     );
 }
