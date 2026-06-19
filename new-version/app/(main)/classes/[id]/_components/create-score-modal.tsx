@@ -328,7 +328,7 @@ export default function CreateScoreModal({
                 isDisabled={!testDate || isPending || isLoadingStudents}
                 onPress={handleSubmit}
               >
-                {isPending ? <Spinner size="sm" /> : "Tạo bài kiểm tra"}
+                {isPending ? <Spinner size="sm" /> : "Tạo điểm kiểm tra"}
               </Button>
             </Modal.Footer>
           </Modal.Dialog>
