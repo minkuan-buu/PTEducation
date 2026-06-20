@@ -10,6 +10,7 @@ export type ClassSchedule = {
 
 export type CreateClassPayload = {
   name: string;
+  gradeName?: string;
   startAt: string;
   endAt: string;
   schedules: ClassSchedule[];

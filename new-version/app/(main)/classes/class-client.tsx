@@ -4,8 +4,10 @@ import {
   Button,
   Chip,
   Input,
+  Label,
   Modal,
   Pagination,
+  TextField,
   Tooltip,
   useOverlayState,
 } from "@heroui/react";
@@ -19,6 +21,7 @@ import { useClasses, useCreateClass } from "@/hooks/classes";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { LoadingDots } from "@/components/loading-dots";
+import { useTheme } from "next-themes";
 
 const DAY_LABELS: Record<number, string> = {
   1: "Thứ 2",
@@ -105,6 +108,7 @@ export default function ClassClient() {
 
   // Form state
   const [name, setName] = useState("");
+  const [gradeName, setGradeName] = useState("");
   const [startAt, setStartAt] = useState("");
   const [endAt, setEndAt] = useState("");
   const [schedules, setSchedules] = useState<ClassSchedule[]>([]);
@@ -112,6 +116,11 @@ export default function ClassClient() {
   const [searchTerm, setSearchTerm] = useState("");
   const pageSize = 10;
   const keyword = searchTerm.trim();
+  const [isMounted, setIsMounted] = useState(false);
+  const { resolvedTheme } = useTheme();
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const pad2 = (value: number) => value.toString().padStart(2, "0");
   const parseDate = (value: string | Date | null) => {
@@ -125,6 +134,10 @@ export default function ClassClient() {
     }
 
     return date;
+  };
+
+  const getInputVariant = (): "primary" | "secondary" | undefined => {
+    return isMounted && resolvedTheme === "dark" ? "secondary" : undefined;
   };
 
   const formatTimeOnly = (value: string | Date | null) => {
@@ -221,6 +234,7 @@ export default function ClassClient() {
 
   const resetForm = () => {
     setName("");
+    setGradeName("");
     setStartAt("");
     setEndAt("");
     setSchedules([]);
@@ -259,6 +273,7 @@ export default function ClassClient() {
       // });
       mutate({
         name,
+        gradeName,
         startAt: new Date(startAt).toISOString(),
         endAt: new Date(endAt).toISOString(),
         schedules,
@@ -286,6 +301,16 @@ export default function ClassClient() {
   const handleCloseModal = () => {
     resetForm();
     close();
+  };
+
+  const handleClassNameChange = (value: string) => {
+    setName(value);
+    const match = value.trim().match(/^\d+/);
+    if (match) {
+      setGradeName(match[0]);
+    } else {
+      setGradeName(value.trim());
+    }
   };
 
   return (
@@ -319,17 +344,57 @@ export default function ClassClient() {
                 </Modal.Header>
                 <Modal.Body className="px-2">
                   <div className="flex flex-col gap-4 mt-4">
-                    <Input
-                      placeholder="Tên lớp"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                    />
+                    <TextField
+                      isRequired
+                      name="class-name"
+                      validate={(value) => {
+                        if (value.length < 3) {
+                          return "Tên lớp cần ít nhất 3 ký tự";
+                        }
+
+                        return null;
+                      }}
+                    >
+                      <Label htmlFor="class-name" className="font-medium text-foreground/80">
+                        Tên lớp
+                      </Label>
+                      <Input
+                        id="class-name"
+                        variant={getInputVariant()}
+                        placeholder="Nhập tên lớp"
+                        value={name}
+                        onChange={(e) => handleClassNameChange(e.target.value)}
+                      />
+                    </TextField>
+                    <TextField
+                      isRequired
+                      name="grade-name"
+                      validate={(value) => {
+                        if (value.length < 1) {
+                          return "Khối cần ít nhất 1 ký tự";
+                        }
+
+                        return null;
+                      }}
+                    >
+                      <Label htmlFor="grade-name" className="font-medium text-foreground/80">
+                        Khối
+                      </Label>
+                      <Input
+                        id="grade-name"
+                        variant={getInputVariant()}
+                        placeholder="Nhập khối"
+                        value={gradeName}
+                        onChange={(e) => setGradeName(e.target.value)}
+                      />
+                    </TextField>
                     <div className="flex flex-row justify-between gap-4">
                       <div className="flex items-center gap-2">
                         <label className="text-sm text-muted">
                           Ngày bắt đầu
                         </label>
                         <Input
+                          variant={getInputVariant()}
                           type="date"
                           placeholder="Ngày bắt đầu"
                           value={startAt}
@@ -341,6 +406,7 @@ export default function ClassClient() {
                           Ngày kết thúc
                         </label>
                         <Input
+                          variant={getInputVariant()}
                           type="date"
                           placeholder="Ngày kết thúc"
                           value={endAt}
