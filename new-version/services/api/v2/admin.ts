@@ -37,6 +37,7 @@ export type UserEditResModel = {
   email: string,
   phone: string,
   schoolInfo: string,
+  avatarUrl: string,
   guardians: Guardian[],
 }
 
