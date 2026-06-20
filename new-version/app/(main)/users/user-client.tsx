@@ -185,7 +185,7 @@ export default function UserClient({ initialData }: UserClientProps) {
 
                                     </Modal.Body>
                                     <Modal.Footer>
-                                        <Button variant="ghost" onPress={close}>
+                                        <Button variant="ghost" onPress={closeAdd}>
                                             Hủy
                                         </Button>
                                         <Button variant="primary" isDisabled={isPending} onPress={handleCreateUser}>
