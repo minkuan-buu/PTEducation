@@ -129,6 +129,8 @@ import styles from "./class-attendance-panel.module.css";
 import { useCreateAttendance } from "@/hooks/classes/attendance/use-create-attendance";
 import { useCheckAttendance } from "@/hooks/classes/attendance/use-check-attendance";
 import { useUpdateAttendance } from "@/hooks/classes/attendance/use-update-attendance";
+import { ClassPeers } from "@/services/api/v2";
+import { useClassPeers } from "@/hooks/classes/use-class-peers";
 
 export function ClassAttendancePanel({ classId }: { classId: string }) {
   const router = useRouter();
@@ -198,6 +200,8 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
   const { isOpen: isWarningModalOpen, setOpen: setWarningModalOpen, close: closeWarningModal } = useOverlayState();
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
   const [pendingStudentClassId, setPendingStudentClassId] = useState<string | null>(null);
+  const { data: classPeers = [] } = useClassPeers(classId);
+  const [selectedClassId, setSelectedClassId] = useState<string>(classId);
   const [editingSession, setEditingSession] = useState<{
     id: string;
     date: string;
@@ -210,7 +214,11 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
     data: selectedSessionDetail,
     isPending: isSessionDetailPending,
     isError: isSessionDetailError,
-  } = useAttendanceSessionDetail(selectedSessionId);
+  } = useAttendanceSessionDetail(selectedSessionId, selectedClassId);
+
+  useEffect(() => {
+    setSelectedClassId(classId);
+  }, [classId, selectedSessionId]);
 
   useEffect(() => {
     if (!classId) return;
@@ -240,7 +248,8 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
   useEffect(() => {
     setSelectedSessionId(null);
     setIsEditMode(false);
-  }, [selectedDateIso]);
+    setSelectedClassId(classId);
+  }, [selectedDateIso, classId]);
 
   useEffect(() => {
     if (!selectedSessionId) return;
@@ -803,12 +812,35 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
                 ) : null}
               </div>
             </div>
+            <div className="mt-4 flex flex-row gap-2 items-center">
+              <div className="flex items-center text-sm font-medium text-muted">
+                Theo lớp:
+              </div>
+              <div className="flex flex-row gap-2 flex-wrap">
+                {classPeers.map((peer) => {
+                  const isSelected = selectedClassId === peer.id;
+                  return (
+                    <Chip
+                      aria-label={`Lớp ${peer.name}`}
+                      key={peer.id}
+                      size="lg"
+                      variant={isSelected ? "primary" : "secondary"}
+                      color="accent"
+                      className={`cursor-pointer select-none ${isEditMode ? "opacity-50 cursor-not-allowed" : ""}`}
+                      onClick={() => { !isEditMode && setSelectedClassId(peer.id) }}
+                    >
+                      {peer.name}
+                    </Chip>
+                  );
+                })}
+              </div>
+            </div>
 
             <div className="mt-4 flex flex-col gap-3 md:flex-row items-center md:justify-between">
               <Input
                 aria-label="Tìm học sinh"
                 className="md:max-w-sm"
-                placeholder="Tìm theo tên, mã, trạng thái"
+                placeholder="Tìm theo tên, mã số  học sinh"
                 value={studentKeyword}
                 onChange={(event) => setStudentKeyword(event.target.value)}
               />
@@ -897,19 +929,36 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
                           </div>
                         </div>
                         {sessionStatus === "Opening" && (
-                          <Button
-                            className="rounded-xl"
-                            isDisabled={Boolean(
-                              pendingCheckAttendanceByStudentClassId[student.studentClassId] ||
-                              student.attendanceStatus === "Present",
+                          <div className="flex flex-row items-center gap-3">
+                            <Button
+                              className="rounded-xl"
+                              isDisabled={Boolean(
+                                pendingCheckAttendanceByStudentClassId[student.studentClassId] ||
+                                student.attendanceStatus === "Present",
+                              )}
+                              variant="primary"
+                              onPress={() => handleCheckAttendance(student.studentClassId)}
+                            >
+                              {pendingCheckAttendanceByStudentClassId[student.studentClassId]
+                                ? <Spinner size="sm" />
+                                : "Điểm danh"}
+                            </Button>
+                            {selectedClassId !== classId && (
+                              <Button
+                                className="rounded-xl"
+                                isDisabled={Boolean(
+                                  pendingCheckAttendanceByStudentClassId[student.studentClassId] ||
+                                  student.attendanceStatus === "Present",
+                                )}
+                                variant="primary"
+                                onPress={() => handleCheckAttendance(student.studentClassId)}
+                              >
+                                {pendingCheckAttendanceByStudentClassId[student.studentClassId]
+                                  ? <Spinner size="sm" />
+                                  : "Điểm danh bù"}
+                              </Button>
                             )}
-                            variant="primary"
-                            onPress={() => handleCheckAttendance(student.studentClassId)}
-                          >
-                            {pendingCheckAttendanceByStudentClassId[student.studentClassId]
-                              ? <Spinner size="sm" />
-                              : "Điểm danh"}
-                          </Button>
+                          </div>
                         )}
                         {isEditMode && (
                           <div className="flex flex-col gap-2">

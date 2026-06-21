@@ -113,13 +113,13 @@ export async function getClassAttendanceSessions(
   return normalizeAttendanceSessions(response.data);
 }
 
-export async function getAttendanceSessionDetail(attendanceId: string) {
+export async function getAttendanceSessionDetail(attendanceId: string, classId: string) {
   if (!attendanceId) {
     throw new Error("Attendance session id is required.");
   }
 
   const response = await api.get<AttendanceSessionDetailResponse>(
-    `/attendances/${encodeURIComponent(attendanceId)}`,
+    `/attendances/${encodeURIComponent(attendanceId)}?classId=${encodeURIComponent(classId)}`,
   );
 
   return normalizeAttendanceSessionDetail(response.data);
@@ -166,4 +166,32 @@ export async function updateAttendanceSession(
 ) {
   await api.put(`/attendances/update`, payload);
 }
+
+export type GeneralDropdownResModel = {
+  id: string;
+  name: string;
+};
+
+type AbsentSessionsResponse =
+  | GeneralDropdownResModel[]
+  | ApiResponse<GeneralDropdownResModel[]>
+  | { data: GeneralDropdownResModel[] };
+
+function normalizeAbsentSessions(payload: AbsentSessionsResponse): GeneralDropdownResModel[] {
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+  if (payload && typeof payload === "object" && "data" in payload) {
+    return payload.data ?? [];
+  }
+  return [];
+}
+
+export async function getStudentAbsentSessions(classId: string, studentClassId: string) {
+  const response = await api.get<AbsentSessionsResponse>(
+    `/attendances/classes/${encodeURIComponent(classId)}/students/${encodeURIComponent(studentClassId)}/absent-sessions`,
+  );
+  return normalizeAbsentSessions(response.data);
+}
+
 

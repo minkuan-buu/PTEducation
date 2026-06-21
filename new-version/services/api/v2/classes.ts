@@ -8,6 +8,11 @@ export type ClassSchedule = {
   endTime: string; // HH:mm
 };
 
+export type ClassPeers = {
+  id: string,
+  name: string
+}
+
 export type CreateClassPayload = {
   name: string;
   gradeName?: string;
@@ -229,4 +234,24 @@ export async function getClassOptions(): Promise<ClassOption[]> {
   return options.sort((a, b) =>
     a.name.localeCompare(b.name, "vi", { numeric: true, sensitivity: "base" }),
   );
+}
+
+type ClassPeersResponse =
+  | ClassPeers[]
+  | ApiResponse<ClassPeers[]>
+  | { data: ClassPeers[] };
+
+function normalizeClassPeers(payload: ClassPeersResponse): ClassPeers[] {
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+  if (payload && typeof payload === "object" && "data" in payload) {
+    return payload.data ?? [];
+  }
+  return [];
+}
+
+export async function getClassPeers(classId: string) {
+  const response = await api.get<ClassPeersResponse>(`/classes/${encodeURIComponent(classId)}/peers`);
+  return normalizeClassPeers(response.data);
 }
