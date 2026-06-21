@@ -129,14 +129,15 @@ import styles from "./class-attendance-panel.module.css";
 import { useCreateAttendance } from "@/hooks/classes/attendance/use-create-attendance";
 import { useCheckAttendance } from "@/hooks/classes/attendance/use-check-attendance";
 import { useUpdateAttendance } from "@/hooks/classes/attendance/use-update-attendance";
-import { ClassPeers } from "@/services/api/v2";
 import { useClassPeers } from "@/hooks/classes/use-class-peers";
+import MakeUpSelectModal from "./make-up-select-modal";
 
 export function ClassAttendancePanel({ classId }: { classId: string }) {
   const router = useRouter();
   const { joinClassGroup, leaveClassGroup } = useAttendanceRealtime();
   const attendanceWindow = useAttendanceWindow(classId);
   const { isOpen, setOpen, close } = useOverlayState();
+  const { isOpen: isMakeUpModalOpen, setOpen: setMakeUpModalOpen, close: closeMakeUpModal } = useOverlayState();
 
   useEffect(() => {
     if (!classId) {
@@ -202,6 +203,7 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
   const [pendingStudentClassId, setPendingStudentClassId] = useState<string | null>(null);
   const { data: classPeers = [] } = useClassPeers(classId);
   const [selectedClassId, setSelectedClassId] = useState<string>(classId);
+  const [selectedStudentForMakeUpId, setSelectedStudentForMakeUpId] = useState<string | null>(null);
   const [editingSession, setEditingSession] = useState<{
     id: string;
     date: string;
@@ -864,6 +866,14 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
                 </Button>
               )}
             </div>
+            <MakeUpSelectModal
+              classId={selectedClassId}
+              studentClassId={selectedStudentForMakeUpId}
+              attendanceId={selectedSessionId}
+              isOpen={isMakeUpModalOpen}
+              handleOpenChange={setMakeUpModalOpen}
+              handleCloseModal={closeMakeUpModal}
+            />
             <div className="mt-4 space-y-3">
               {isSessionDetailPending ? (
                 <div className="space-y-3">
@@ -873,8 +883,6 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
                 </div>
               ) : filteredRoster.length ? (
                 filteredRoster.map((student) => {
-
-
                   return (
                     <div
                       key={student.studentClassId}
@@ -944,19 +952,22 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
                                 : "Điểm danh"}
                             </Button>
                             {selectedClassId !== classId && (
-                              <Button
-                                className="rounded-xl"
-                                isDisabled={Boolean(
-                                  pendingCheckAttendanceByStudentClassId[student.studentClassId] ||
-                                  student.attendanceStatus === "Present",
-                                )}
-                                variant="primary"
-                                onPress={() => handleCheckAttendance(student.studentClassId)}
-                              >
-                                {pendingCheckAttendanceByStudentClassId[student.studentClassId]
-                                  ? <Spinner size="sm" />
-                                  : "Điểm danh bù"}
-                              </Button>
+                              <>
+                                <Button
+                                  className="rounded-xl"
+                                  isDisabled={Boolean(
+                                    pendingCheckAttendanceByStudentClassId[student.studentClassId] ||
+                                    student.attendanceStatus === "Present",
+                                  )}
+                                  variant="primary"
+                                  onPress={() => {
+                                    setSelectedStudentForMakeUpId(student.studentClassId);
+                                    setMakeUpModalOpen(true);
+                                  }}
+                                >
+                                  Điểm danh bù
+                                </Button>
+                              </>
                             )}
                           </div>
                         )}

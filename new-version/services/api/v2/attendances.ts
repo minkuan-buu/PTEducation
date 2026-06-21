@@ -3,6 +3,7 @@ import type { ApiResponse } from "../types";
 
 export type CheckAttendancePayload = {
   studentClassId: string;
+  makeUpSessionId?: string;
 };
 
 export type UpdateAttendancePayload = {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import { Button, Input, ListBox, Modal, Select } from "@heroui/react";
 import { useCreateAttendance } from "@/hooks/classes/attendance/use-create-attendance";
@@ -323,4 +323,4 @@ const CreateAttendanceModal = ({
   );
 };
 
-export default CreateAttendanceModal;
+export default React.memo(CreateAttendanceModal);
