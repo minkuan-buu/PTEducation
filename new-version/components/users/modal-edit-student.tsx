@@ -141,7 +141,7 @@ export default function ModalEditStudent({ isOpen, setOpen, close, studentId }: 
                     <Modal.Dialog className="w-full max-w-none sm:max-w-3xl md:max-w-4xl lg:max-w-5xl">
                         <Modal.Header className="flex flex-col gap-2 pb-2">
                             <h2 className="text-xl font-bold text-foreground">Chỉnh sửa thông tin người dùng</h2>
-                            <Description className="text-muted">Điền thông tin và chọn lớp phù hợp</Description>
+                            <Description className="text-muted">Điền thông tin cần chỉnh sửa</Description>
                         </Modal.Header>
                         <Modal.Body className="px-2 min-h-[300px] py-6 border-t border-gray-200 dark:border-gray-800">
                             {isDetailLoading ? (
@@ -154,101 +154,103 @@ export default function ModalEditStudent({ isOpen, setOpen, close, studentId }: 
                                     <Fieldset className="w-full">
                                         <Fieldset.Group>
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full pb-4">
-                                                <div className="col-span-1">
-                                                    <Avatar size="lg">
+                                                <div className="col-span-1 flex justify-center items-center">
+                                                    <Avatar className="w-54 h-54">
                                                         <Avatar.Image
                                                             alt={editStudent.name}
                                                             src={editStudent.avatarUrl}
                                                         />
-                                                        <Avatar.Fallback className="border-none bg-gradient-to-br from-[#00b4d8] to-[#90e0ef] text-white">
+                                                        <Avatar.Fallback className="border-none bg-gradient-to-br from-[#00b4d8] to-[#90e0ef] text-white text-4xl">
                                                             {editStudent.name.split(" ").map((part) => part[0]).join("").slice(editStudent.name.split(" ").length - 2, editStudent.name.split(" ").length).toUpperCase()}
                                                         </Avatar.Fallback>
                                                     </Avatar>
                                                 </div>
-                                                <TextField
-                                                    isRequired
-                                                    name="reg-username"
-                                                >
-                                                    <Label htmlFor="reg-username" className="font-medium text-foreground/80">
-                                                        Họ và tên
-                                                    </Label>
-                                                    <Input
-                                                        suppressHydrationWarning
-                                                        variant={getInputVariant()}
-                                                        autoComplete="name"
-                                                        id="reg-username"
-                                                        value={editStudent.name}
-                                                        onChange={(e) => setEditStudent({ ...editStudent, name: e.target.value })}
-                                                        fullWidth
+                                                <div className="col-span-2 flex flex-col gap-2">
+                                                    <TextField
+                                                        isRequired
                                                         name="reg-username"
-                                                        placeholder="Họ và tên"
-                                                        type="text"
-                                                    />
-                                                    <FieldError />
-                                                </TextField>
-                                                <TextField
-                                                    isRequired
-                                                    name="phone"
-                                                >
-                                                    <Label htmlFor="phone" className="font-medium text-foreground/80">
-                                                        Số điện thoại
-                                                    </Label>
-                                                    <div className="flex gap-2">
+                                                    >
+                                                        <Label htmlFor="reg-username" className="font-medium text-foreground/80">
+                                                            Họ và tên
+                                                        </Label>
                                                         <Input
                                                             suppressHydrationWarning
                                                             variant={getInputVariant()}
-                                                            id="phone"
+                                                            autoComplete="name"
+                                                            id="reg-username"
+                                                            value={editStudent.name}
+                                                            onChange={(e) => setEditStudent({ ...editStudent, name: e.target.value })}
                                                             fullWidth
-                                                            name="phone"
-                                                            placeholder="Vị dụ: 0909xxxxxx"
-                                                            type="tel"
-                                                            value={editStudent.phone}
-                                                            onChange={(e) => setEditStudent({ ...editStudent, phone: e.target.value })}
+                                                            name="reg-username"
+                                                            placeholder="Họ và tên"
+                                                            type="text"
                                                         />
-                                                    </div>
-                                                    <FieldError />
-                                                </TextField>
-                                                <TextField
-                                                    isRequired
-                                                    name="email"
-                                                >
-                                                    <Label htmlFor="email" className="font-medium text-foreground/80">
-                                                        Email
-                                                    </Label>
-                                                    <Input
-                                                        suppressHydrationWarning
-                                                        variant={getInputVariant()}
-                                                        autoComplete="email"
-                                                        id="email"
-                                                        value={editStudent.email}
-                                                        onChange={(e) => setEditStudent({ ...editStudent, email: e.target.value })}
-                                                        fullWidth
+                                                        <FieldError />
+                                                    </TextField>
+                                                    <TextField
+                                                        isRequired
+                                                        name="phone"
+                                                    >
+                                                        <Label htmlFor="phone" className="font-medium text-foreground/80">
+                                                            Số điện thoại
+                                                        </Label>
+                                                        <div className="flex gap-2">
+                                                            <Input
+                                                                suppressHydrationWarning
+                                                                variant={getInputVariant()}
+                                                                id="phone"
+                                                                fullWidth
+                                                                name="phone"
+                                                                placeholder="Vị dụ: 0909xxxxxx"
+                                                                type="tel"
+                                                                value={editStudent.phone}
+                                                                onChange={(e) => setEditStudent({ ...editStudent, phone: e.target.value })}
+                                                            />
+                                                        </div>
+                                                        <FieldError />
+                                                    </TextField>
+                                                    <TextField
+                                                        isRequired
                                                         name="email"
-                                                        placeholder="Nhập email"
-                                                        type="email"
-                                                    />
-                                                    <FieldError />
-                                                </TextField>
-                                                <TextField
-                                                    isRequired
-                                                    name="school"
-                                                >
-                                                    <Label htmlFor="school" className="font-medium text-foreground/80">
-                                                        Lớp - Trường đang học (bổ sung nếu chưa có)
-                                                    </Label>
-                                                    <Input
-                                                        suppressHydrationWarning
-                                                        variant={getInputVariant()}
-                                                        id="school"
-                                                        fullWidth
+                                                    >
+                                                        <Label htmlFor="email" className="font-medium text-foreground/80">
+                                                            Email
+                                                        </Label>
+                                                        <Input
+                                                            suppressHydrationWarning
+                                                            variant={getInputVariant()}
+                                                            autoComplete="email"
+                                                            id="email"
+                                                            value={editStudent.email}
+                                                            onChange={(e) => setEditStudent({ ...editStudent, email: e.target.value })}
+                                                            fullWidth
+                                                            name="email"
+                                                            placeholder="Nhập email"
+                                                            type="email"
+                                                        />
+                                                        <FieldError />
+                                                    </TextField>
+                                                    <TextField
+                                                        isRequired
                                                         name="school"
-                                                        value={editStudent.school}
-                                                        onChange={(e) => setEditStudent({ ...editStudent, school: e.target.value })}
-                                                        placeholder="Vị dụ: Lớp 10A1 - Trần Đại Nghĩa"
-                                                        type="text"
-                                                    />
-                                                    <FieldError />
-                                                </TextField>
+                                                    >
+                                                        <Label htmlFor="school" className="font-medium text-foreground/80">
+                                                            Lớp - Trường đang học
+                                                        </Label>
+                                                        <Input
+                                                            suppressHydrationWarning
+                                                            variant={getInputVariant()}
+                                                            id="school"
+                                                            fullWidth
+                                                            name="school"
+                                                            value={editStudent.school}
+                                                            onChange={(e) => setEditStudent({ ...editStudent, school: e.target.value })}
+                                                            placeholder="Vị dụ: Lớp 10A1 - Trần Đại Nghĩa"
+                                                            type="text"
+                                                        />
+                                                        <FieldError />
+                                                    </TextField>
+                                                </div>
                                             </div>
                                             <div className="space-y-4 border-t border-divider" />
                                             <h3 className="font-semibold text-foreground">Thông tin phụ huynh</h3>
