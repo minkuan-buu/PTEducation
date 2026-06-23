@@ -4,7 +4,7 @@ import ClassClient from './class-client';
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Quản lý lớp học | PTEducation",
+  title: "Quản lý lớp học",
   description: "Hệ thống giáo dục PTEducation.",
 };
 

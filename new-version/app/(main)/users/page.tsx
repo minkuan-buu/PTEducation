@@ -6,7 +6,7 @@ import UserClient from './user-client-no-ssr';
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Quản lý người dùng | PTEducation",
+  title: "Quản lý người dùng",
   description: "Hệ thống giáo dục PTEducation.",
 };
 

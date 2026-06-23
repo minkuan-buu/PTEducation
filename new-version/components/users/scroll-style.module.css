@@ -1,0 +1,20 @@
+.scrollable {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 98, 255, 0.336) transparent;
+}
+
+.scrollable::-webkit-scrollbar {
+  width: 4px;
+}
+
+.scrollable::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 9999px;
+}
+
+.scrollable::-webkit-scrollbar-thumb {
+  background-color: rgba(59, 130, 246, 0.35);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}

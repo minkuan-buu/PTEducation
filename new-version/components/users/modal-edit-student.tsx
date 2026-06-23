@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useGetUserDetail } from "@/hooks/users/use-get-user-detail";
 import { useUpdateUserDetail } from "@/hooks/users/use-update-user-detail";
 import type { UserEditResModel } from "@/services/api/v2";
+import styles from "./scroll-style.module.css";
 
 interface User {
     name: string;
@@ -138,7 +139,7 @@ export default function ModalEditStudent({ isOpen, setOpen, close, studentId }: 
         <Modal>
             <Modal.Backdrop isOpen={isOpen} onOpenChange={setOpen}>
                 <Modal.Container size="lg">
-                    <Modal.Dialog className="w-full max-w-none sm:max-w-3xl md:max-w-4xl lg:max-w-5xl">
+                    <Modal.Dialog className={`w-full max-w-none sm:max-w-3xl md:max-w-4xl lg:max-w-5xl ${styles.scrollable}`}>
                         <Modal.Header className="flex flex-col gap-2 pb-2">
                             <h2 className="text-xl font-bold text-foreground">Chỉnh sửa thông tin người dùng</h2>
                             <Description className="text-muted">Điền thông tin cần chỉnh sửa</Description>
@@ -150,7 +151,7 @@ export default function ModalEditStudent({ isOpen, setOpen, close, studentId }: 
                                     <span className="text-sm text-muted-foreground font-medium">Đang tải thông tin học viên...</span>
                                 </div>
                             ) : (
-                                <form autoComplete="on" onSubmit={handleEditSubmit} className="w-full">
+                                <form autoComplete="on" onSubmit={handleEditSubmit} className="w-full" aria-label="form-edit-user">
                                     <Fieldset className="w-full">
                                         <Fieldset.Group>
                                             <div className="grid grid-cols-1 md:grid-cols-3 w-full pb-4">
