@@ -153,14 +153,14 @@ export default function ModalEditStudent({ isOpen, setOpen, close, studentId }: 
                                 <form autoComplete="on" onSubmit={handleEditSubmit} className="w-full">
                                     <Fieldset className="w-full">
                                         <Fieldset.Group>
-                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full pb-4">
+                                            <div className="grid grid-cols-1 md:grid-cols-3 w-full pb-4">
                                                 <div className="col-span-1 flex justify-center items-center">
-                                                    <Avatar className="w-54 h-54">
+                                                    <Avatar className="w-56 h-56 cursor-pointer select-none">
                                                         <Avatar.Image
                                                             alt={editStudent.name}
                                                             src={editStudent.avatarUrl}
                                                         />
-                                                        <Avatar.Fallback className="border-none bg-gradient-to-br from-[#00b4d8] to-[#90e0ef] text-white text-4xl">
+                                                        <Avatar.Fallback className="border-none bg-gradient-to-br from-[#00b4d8] to-[#90e0ef] text-white text-4xl select-none">
                                                             {editStudent.name.split(" ").map((part) => part[0]).join("").slice(editStudent.name.split(" ").length - 2, editStudent.name.split(" ").length).toUpperCase()}
                                                         </Avatar.Fallback>
                                                     </Avatar>
@@ -251,6 +251,11 @@ export default function ModalEditStudent({ isOpen, setOpen, close, studentId }: 
                                                         <FieldError />
                                                     </TextField>
                                                 </div>
+                                            </div>
+                                            <div className="flex flex-row items-center justify-end">
+                                                <Button>
+                                                    Đặt lại mật khẩu
+                                                </Button>
                                             </div>
                                             <div className="space-y-4 border-t border-divider" />
                                             <h3 className="font-semibold text-foreground">Thông tin phụ huynh</h3>
@@ -353,7 +358,12 @@ export default function ModalEditStudent({ isOpen, setOpen, close, studentId }: 
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <div className="flex flex-row justify-end">
+                                                    <div className="flex flex-row justify-end gap-2">
+                                                        {!guardian.id.startsWith("g-") && (
+                                                            <Button>
+                                                                Đặt lại mật khẩu
+                                                            </Button>
+                                                        )}
                                                         <Button
                                                             variant="secondary"
                                                             className="text-red-400"
