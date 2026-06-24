@@ -147,3 +147,14 @@ export async function deleteStudent(studentId: string) {
 
   return normalizeStudents(response.data);
 }
+
+export async function uploadAvatar(userId: string, file: File) {
+  const formData = new FormData();
+  formData.append("File", file);
+  const response = await api.post<ApiResponse<any>>(`/admin/users/${userId}/avatar`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+  return response.data.data;
+}

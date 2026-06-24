@@ -1,9 +1,11 @@
-import { Description, FieldError, Fieldset, FieldsetLegend, Input, Label, Modal, TextField, useOverlayState, Select, ListBox, Switch, Button, Spinner, Avatar } from "@heroui/react";
+import { Description, FieldError, Fieldset, FieldsetLegend, Input, Label, Modal, TextField, useOverlayState, Select, ListBox, Switch, Button, Spinner, Avatar, toast } from "@heroui/react";
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useGetUserDetail } from "@/hooks/users/use-get-user-detail";
 import { useUpdateUserDetail } from "@/hooks/users/use-update-user-detail";
+import { useUploadAvatar } from "@/hooks/users/use-upload-avatar";
 import type { UserEditResModel } from "@/services/api/v2";
+import { FaCamera } from "react-icons/fa";
 import styles from "./scroll-style.module.css";
 
 interface User {
@@ -25,6 +27,27 @@ export default function ModalEditStudent({ isOpen, setOpen, close, studentId }: 
     const updateStudentMutation = useUpdateUserDetail(studentId, () => {
         close();
     });
+
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const uploadAvatarMutation = useUploadAvatar(studentId);
+
+    const [isHovered, setIsHovered] = useState(false);
+
+    const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const localUrl = URL.createObjectURL(file);
+            setEditStudent((prev) => ({ ...prev, avatarUrl: localUrl }));
+            uploadAvatarMutation.mutate(file);
+        }
+    };
+
+    const showOverlay = isHovered || uploadAvatarMutation.isPending;
+    const maskRadius = showOverlay ? 28 : 0;
+    const avatarStyle = {
+        WebkitMaskImage: `radial-gradient(circle at calc(100% - 32px) calc(100% - 32px), transparent ${maskRadius}px, black ${maskRadius + 0.5}px)`,
+        maskImage: `radial-gradient(circle at calc(100% - 32px) calc(100% - 32px), transparent ${maskRadius}px, black ${maskRadius + 0.5}px)`,
+    };
 
     useEffect(() => {
         if (studentDetail) {
@@ -156,15 +179,43 @@ export default function ModalEditStudent({ isOpen, setOpen, close, studentId }: 
                                         <Fieldset.Group>
                                             <div className="grid grid-cols-1 md:grid-cols-3 w-full pb-4">
                                                 <div className="col-span-1 flex justify-center items-center">
-                                                    <Avatar className="w-56 h-56 cursor-pointer select-none">
-                                                        <Avatar.Image
-                                                            alt={editStudent.name}
-                                                            src={editStudent.avatarUrl}
+                                                    <div
+                                                        role="button"
+                                                        aria-label="Thay đổi ảnh đại diện"
+                                                        onMouseEnter={() => setIsHovered(true)}
+                                                        onMouseLeave={() => setIsHovered(false)}
+                                                        onClick={() => fileInputRef.current?.click()}
+                                                        className="relative cursor-pointer select-none rounded-full"
+                                                    >
+                                                        <Avatar
+                                                            aria-label="Ảnh đại diện học viên"
+                                                            style={avatarStyle}
+                                                            className={`w-56 h-56 transition-all duration-300 ${showOverlay ? "brightness-95" : ""}`}
+                                                        >
+                                                            <Avatar.Image
+                                                                alt={editStudent.name}
+                                                                src={editStudent.avatarUrl}
+                                                            />
+                                                            <Avatar.Fallback className="border-none bg-gradient-to-br from-[#00b4d8] to-[#90e0ef] text-white text-4xl select-none">
+                                                                {editStudent.name.split(" ").map((part) => part[0]).join("").slice(editStudent.name.split(" ").length - 2, editStudent.name.split(" ").length).toUpperCase()}
+                                                            </Avatar.Fallback>
+                                                        </Avatar>
+                                                        <div className={`absolute inset-0 bg-black/10 rounded-full transition-all duration-300 pointer-events-none ${showOverlay ? "opacity-100" : "opacity-0"}`} />
+                                                        <div className={`absolute bottom-2 right-2 w-12 h-12 flex items-center justify-center bg-[#27272a] hover:bg-[#3f3f46] text-white rounded-full shadow-lg transition-all duration-300 ease-out transform ${showOverlay ? "scale-100 opacity-100" : "scale-50 opacity-0"}`}>
+                                                            {uploadAvatarMutation.isPending ? (
+                                                                <Spinner size="sm" aria-label="Đang tải ảnh đại diện" />
+                                                            ) : (
+                                                                <FaCamera className="w-5 h-5" />
+                                                            )}
+                                                        </div>
+                                                        <input
+                                                            type="file"
+                                                            ref={fileInputRef}
+                                                            onChange={handleAvatarChange}
+                                                            accept="image/*"
+                                                            className="hidden"
                                                         />
-                                                        <Avatar.Fallback className="border-none bg-gradient-to-br from-[#00b4d8] to-[#90e0ef] text-white text-4xl select-none">
-                                                            {editStudent.name.split(" ").map((part) => part[0]).join("").slice(editStudent.name.split(" ").length - 2, editStudent.name.split(" ").length).toUpperCase()}
-                                                        </Avatar.Fallback>
-                                                    </Avatar>
+                                                    </div>
                                                 </div>
                                                 <div className="col-span-2 flex flex-col gap-2">
                                                     <TextField
@@ -323,6 +374,7 @@ export default function ModalEditStudent({ isOpen, setOpen, close, studentId }: 
                                                                     Quan hệ
                                                                 </Label>
                                                                 <Select
+                                                                    aria-label="Quan hệ"
                                                                     variant={resolvedTheme === "dark" ? "secondary" : undefined}
                                                                     className="w-full"
                                                                     placeholder="Chọn quan hệ"
@@ -351,7 +403,7 @@ export default function ModalEditStudent({ isOpen, setOpen, close, studentId }: 
                                                             </div>
                                                             <div className="flex gap-2 items-center shrink-0">
                                                                 <span className="text-md text-muted">Liên hệ chính</span>
-                                                                <Switch isSelected={guardian.isPrimary} onChange={() => handleGuardianPrimaryChange(guardian.id)}>
+                                                                <Switch aria-label="Liên hệ chính" isSelected={guardian.isPrimary} onChange={() => handleGuardianPrimaryChange(guardian.id)}>
                                                                     <Switch.Control>
                                                                         <Switch.Thumb />
                                                                     </Switch.Control>
