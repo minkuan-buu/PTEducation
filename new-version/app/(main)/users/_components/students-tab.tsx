@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Chip, cn, Pagination, Spinner, Table, Tooltip, useOverlayState } from "@heroui/react";
+import { Button, Chip, cn, Description, Pagination, Spinner, Table, Tooltip, useOverlayState } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import type { Key } from "@react-types/shared";
 import { useEffect, useMemo, useState } from "react";

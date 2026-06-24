@@ -103,6 +103,12 @@ export async function updateUserEdits(id: string, payload: UserEditResModel) {
   return response.data.data;
 }
 
+export async function resetPassword(userId: string, payload: { password?: string | null }) {
+  const response = await api.post<ApiResponse<any>>(`/admin/users/${userId}/reset-password`, payload);
+  return response.data;
+}
+
+
 export async function getAdminStudents(params?: {
   pageIndex?: number;
   pageSize?: number;

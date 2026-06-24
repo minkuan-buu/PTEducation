@@ -124,6 +124,11 @@ export default function AuthClient({ nextPath }: AuthClientProps) {
         );
     }
 
+    function resetForm() {
+        setRegisterStudent({ name: "", email: "", phone: "", class: "", school: "" });
+        setGuardianList([{ id: "g-0", name: "", email: "", phone: "", relation: "Ba", isPrimary: true }]);
+    }
+
     async function handleLoginSubmit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
         setLoginError(null);
@@ -184,9 +189,9 @@ export default function AuthClient({ nextPath }: AuthClientProps) {
 
         try {
             const result = await v2.register(reqRegister);
+            resetForm();
             console.log("Registration success:", result);
             toast.success("Đăng ký thành công! Vui lòng chờ xét duyệt và đăng nhập lại.");
-            // alert("Đăng ký thành công! Vui lòng chờ xét duyệt và đăng nhập lại.");
             setIsRegistering(false);
         } catch (error) {
             console.error("Registration error:", error);
