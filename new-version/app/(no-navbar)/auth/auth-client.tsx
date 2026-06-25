@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
     Button,
     Card,
@@ -16,10 +16,11 @@ import {
     Spinner,
     Switch,
     TextField,
-    toast
+    toast,
+    InputOTP
 } from "@heroui/react";
 import { motion } from "framer-motion";
-import { v2 } from "@/services/api";
+import { v1, v2, otp } from "@/services/api";
 import { AxiosError } from "axios";
 import { useUser } from "@/context/user-context";
 import { useTheme } from "next-themes";
@@ -28,6 +29,7 @@ import { RegisterPayload } from "@/services/api/v2";
 import { FaRegEye, FaRegEyeSlash } from "react-icons/fa";
 
 import { useClassOptions } from "@/hooks/classes/use-class-options";
+import WeeklySchedule, { EventItem } from "@/components/weekly-schedule";
 
 type AuthClientProps = {
     nextPath?: string;
@@ -44,12 +46,47 @@ export default function AuthClient({ nextPath }: AuthClientProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [loginError, setLoginError] = useState<string | null>(null);
     const [isShowPassword, setIsShowPassword] = useState(false);
+    const [classSelected, setClassSelected] = useState<v2.ClassOption | null>(null);
     const [registerStudent, setRegisterStudent] = useState<{ name: string; email: string; phone: string; class: string; school: string }>({ name: "", email: "", phone: "", class: "", school: "" });
     const [guardianList, setGuardianList] = useState<Array<{ id: string; name: string; email: string; phone: string; relation: string; isPrimary: boolean }>>([{ id: "g-0", name: "", email: "", phone: "", relation: "Ba", isPrimary: true }]);
+
+    const [isResettingPassword, setIsResettingPassword] = useState(false);
+    const [isOTPTyping, setIsOTPTyping] = useState(false);
+    const [isTypingPassword, setIsTypingPassword] = useState(false);
+    const [resetEmail, setResetEmail] = useState("");
+    const [tempToken, setTempToken] = useState("");
+    const [minutesResend, setMinutesResend] = useState(0);
+    const [secondsResend, setSecondsResend] = useState(0);
+    const [canResend, setCanResend] = useState(false);
+    const [onSendingOTP, setOnSendingOTP] = useState(false);
+    const [OTPCreateAt, setOTPCreateAt] = useState<Date | null>(null);
+    const [isShowPasswordConfirm, setIsShowPasswordConfirm] = useState(false);
 
     useEffect(() => {
         setIsMounted(true);
     }, []);
+
+    useEffect(() => {
+        if (!isOTPTyping || !OTPCreateAt) return;
+        const interval = setInterval(() => {
+            const createdTime = new Date(OTPCreateAt);
+            const canResendTime = new Date(createdTime.getTime() + 2 * 60000);
+            const now = new Date();
+            const time = canResendTime.getTime() - now.getTime();
+
+            if (time < 0) {
+                setCanResend(true);
+                setMinutesResend(0);
+                setSecondsResend(0);
+                clearInterval(interval);
+            } else {
+                setMinutesResend(Math.floor((time % (1000 * 60 * 60)) / (1000 * 60)));
+                setSecondsResend(Math.floor((time % (1000 * 60)) / 1000));
+            }
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [isOTPTyping, OTPCreateAt]);
 
     const getInputVariant = (): "primary" | "secondary" | undefined => {
         return isMounted && resolvedTheme === "dark" ? "secondary" : undefined;
@@ -199,6 +236,124 @@ export default function AuthClient({ nextPath }: AuthClientProps) {
         }
     }
 
+    async function handleSendOTP(event: React.FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+        setIsSubmitting(true);
+        try {
+            const formData = new FormData(event.currentTarget);
+            const email = String(formData.get("email") ?? "");
+            setResetEmail(email);
+
+            await otp.sendOtp(email);
+            toast.success("Đã gửi mã OTP đến email của bạn");
+            setOTPCreateAt(new Date());
+            setIsOTPTyping(true);
+        } catch (error) {
+            const axiosError = error as AxiosError<{ message?: string }>;
+            toast.danger(axiosError.response?.data?.message ?? "Không thể gửi OTP. Vui lòng thử lại.");
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
+
+    async function handleVerifyOTP(event: React.FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+        setIsSubmitting(true);
+        try {
+            const formData = new FormData(event.currentTarget);
+            const otpCode = String(formData.get("otpCode") ?? "");
+
+            const result = await otp.verifyOtp({ email: resetEmail, otpCode });
+            setTempToken(result.data.tempToken);
+            setIsOTPTyping(false);
+            setIsTypingPassword(true);
+        } catch (error) {
+            const axiosError = error as AxiosError<{ message?: string }>;
+            toast.danger(axiosError.response?.data?.message ?? "OTP không hợp lệ.");
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
+
+    async function handleResetPasswordSubmit(event: React.FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+        setIsSubmitting(true);
+        try {
+            const formData = new FormData(event.currentTarget);
+            const newPassword = String(formData.get("newPassword") ?? "");
+            const confirmPassword = String(formData.get("confirmPassword") ?? "");
+
+            if (newPassword !== confirmPassword) {
+                toast.danger("Mật khẩu không khớp.");
+                return;
+            }
+            if (newPassword.length < 6) {
+                toast.danger("Mật khẩu cần ít nhất 6 ký tự.");
+                return;
+            }
+
+            await v1.resetPassword(tempToken, { newPassword, confirmPassword });
+            toast.success("Đổi mật khẩu thành công");
+            handleCancelReset();
+        } catch (error) {
+            const axiosError = error as AxiosError<{ message?: string }>;
+            toast.danger(axiosError.response?.data?.message ?? "Đổi mật khẩu thất bại.");
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
+
+    async function resendOTP() {
+        setOnSendingOTP(true);
+        try {
+            await otp.sendOtp(resetEmail);
+            toast.success("Đã gửi lại mã OTP đến email của bạn");
+            setOTPCreateAt(new Date());
+            setCanResend(false);
+        } catch (error) {
+            const axiosError = error as AxiosError<{ message?: string }>;
+            toast.danger(axiosError.response?.data?.message ?? "Không thể gửi OTP. Vui lòng thử lại.");
+        } finally {
+            setOnSendingOTP(false);
+        }
+    }
+
+    function handleCancelReset() {
+        setTempToken("");
+        setResetEmail("");
+        setCanResend(false);
+        setIsOTPTyping(false);
+        setIsTypingPassword(false);
+        setIsResettingPassword(false);
+    }
+
+    const DAY_LABELS: Record<number, string> = {
+        1: "Thứ 2",
+        2: "Thứ 3",
+        3: "Thứ 4",
+        4: "Thứ 5",
+        5: "Thứ 6",
+        6: "Thứ 7",
+        0: "Chủ nhật",
+    };
+
+    const scheduleEvents = useMemo<EventItem[]>(() => {
+        if (!classSelected?.weeklySchedules || !Array.isArray(classSelected.weeklySchedules)) {
+            return [];
+        }
+
+        const colors: Array<NonNullable<EventItem["colorTheme"]>> = ["blue", "purple", "green", "orange"];
+
+        return classSelected.weeklySchedules.map((schedule, index) => ({
+            id: `schedule-${index}`,
+            title: `${classSelected.name} - ${DAY_LABELS[schedule.dayOfWeek] ?? `Thứ ${schedule.dayOfWeek + 1}`}`,
+            day: schedule.dayOfWeek,
+            start: schedule.startTime?.substring(0, 5) || "",
+            end: schedule.endTime?.substring(0, 5) || "",
+            colorTheme: colors[index % colors.length],
+        }));
+    }, [classSelected]);
+
     const guardianOptions = [
         { value: "Ba", label: "Ba" },
         { value: "Mẹ", label: "Mẹ" },
@@ -226,7 +381,7 @@ export default function AuthClient({ nextPath }: AuthClientProps) {
             <div className="relative flex h-full w-full items-center justify-center">
                 <div className={`relative px-4 flex items-center justify-center ${!isRegistering ? "w-full" : "w-[85%]"}`}>
                     {/* Login Card */}
-                    {!isRegistering && (
+                    {!isRegistering && !isResettingPassword && (
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
@@ -311,6 +466,15 @@ export default function AuthClient({ nextPath }: AuthClientProps) {
                                             {loginError ? (
                                                 <p className="text-sm text-danger">{loginError}</p>
                                             ) : null}
+                                            <div className="flex justify-end w-full mt-[-8px] mb-4">
+                                                <button
+                                                    className="text-sm text-blue-600 hover:underline cursor-pointer"
+                                                    onClick={() => setIsResettingPassword(true)}
+                                                    type="button"
+                                                >
+                                                    Quên mật khẩu?
+                                                </button>
+                                            </div>
                                             <button
                                                 className="w-full flex flex-row items-center justify-center gap-4 bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition-colors disabled:cursor-not-allowed disabled:bg-blue-600/70"
                                                 disabled={isSubmitting}
@@ -325,7 +489,7 @@ export default function AuthClient({ nextPath }: AuthClientProps) {
                                 <p className="mt-4 text-sm text-muted">
                                     Chưa có tài khoản?{" "}
                                     <button
-                                        className="text-blue-600 hover:underline"
+                                        className="text-blue-600 hover:underline cursor-pointer"
                                         onClick={() => setIsRegistering(true)}
                                         type="button"
                                     >
@@ -337,7 +501,7 @@ export default function AuthClient({ nextPath }: AuthClientProps) {
                     )}
 
                     {/* Register Card */}
-                    {isRegistering && (
+                    {isRegistering && !isResettingPassword && (
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -415,6 +579,10 @@ export default function AuthClient({ nextPath }: AuthClientProps) {
                                                         onChange={(value) => {
                                                             if (value !== null) {
                                                                 setRegisterStudent({ ...registerStudent, class: String(value) });
+                                                                const selectedClass = classOptions.find((c) => String(c.id) === String(value));
+                                                                if (selectedClass) {
+                                                                    setClassSelected(selectedClass);
+                                                                }
                                                             }
                                                         }}
                                                     >
@@ -606,40 +774,16 @@ export default function AuthClient({ nextPath }: AuthClientProps) {
                                         <div>
                                             <h3 className="text-2xl font-bold text-foreground">Lịch học trong tuần</h3>
                                         </div>
-                                        <div className="space-y-4">
-                                            {/* Schedule Header */}
-                                            <div className="grid grid-cols-2 gap-4 pb-4 border-b border-divider">
-                                                <div className="text-center font-semibold text-foreground">Thứ 2</div>
-                                                <div className="text-center font-semibold text-foreground">Thứ 7</div>
+                                        {classSelected !== null ? (
+                                            <WeeklySchedule events={scheduleEvents} />
+                                        ) : (
+                                            <div className="flex justify-center items-center h-full">
+                                                <p className="text-foreground">Vui lòng chọn lớp để xem lịch học</p>
                                             </div>
-
-                                            {/* Time slots */}
-                                            <div className="space-y-2">
-                                                {[12, 13, 14, 15, 16, 17, 18, 19, 20, 21].map((hour) => (
-                                                    <div key={hour} className="flex gap-4 items-start">
-                                                        <div className="w-16 text-sm text-muted flex-shrink-0">{hour}:00</div>
-                                                        <div className="flex-1 grid grid-cols-2 gap-4">
-                                                            <div />
-                                                            {hour === 13 && (
-                                                                <div className="col-span-2 bg-gradient-to-br from-purple-200 to-purple-100 border border-purple-300 rounded-lg p-3">
-                                                                    <div className="font-semibold text-sm text-purple-900">Lớp 6 - Thứ 7</div>
-                                                                    <div className="text-xs text-purple-700">13:30 - 16:30</div>
-                                                                </div>
-                                                            )}
-                                                            {hour === 17 && (
-                                                                <div className="col-span-2 bg-gradient-to-br from-blue-200 to-blue-100 border border-blue-300 rounded-lg p-3">
-                                                                    <div className="font-semibold text-sm text-blue-900">Lớp 6 - Thứ 2</div>
-                                                                    <div className="text-xs text-blue-700">17:30 - 20:30</div>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
+                                        )}
                                     </div>
                                     <button
-                                        className="mt-8 w-full text-blue-600 hover:underline text-center py-2"
+                                        className="mt-8 w-full text-blue-600 hover:underline text-center py-2 cursor-pointer"
                                         onClick={() => setIsRegistering(false)}
                                         type="button"
                                     >
@@ -647,6 +791,110 @@ export default function AuthClient({ nextPath }: AuthClientProps) {
                                     </button>
                                 </Card>
                             </div>
+                        </motion.div>
+                    )}
+
+                    {/* Reset Password Card */}
+                    {isResettingPassword && (
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                        >
+                            <Card className="min-w-[26vw] border border-divider/70 bg-content1/80 p-8 shadow-xl shadow-black/10 backdrop-blur-md">
+                                <Fieldset className="w-full">
+                                    <FieldsetLegend className="text-2xl font-bold text-foreground">PT Education</FieldsetLegend>
+                                    <Description className="mb-2 text-muted">Đặt lại mật khẩu</Description>
+
+                                    {!isOTPTyping && !isTypingPassword && (
+                                        <form autoComplete="on" onSubmit={handleSendOTP}>
+                                            <Fieldset.Group>
+                                                <TextField isRequired name="email">
+                                                    <Label htmlFor="reset-email" className="font-medium text-foreground/80">Email</Label>
+                                                    <Input suppressHydrationWarning variant={getInputVariant()} id="reset-email" name="email" placeholder="Nhập email" type="email" />
+                                                    <FieldError />
+                                                </TextField>
+                                                <button className="w-full flex flex-row items-center justify-center gap-4 bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition-colors disabled:cursor-not-allowed disabled:bg-blue-600/70" disabled={isSubmitting} type="submit">
+                                                    {isSubmitting ? <Spinner color="current" size="md" /> : null}
+                                                    {isSubmitting ? "Đang gửi..." : "Tiếp tục"}
+                                                </button>
+                                            </Fieldset.Group>
+                                        </form>
+                                    )}
+
+                                    {isOTPTyping && (
+                                        <form autoComplete="on" onSubmit={handleVerifyOTP}>
+                                            <p className="text-sm text-muted mb-4">Nhập mã OTP đã được gửi đến email của bạn.</p>
+                                            <Fieldset.Group>
+                                                <div className="flex flex-col gap-2 w-full justify-start py-2">
+                                                    <Label htmlFor="otpCode" className="font-medium text-foreground/80 self-start">Mã OTP</Label>
+                                                    <InputOTP maxLength={6} name="otpCode" id="otpCode" variant={getInputVariant()}>
+                                                        <InputOTP.Group>
+                                                            <InputOTP.Slot className="size-12 rounded-2xl border-2 text-lg font-bold" index={0} />
+                                                            <InputOTP.Slot className="size-12 rounded-2xl border-2 text-lg font-bold" index={1} />
+                                                            <InputOTP.Slot className="size-12 rounded-2xl border-2 text-lg font-bold" index={2} />
+                                                            <InputOTP.Slot className="size-12 rounded-2xl border-2 text-lg font-bold" index={3} />
+                                                            <InputOTP.Slot className="size-12 rounded-2xl border-2 text-lg font-bold" index={4} />
+                                                            <InputOTP.Slot className="size-12 rounded-2xl border-2 text-lg font-bold" index={5} />
+                                                        </InputOTP.Group>
+                                                    </InputOTP>
+                                                </div>
+                                                <p className="text-sm text-foreground/80 mt-1">
+                                                    Bạn chưa nhận được OTP?{" "}
+                                                    <button type="button" className={`text-blue-600 hover:underline ${canResend ? "" : "opacity-50 cursor-not-allowed hover:no-underline"}`} disabled={!canResend || onSendingOTP} onClick={resendOTP}>
+                                                        Gửi lại {canResend ? "" : `sau ${minutesResend}:${secondsResend < 10 ? "0" : ""}${secondsResend}`}
+                                                    </button>
+                                                </p>
+                                                <button className="w-full flex flex-row items-center justify-center gap-4 bg-blue-600 text-white py-2 mt-2 rounded-xl hover:bg-blue-700 transition-colors disabled:cursor-not-allowed disabled:bg-blue-600/70" disabled={isSubmitting} type="submit">
+                                                    {isSubmitting ? <Spinner color="current" size="md" /> : null}
+                                                    {isSubmitting ? "Đang xác thực..." : "Tiếp tục"}
+                                                </button>
+                                            </Fieldset.Group>
+                                        </form>
+                                    )}
+
+                                    {isTypingPassword && (
+                                        <form autoComplete="on" onSubmit={handleResetPasswordSubmit}>
+                                            <Fieldset.Group>
+                                                <TextField isRequired name="newPassword">
+                                                    <Label htmlFor="newPassword" className="font-medium text-foreground/80">Mật khẩu mới</Label>
+                                                    <InputGroup variant={getInputVariant()}>
+                                                        <InputGroup.Input suppressHydrationWarning id="newPassword" name="newPassword" placeholder="Nhập mật khẩu mới" type={isShowPassword ? "text" : "password"} />
+                                                        <InputGroup.Suffix>
+                                                            <button className="focus:outline-none flex items-center justify-center" type="button" onClick={() => setIsShowPassword(!isShowPassword)}>
+                                                                {isShowPassword ? <FaRegEyeSlash className="text-xl text-default-400" /> : <FaRegEye className="text-xl text-default-400" />}
+                                                            </button>
+                                                        </InputGroup.Suffix>
+                                                    </InputGroup>
+                                                    <FieldError />
+                                                </TextField>
+                                                <TextField isRequired name="confirmPassword">
+                                                    <Label htmlFor="confirmPassword" className="font-medium text-foreground/80">Nhập lại mật khẩu</Label>
+                                                    <InputGroup variant={getInputVariant()}>
+                                                        <InputGroup.Input suppressHydrationWarning id="confirmPassword" name="confirmPassword" placeholder="Nhập lại mật khẩu mới" type={isShowPasswordConfirm ? "text" : "password"} />
+                                                        <InputGroup.Suffix>
+                                                            <button className="focus:outline-none flex items-center justify-center" type="button" onClick={() => setIsShowPasswordConfirm(!isShowPasswordConfirm)}>
+                                                                {isShowPasswordConfirm ? <FaRegEyeSlash className="text-xl text-default-400" /> : <FaRegEye className="text-xl text-default-400" />}
+                                                            </button>
+                                                        </InputGroup.Suffix>
+                                                    </InputGroup>
+                                                    <FieldError />
+                                                </TextField>
+                                                <button className="w-full flex flex-row items-center justify-center gap-4 bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition-colors disabled:cursor-not-allowed disabled:bg-blue-600/70" disabled={isSubmitting} type="submit">
+                                                    {isSubmitting ? <Spinner color="current" size="md" /> : null}
+                                                    {isSubmitting ? "Đang đổi mật khẩu..." : "Tiếp tục"}
+                                                </button>
+                                            </Fieldset.Group>
+                                        </form>
+                                    )}
+                                    <div className="flex justify-center w-full mt-4">
+                                        <button className="text-sm text-muted hover:text-foreground transition-colors" onClick={handleCancelReset} type="button">
+                                            Quay lại đăng nhập
+                                        </button>
+                                    </div>
+                                </Fieldset>
+                            </Card>
                         </motion.div>
                     )}
                 </div>

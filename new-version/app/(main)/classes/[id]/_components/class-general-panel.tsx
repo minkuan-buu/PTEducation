@@ -480,7 +480,8 @@ export function ClassGeneralPanel({ classId, classData }: { classId: string; cla
                                     </Modal.Container>
                                 </Modal.Backdrop>
                             </Modal>
-                            <WeeklySchedule events={scheduleEvents} /></div>
+                            <WeeklySchedule events={scheduleEvents} />
+                        </div>
                     </div>
                 </div>
             </div>

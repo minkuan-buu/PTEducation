@@ -69,6 +69,7 @@ type CalendarIndicatorsResponse =
 export type ClassOption = {
   id: string;
   name: string;
+  weeklySchedules: ClassSchedule[];
 };
 
 const api = createApiClient("v2");
