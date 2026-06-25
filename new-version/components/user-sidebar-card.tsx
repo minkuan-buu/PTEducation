@@ -14,10 +14,12 @@ export const UserCard = ({ name, role, avatarUrl }: UserCardProps) => {
             <Card.Content className="flex flex-row gap-4">
                 <div>
                     <Avatar size="md">
-                        <Avatar.Image
-                            alt={name}
-                            src={avatarUrl}
-                        />
+                        {avatarUrl ? (
+                            <Avatar.Image
+                                alt={name}
+                                src={avatarUrl}
+                            />
+                        ) : null}
                         <Avatar.Fallback className="border-none bg-gradient-to-br from-[#00b4d8] to-[#90e0ef] text-white">
                             {name.split(" ").map((part) => part[0]).join("").slice(name.split(" ").length - 2, name.split(" ").length).toUpperCase()}
                         </Avatar.Fallback>

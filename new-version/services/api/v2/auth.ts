@@ -10,6 +10,7 @@ export type LoginUser = {
   id: string;
   name: string;
   email?: string;
+  avatarUrl?: string;
   phoneNumber?: string;
   role: "admin" | "student" | "guardian" | "manager";
   token: string;

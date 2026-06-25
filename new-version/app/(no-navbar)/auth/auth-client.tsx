@@ -186,6 +186,7 @@ export default function AuthClient({ nextPath }: AuthClientProps) {
                 phoneNumber: result.data.phoneNumber,
                 name: result.data.name,
                 email: result.data.email,
+                avatarUrl: result.data.avatarUrl,
                 role: result.data.role,
             });
 
