@@ -842,7 +842,7 @@ export function ClassAttendancePanel({ classId }: { classId: string }) {
               <Input
                 aria-label="Tìm học sinh"
                 className="md:max-w-sm"
-                placeholder="Tìm theo tên, mã số  học sinh"
+                placeholder="Tìm theo tên, mã số học sinh"
                 value={studentKeyword}
                 onChange={(event) => setStudentKeyword(event.target.value)}
               />
