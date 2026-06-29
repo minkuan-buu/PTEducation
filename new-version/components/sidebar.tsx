@@ -18,7 +18,8 @@ import {
     TbAward,
     TbClipboardCheck,
     TbReportAnalytics,
-    TbLogout2
+    TbLogout2,
+    TbReceipt2
 } from "react-icons/tb";
 import NextLink from "next/link";
 import OpenIcon from '@iconify-react/majesticons/open';
@@ -126,7 +127,7 @@ export const Sidebar = () => {
                     items: [
                         { label: "Người dùng", href: "/users", icon: TbUsers },
                         { label: "Lớp học", href: "/classes", icon: TbSchool },
-                        // { label: "Báo cáo", href: "/reports", icon: TbReport },
+                        { label: "Học phí", href: "/tuitions", icon: TbReceipt2 },
                     ],
                 },
             ],
