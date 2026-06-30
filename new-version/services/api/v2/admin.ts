@@ -1,6 +1,15 @@
 import { createApiClient } from "../client";
 import type { ApiListResponse, ApiResponse } from "../types";
 
+export type AddTuitionPayload = {
+  gradeId: number;
+  title: string;
+  dueDate: string;  // DateTime? bên C#
+  fromDate: string; // DateOnly bên C#
+  toDate: string;   // DateOnly bên C#
+  amount: number;
+};
+
 export type AdminGuardian = {
   id: string;
   name: string;
@@ -163,4 +172,9 @@ export async function uploadAvatar(userId: string, file: File) {
     },
   });
   return response.data.data;
+}
+
+export async function addTuition(payload: AddTuitionPayload) {
+  const response = await api.post<ApiResponse<any>>(`/admin/tuition`, payload);
+  return response.data;
 }
