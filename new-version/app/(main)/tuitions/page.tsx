@@ -1,9 +1,21 @@
-import { title } from "@/components/primitives";
 
-export default function TuitionsPage() {
-    return (
-        <div>
-            <h1 className={title()}>Học phí</h1>
-        </div>
-    );
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+
+import { Metadata } from "next";
+import TuitionClient from './tuition-client';
+
+export const metadata: Metadata = {
+    title: "Quản lý người dùng",
+    description: "Hệ thống giáo dục PTEducation.",
+};
+
+export default async function TuitionServerPage() {
+    const cookieStore = await cookies();
+    const token = cookieStore.get('at')?.value;
+    if (!token) {
+        redirect('/auth?next=/tuitions');
+    }
+
+    return <TuitionClient />;
 }
