@@ -1,6 +1,7 @@
 "use client";
 
 import { Avatar, Card } from "@heroui/react";
+import { useRouter } from "next/navigation";
 
 export type UserCardProps = {
     name: string;
@@ -9,8 +10,9 @@ export type UserCardProps = {
 }
 
 export const UserCard = ({ name, role, avatarUrl }: UserCardProps) => {
+    const router = useRouter();
     return (
-        <Card className="w-full rounded-xl px-3" variant="secondary">
+        <Card className="w-full rounded-xl px-3 cursor-pointer border border-transparent transition-all duration-300 hover:bg-default-100 hover:scale-[1.02] active:scale-[0.98] hover:shadow-md hover:border-default-200 dark:hover:border-default-100" variant="secondary" onClick={() => router.push("/profile")}>
             <Card.Content className="flex flex-row gap-4">
                 <div>
                     <Avatar size="md">

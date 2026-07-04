@@ -8,6 +8,7 @@ import type { UserEditResModel } from "@/services/api/v2";
 import { FaCamera } from "react-icons/fa";
 import styles from "./scroll-style.module.css";
 import ModalEditResetPassword from "./modal-edit-reset-password";
+import { useUser } from "@/context/user-context";
 
 interface User {
     name: string;
@@ -18,7 +19,9 @@ interface User {
     avatarUrl: string;
 }
 
-export default function ModalEditStudent({ isOpen, setOpen, close, studentId }: any) {
+export default function ModalEditStudent({ isOpen, setOpen, close, studentId, isSelf, initialData }: any) {
+    const { user } = useUser();
+    const isStaff = user?.role?.toLowerCase() === "admin" || user?.role?.toLowerCase() === "manager";
     const [isMounted, setIsMounted] = useState(false);
     const { resolvedTheme } = useTheme();
     const [editStudent, setEditStudent] = useState<User>({ name: "", email: "", phone: "", class: "", school: "", avatarUrl: "" });
@@ -29,13 +32,15 @@ export default function ModalEditStudent({ isOpen, setOpen, close, studentId }: 
     const [selectedUserId, setSelectedUserId] = useState<string>("");
     const [selectedUserName, setSelectedUserName] = useState<string>("");
 
-    const { data: studentDetail, isLoading: isDetailLoading } = useGetUserDetail(studentId);
+    const shouldFetch = !isSelf || !initialData;
+    const { data: fetchedDetail, isLoading: isDetailLoading } = useGetUserDetail(studentId, isSelf, shouldFetch);
+    const studentDetail = isSelf && initialData ? initialData : fetchedDetail;
     const updateStudentMutation = useUpdateUserDetail(studentId, () => {
         close();
-    });
+    }, isSelf);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const uploadAvatarMutation = useUploadAvatar(studentId);
+    const uploadAvatarMutation = useUploadAvatar(studentId, undefined, isSelf);
 
     const [isHovered, setIsHovered] = useState(false);
 
@@ -329,11 +334,13 @@ export default function ModalEditStudent({ isOpen, setOpen, close, studentId }: 
                                                         </TextField>
                                                     </div>
                                                 </div>
-                                                <div className="flex flex-row items-center justify-end">
-                                                    <Button onPress={() => hanndleSelectResetPasswordModal(studentId, studentDetail.name || "")}>
-                                                        Đặt lại mật khẩu
-                                                    </Button>
-                                                </div>
+                                                 {isStaff && (
+                                                     <div className="flex flex-row items-center justify-end">
+                                                         <Button onPress={() => hanndleSelectResetPasswordModal(studentId, studentDetail.name || "")}>
+                                                             Đặt lại mật khẩu
+                                                         </Button>
+                                                     </div>
+                                                 )}
                                                 <div className="space-y-4 border-t border-divider" />
                                                 <h3 className="font-semibold text-foreground">Thông tin phụ huynh</h3>
                                                 {guardianList.map((guardian) => (
@@ -437,11 +444,11 @@ export default function ModalEditStudent({ isOpen, setOpen, close, studentId }: 
                                                             </div>
                                                         </div>
                                                         <div className="flex flex-row justify-end gap-2">
-                                                            {!guardian.id.startsWith("g-") && (
-                                                                <Button onPress={() => hanndleSelectResetPasswordModal(guardian.id, guardian.name || "")}>
-                                                                    Đặt lại mật khẩu
-                                                                </Button>
-                                                            )}
+                                                             {isStaff && !guardian.id.startsWith("g-") && (
+                                                                 <Button onPress={() => hanndleSelectResetPasswordModal(guardian.id, guardian.name || "")}>
+                                                                     Đặt lại mật khẩu
+                                                                 </Button>
+                                                             )}
                                                             <Button
                                                                 variant="secondary"
                                                                 className="text-red-400"

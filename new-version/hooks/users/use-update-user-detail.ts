@@ -4,19 +4,31 @@ import type { UserEditResModel } from "@/services/api/v2";
 import { AxiosError } from "axios";
 import { toast } from "@heroui/react";
 
-export function useUpdateUserDetail(id: string, onSuccessFn?: () => void) {
+export function useUpdateUserDetail(id: string, onSuccessFn?: () => void, isSelf?: boolean) {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (payload: UserEditResModel) => v2.updateUserEdits(id, payload),
+        mutationFn: (payload: UserEditResModel) => isSelf ? v2.updateMyUserDetail(payload) : v2.updateUserEdits(id, payload),
         onSuccess: () => {
-            queryClient.invalidateQueries({
-                queryKey: ["users", "detail", id],
-            });
+            if (isSelf) {
+                queryClient.invalidateQueries({
+                    queryKey: ["users", "detail", "me"],
+                });
+                queryClient.invalidateQueries({
+                    queryKey: ["profile", "me"],
+                });
+            } else {
+                queryClient.invalidateQueries({
+                    queryKey: ["users", "detail", id],
+                });
+                queryClient.invalidateQueries({
+                    queryKey: ["profile", "admin", id],
+                });
+            }
             queryClient.invalidateQueries({
                 queryKey: ["users", "pagination"],
             });
-            toast.success("Cập nhật thông tin học viên thành công");
+            toast.success("Cập nhật thông tin thành công");
             onSuccessFn?.();
         },
         onError: (error) => {

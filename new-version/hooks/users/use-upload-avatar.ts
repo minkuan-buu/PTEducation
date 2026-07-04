@@ -3,15 +3,27 @@ import { v2 } from "@/services/api";
 import { AxiosError } from "axios";
 import { toast } from "@heroui/react";
 
-export function useUploadAvatar(id: string, onSuccessFn?: () => void) {
+export function useUploadAvatar(id: string, onSuccessFn?: () => void, isSelf?: boolean) {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (file: File) => v2.uploadAvatar(id, file),
+        mutationFn: (file: File) => isSelf ? v2.uploadMyAvatar(file) : v2.uploadAvatar(id, file),
         onSuccess: () => {
-            queryClient.invalidateQueries({
-                queryKey: ["users", "detail", id],
-            });
+            if (isSelf) {
+                queryClient.invalidateQueries({
+                    queryKey: ["users", "detail", "me"],
+                });
+                queryClient.invalidateQueries({
+                    queryKey: ["profile", "me"],
+                });
+            } else {
+                queryClient.invalidateQueries({
+                    queryKey: ["users", "detail", id],
+                });
+                queryClient.invalidateQueries({
+                    queryKey: ["profile", "admin", id],
+                });
+            }
             queryClient.invalidateQueries({
                 queryKey: ["users", "pagination"],
             });

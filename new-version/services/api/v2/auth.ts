@@ -64,3 +64,18 @@ export async function register(payload: RegisterPayload) {
 
   return response.data;
 }
+
+export type ChangePasswordPayload = {
+  oldPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+};
+
+export async function changePassword(payload: ChangePasswordPayload) {
+  const response = await api.post<ApiResponse<null>>(
+    "/authentication/change-password",
+    payload,
+  );
+
+  return response.data;
+}
