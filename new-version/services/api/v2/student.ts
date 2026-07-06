@@ -26,7 +26,14 @@ export type AttendanceStudentDetailResModel = {
   startTime: string;
   endTime: string;
   attendanceStatus: string;
+  makeUpAttendance?: MakeUpAttendanceDetaol | null;
 };
+
+export type MakeUpAttendanceDetaol = {
+  date: string;
+  startTime: string;
+  endTime: string;
+}
 
 export type AttendanceStudentResModel = {
   id: string;

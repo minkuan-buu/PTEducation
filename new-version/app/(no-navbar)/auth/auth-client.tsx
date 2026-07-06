@@ -188,6 +188,7 @@ export default function AuthClient({ nextPath }: AuthClientProps) {
                 email: result.data.email,
                 avatarUrl: result.data.avatarUrl,
                 role: result.data.role,
+                isNeedChangePassword: result.data.isNeedChangePassword,
             });
 
             router.push(getSafeNextPath());

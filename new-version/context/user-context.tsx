@@ -9,6 +9,7 @@ export type UserProfile = {
     phoneNumber?: string;
     avatarUrl?: string;
     role?: "admin" | "student" | "guardian" | "manager";
+    isNeedChangePassword?: boolean;
 };
 
 type UserContextValue = {

@@ -10,6 +10,7 @@ import type { AdminGuardian, AdminStudent } from "@/services/api/v2";
 import { useUsers } from "@/hooks/users/use-users";
 import { useQueryClient } from "@tanstack/react-query";
 import ModalEditStudent from "@/components/users/modal-edit-student";
+import { useRouter } from "next/navigation";
 
 export type GuardianData = AdminGuardian;
 export type UserData = AdminStudent;
@@ -84,6 +85,8 @@ const StudentActions = ({
     onAction: (id: string) => Promise<void>,
     onEdit: (id: string) => void
 }) => {
+
+    const router = useRouter();
     const [isProcessing, setIsProcessing] = useState(false);
 
     const handlePress = async () => {
@@ -109,6 +112,14 @@ const StudentActions = ({
 
     return (
         <div className="flex gap-2 h-10">
+            <Tooltip delay={0}>
+                <Button className="rounded-full" size="md" variant="outline" onPress={() => router.push(`/profile?id=${studentId}`)}>
+                    <Icon icon="lucide:info" width="1024" height="1024" />
+                    <Tooltip.Content placement="bottom">
+                        <p>Thông tin chi tiết</p>
+                    </Tooltip.Content>
+                </Button>
+            </Tooltip>
             <Tooltip delay={0}>
                 <Button className="rounded-full" size="md" variant="outline" onPress={() => handleEditPressed()}>
                     <Icon icon="lucide:edit" width="1024" height="1024" />
@@ -138,6 +149,7 @@ const StudentActions = ({
 };
 
 export function StudentsTab() {
+    const router = useRouter();
     const queryClient = useQueryClient();
     const [pageIndex, setPageIndex] = useState(1);
     const [searchTerm, setSearchTerm] = useState("");
@@ -255,7 +267,16 @@ export function StudentsTab() {
                                 />
                             )}
                         </>
-                    ) : null}
+                    ) : (
+                        <Tooltip delay={0}>
+                            <Button className="rounded-full" size="md" variant="outline" onPress={() => router.push(`/profile?id=${item.id}`)}>
+                                <Icon icon="lucide:info" width="1024" height="1024" />
+                                <Tooltip.Content placement="bottom">
+                                    <p>Thông tin chi tiết</p>
+                                </Tooltip.Content>
+                            </Button>
+                        </Tooltip>
+                    )}
                 </Table.Cell>
 
                 <Table.Collection items={'guardians' in item ? item.guardians : []}>

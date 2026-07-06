@@ -379,8 +379,19 @@ export default function AttendancePage() {
                             ) : (
                                 attendanceLogs.map((log, idx) => (
                                     <div key={idx} className="flex items-center justify-between p-3 border border-divider/60 rounded-xl bg-content1/20">
-                                        <div>
-                                            <p className="text-sm font-semibold">{formatDateTime(log.date)}</p>
+                                        <div className="flex flex-col gap-0.5">
+                                            <div className="flex flex-row gap-2 items-center">
+                                                <p className="text-sm font-semibold">{formatDateTime(log.date)}</p>
+                                                {log.makeUpAttendance && (
+                                                    <Chip
+                                                        size="sm"
+                                                        variant="secondary"
+                                                        className="bg-primary text-primary-foreground h-6 rounded-full px-2 text-xs font-medium"
+                                                    >
+                                                        Bù cho {formatDateTime(log.makeUpAttendance.date)}, {formatTimeOnly(log.makeUpAttendance.startTime)} - {formatTimeOnly(log.makeUpAttendance.endTime)}
+                                                    </Chip>
+                                                )}
+                                            </div>
                                             <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
                                                 <TbClock className="size-3.5" /> {formatTimeOnly(log.startTime)} - {formatTimeOnly(log.endTime)}
                                             </p>

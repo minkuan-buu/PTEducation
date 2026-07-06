@@ -6,7 +6,7 @@ import { Metadata } from "next";
 import TuitionClient from './tuition-client';
 
 export const metadata: Metadata = {
-    title: "Quản lý người dùng",
+    title: "Quản lý học phí",
     description: "Hệ thống giáo dục PTEducation.",
 };
 

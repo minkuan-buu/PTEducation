@@ -1,5 +1,6 @@
 import { createApiClient } from "../client";
 import type { ApiListResponse, ApiResponse } from "../types";
+import type { UserProfileResModel } from "./users";
 
 export type AddTuitionPayload = {
   gradeId: number;
@@ -47,6 +48,7 @@ export type UserEditResModel = {
   phone: string,
   schoolInfo: string,
   avatarUrl: string,
+  role?: string,
   guardians: Guardian[],
 }
 
@@ -104,6 +106,11 @@ function normalizeStudents(
 
 export async function getUserEdits(id: string) {
   const response = await api.get<ApiResponse<UserEditResModel>>(`/admin/users/${id}/`);
+  return response.data.data;
+}
+
+export async function getUserProfile(id: string) {
+  const response = await api.get<ApiResponse<UserProfileResModel>>(`/admin/users/${id}/profile`);
   return response.data.data;
 }
 

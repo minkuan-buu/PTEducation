@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState, useRef, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Card,
@@ -26,6 +26,7 @@ import { useUser } from "@/context/user-context";
 import { v2 } from "@/services/api";
 
 export default function ProfileClient() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const { user, setUser } = useUser();
   const idParam = searchParams.get("id");
@@ -89,12 +90,12 @@ export default function ProfileClient() {
   // Mảng queryKeys để tách biệt cache
   const queryKey = isViewingOther ? ["profile", "admin", idParam] : ["profile", "me"];
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isPending, isError } = useQuery({
     queryKey,
     queryFn: async () => {
       if (isViewingOther && idParam) {
-        // Admin xem chi tiết học sinh
-        return await v2.getUserEdits(idParam);
+        // Admin xem chi tiết người dùng
+        return await v2.getUserProfile(idParam);
       } else {
         // Người dùng tự xem profile
         return await v2.getMyProfile();
@@ -111,39 +112,22 @@ export default function ProfileClient() {
 
   const profileData = useMemo(() => {
     if (!data) return null;
-    // Chuyển đổi dữ liệu về dạng chung để render dễ dàng
-    if (isViewingOther) {
-      const adminData = data as v2.UserEditResModel;
-      return {
-        id: idParam,
-        name: adminData.name,
-        email: adminData.email,
-        phone: adminData.phone,
-        schoolInfo: adminData.schoolInfo,
-        avatarUrl: adminData.avatarUrl,
-        guardians: adminData.guardians,
-        className: null, // admin api không trả về className trực tiếp trong model này
-        role: "student",
-        guardianProfile: null,
-        adminProfile: null,
-      };
-    } else {
-      const myData = data as v2.UserProfileResModel;
-      return {
-        id: myData.id,
-        name: myData.name,
-        email: myData.email,
-        phone: myData.phone,
-        className: myData.className,
-        schoolInfo: myData.schoolInfo,
-        avatarUrl: myData.avatarUrl,
-        role: myData.role,
-        guardianProfile: myData.guardianProfile,
-        adminProfile: myData.adminProfile,
-        guardians: myData.guardians || [],
-      };
-    }
-  }, [data, isViewingOther, idParam]);
+    // Dữ liệu chung cho cả admin view và user view vì dùng chung API cấu trúc
+    const myData = data as v2.UserProfileResModel;
+    return {
+      id: myData.id || idParam,
+      name: myData.name,
+      email: myData.email,
+      phone: myData.phone,
+      className: myData.className,
+      schoolInfo: myData.schoolInfo,
+      avatarUrl: myData.avatarUrl,
+      role: myData.role,
+      guardianProfile: myData.guardianProfile,
+      adminProfile: myData.adminProfile,
+      guardians: myData.guardians || [],
+    };
+  }, [data, idParam]);
 
   useEffect(() => {
     if (!isViewingOther && profileData && user) {
@@ -158,7 +142,15 @@ export default function ProfileClient() {
     }
   }, [profileData, isViewingOther, user, setUser]);
 
-  if (isLoading) {
+  if (isError) {
+    return (
+      <div className="flex h-full min-h-[400px] w-full items-center justify-center">
+        <p className="text-danger">Đã có lỗi xảy ra khi tải thông tin cá nhân.</p>
+      </div>
+    );
+  }
+
+  if (isLoading || (isPending && !profileData)) {
     return (
       <div className="flex h-full min-h-[400px] w-full flex-col items-center justify-center gap-3">
         <Spinner size="lg" color="accent" />
@@ -167,21 +159,19 @@ export default function ProfileClient() {
     );
   }
 
-  if (isError || !profileData) {
+  if (!profileData) {
     return (
       <div className="flex h-full min-h-[400px] w-full items-center justify-center">
-        <p className="text-danger">Đã có lỗi xảy ra khi tải thông tin cá nhân.</p>
+        <p className="text-danger">Không tìm thấy thông tin cá nhân.</p>
       </div>
     );
   }
-
-
 
   const renderGuardianDashboard = (guardianProfile: any) => {
     const students = guardianProfile?.managedStudents || [];
     if (students.length === 0) {
       return (
-        <Card className="border-none bg-background/60 shadow-md backdrop-blur-md dark:bg-default-100/50 p-6 text-center text-default-500">
+        <Card className="border border-transparent dark:border-white/10 bg-background/60 shadow-md backdrop-blur-md dark:bg-white/5 p-6 text-center text-default-500">
           <UserIcon className="mx-auto mb-4 h-12 w-12 opacity-20" />
           <p>Không tìm thấy học sinh nào dưới sự giám hộ của bạn.</p>
         </Card>
@@ -194,7 +184,7 @@ export default function ProfileClient() {
       <div className="space-y-6">
         {/* Child Selector */}
         {students.length > 1 && (
-          <Card className="border-none bg-background/60 shadow-md backdrop-blur-md dark:bg-default-100/50 p-4">
+          <Card className="border border-transparent dark:border-white/10 bg-background/60 shadow-md backdrop-blur-md dark:bg-white/5 p-4">
             <h3 className="text-sm font-semibold text-default-500 mb-3">Chọn học sinh để xem:</h3>
             <div className="flex flex-wrap gap-2">
               {students.map((student: any) => (
@@ -214,8 +204,8 @@ export default function ProfileClient() {
         )}
 
         {/* Selected Child Info */}
-        <Card className="border-none bg-background/60 shadow-md backdrop-blur-md dark:bg-default-100/50 p-4">
-          <div className="flex items-center space-x-4 mb-4">
+        <Card className="border border-transparent dark:border-white/10 bg-background/60 shadow-md backdrop-blur-md dark:bg-white/5 p-4">
+          <div className="flex items-center space-x-4">
             <Avatar className="w-12 h-12 text-medium">
               {currentStudent.avatarUrl && (
                 <Avatar.Image
@@ -231,14 +221,18 @@ export default function ProfileClient() {
               </Avatar.Fallback>
             </Avatar>
             <div>
-              <h3 className="font-bold text-foreground text-lg">{currentStudent.name}</h3>
+              <div onClick={() => router.push(`/profile?id=${currentStudent.id}`)} className="hover:underline cursor-pointer"><h3 className="font-bold text-foreground text-lg">{currentStudent.name}</h3></div>
               <p className="text-xs text-default-500">
-                Quan hệ: {currentStudent.relationship} {currentStudent.isPrimary && "(Giám hộ chính)"}
+                Quan hệ: {currentStudent.relationship} {currentStudent.isPrimary && (
+                  <Chip color="accent">
+                    <Chip.Label>Liên hệ chính</Chip.Label>
+                  </Chip>
+                )}
               </p>
             </div>
           </div>
           <Separator />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 text-sm text-default-600">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-2 text-sm text-default-600">
             <div><span className="font-semibold text-default-800">Email:</span> {currentStudent.email || "Chưa cập nhật"}</div>
             <div><span className="font-semibold text-default-800">SĐT:</span> {currentStudent.phone || "Chưa cập nhật"}</div>
             {currentStudent.schoolInfo && (
@@ -263,7 +257,7 @@ export default function ProfileClient() {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {stats.map((stat, idx) => (
-          <Card key={idx} className="border-none bg-background/60 shadow-md backdrop-blur-md dark:bg-default-100/50 p-5 flex flex-row items-center space-x-4">
+          <Card key={idx} className="border border-transparent dark:border-white/10 bg-background/60 shadow-md backdrop-blur-md dark:bg-white/5 p-5 flex flex-row items-center space-x-4">
             <div className={`p-3 rounded-2xl ${stat.color}`}>
               <stat.icon className="w-6 h-6" />
             </div>
@@ -291,7 +285,7 @@ export default function ProfileClient() {
   return (
     <div className="mx-auto w-full space-y-6 p-4 sm:p-6">
       {/* Cover & General Info */}
-      <Card className="p-0 overflow-hidden border-none bg-background/60 shadow-lg backdrop-blur-md dark:bg-default-100/50">
+      <Card className="p-0 overflow-hidden border border-transparent dark:border-white/10 bg-background/60 shadow-lg backdrop-blur-md dark:bg-white/5">
         <div className="h-32 w-full bg-gradient-to-r from-[#0077b6] via-[#0096c7] to-[#48cae4] sm:h-48" />
         <CardContent className="px-6 pb-6 pt-0 sm:px-10">
           <div className="relative flex flex-col items-center sm:flex-row sm:items-center sm:space-x-6">
@@ -353,7 +347,7 @@ export default function ProfileClient() {
                 {profileData.name}
               </h1>
               <p className="text-medium text-default-500">
-                {isViewingOther ? "Học sinh" : getRoleName(profileData.role)}
+                {getRoleName(profileData.role)}
               </p>
             </div>
             <div className="flex flex-row items-center gap-2 mt-4 sm:mt-0 ml-auto">
@@ -362,7 +356,7 @@ export default function ProfileClient() {
                   Chế độ Quản trị viên
                 </Chip>
               )}
-              
+
               <Button
                 variant="primary"
                 onPress={() => setOpenEdit(true)}
@@ -370,7 +364,7 @@ export default function ProfileClient() {
                 Sửa thông tin
               </Button>
 
-              {!isViewingOther && !isAdminOrManager && (
+              {!isViewingOther && (
                 <Button
                   variant="secondary"
                   onPress={() => setOpenChangePass(true)}
@@ -386,8 +380,8 @@ export default function ProfileClient() {
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         {/* Left Column: Contact & Details */}
         <div className="space-y-6 md:col-span-1">
-          <Card className="border-none bg-background/60 shadow-md backdrop-blur-md dark:bg-default-100/50">
-            <CardHeader className="px-2 pt-6 font-semibold">
+          <Card className="border border-transparent dark:border-white/10 bg-background/60 shadow-md backdrop-blur-md dark:bg-white/5">
+            <CardHeader className="px-2 font-semibold">
               Thông tin liên hệ
             </CardHeader>
             <Separator />
@@ -420,7 +414,7 @@ export default function ProfileClient() {
         <div className="space-y-6 md:col-span-2">
           {profileData.role?.toLowerCase() === "student" ? (
             profileData.guardians && profileData.guardians.length > 0 ? (
-              <Card className="border-none bg-background/60 shadow-md backdrop-blur-md dark:bg-default-100/50">
+              <Card className="border border-transparent dark:border-white/10 bg-background/60 shadow-md backdrop-blur-md dark:bg-white/5">
                 <CardHeader className="px-2 pt-6 font-semibold">
                   Thông tin người giám hộ
                 </CardHeader>
@@ -429,8 +423,9 @@ export default function ProfileClient() {
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     {profileData.guardians.map((guardian) => (
                       <div
+                        onClick={() => router.push(`/profile?id=${guardian.id}`)}
                         key={guardian.id}
-                        className="flex flex-col space-y-2 rounded-xl border border-default-200 bg-default-50 p-4 transition-colors hover:bg-default-100 dark:border-default-100 dark:bg-default-100 dark:hover:bg-default-200"
+                        className="cursor-pointer flex flex-col space-y-2 rounded-xl border border-default-200 bg-default-50 p-4 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] hover:bg-default-100 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/15"
                       >
                         <div className="flex items-center justify-between">
                           <span className="font-semibold text-foreground">
@@ -464,7 +459,7 @@ export default function ProfileClient() {
                 </CardContent>
               </Card>
             ) : (
-              <Card className="border-none bg-background/60 shadow-md backdrop-blur-md dark:bg-default-100/50">
+              <Card className="border border-transparent dark:border-white/10 bg-background/60 shadow-md backdrop-blur-md dark:bg-white/5">
                 <CardContent className="px-6 py-12 text-center text-default-500">
                   <UserIcon className="mx-auto mb-4 h-12 w-12 opacity-20" />
                   <p>Không có thông tin giám hộ hoặc chi tiết khác được tìm thấy.</p>
@@ -476,7 +471,7 @@ export default function ProfileClient() {
           ) : (profileData.role?.toLowerCase() === "admin" || profileData.role?.toLowerCase() === "manager") && profileData.adminProfile ? (
             renderAdminDashboard(profileData.adminProfile)
           ) : profileData.guardians && profileData.guardians.length > 0 ? (
-            <Card className="border-none bg-background/60 shadow-md backdrop-blur-md dark:bg-default-100/50">
+            <Card className="border border-transparent dark:border-white/10 bg-background/60 shadow-md backdrop-blur-md dark:bg-white/5">
               <CardHeader className="px-6 pt-6 font-semibold">
                 Thông tin người giám hộ
               </CardHeader>
@@ -485,8 +480,9 @@ export default function ProfileClient() {
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   {profileData.guardians.map((guardian) => (
                     <div
+                      onClick={() => router.push(`/profile?id=${guardian.id}`)}
                       key={guardian.id}
-                      className="flex flex-col space-y-2 rounded-xl border border-default-200 bg-default-50 p-4 transition-colors hover:bg-default-100 dark:border-default-100 dark:bg-default-100 dark:hover:bg-default-200"
+                      className="cursor-pointer flex flex-col space-y-2 rounded-xl border border-default-200 bg-default-50 p-4 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] hover:bg-default-100 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/15"
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-semibold text-foreground">
@@ -520,7 +516,7 @@ export default function ProfileClient() {
               </CardContent>
             </Card>
           ) : (
-            <Card className="border-none bg-background/60 shadow-md backdrop-blur-md dark:bg-default-100/50">
+            <Card className="border border-transparent dark:border-white/10 bg-background/60 shadow-md backdrop-blur-md dark:bg-white/5">
               <CardContent className="px-6 py-12 text-center text-default-500">
                 <UserIcon className="mx-auto mb-4 h-12 w-12 opacity-20" />
                 <p>Không có thông tin giám hộ hoặc chi tiết học tập nào khác được tìm thấy.</p>

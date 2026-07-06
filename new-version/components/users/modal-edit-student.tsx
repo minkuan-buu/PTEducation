@@ -32,9 +32,12 @@ export default function ModalEditStudent({ isOpen, setOpen, close, studentId, is
     const [selectedUserId, setSelectedUserId] = useState<string>("");
     const [selectedUserName, setSelectedUserName] = useState<string>("");
 
-    const shouldFetch = !isSelf || !initialData;
+    const shouldFetch = (!isSelf || !initialData) && isOpen;
     const { data: fetchedDetail, isLoading: isDetailLoading } = useGetUserDetail(studentId, isSelf, shouldFetch);
     const studentDetail = isSelf && initialData ? initialData : fetchedDetail;
+    const isTargetStaff = studentDetail?.role?.toLowerCase() === "admin" || studentDetail?.role?.toLowerCase() === "manager";
+    const isTargetGuardian = studentDetail?.role?.toLowerCase() === "guardian";
+    const isTargetStudent = !isTargetStaff && !isTargetGuardian;
     const updateStudentMutation = useUpdateUserDetail(studentId, () => {
         close();
     }, isSelf);
@@ -110,7 +113,7 @@ export default function ModalEditStudent({ isOpen, setOpen, close, studentId, is
             phone: editStudent.phone,
             schoolInfo: editStudent.school,
             avatarUrl: editStudent.avatarUrl,
-            guardians: guardianList.map((g) => ({
+            guardians: (isTargetStaff || isTargetGuardian) ? [] : guardianList.map((g) => ({
                 id: g.id.startsWith("g-") && g.id.split("-").length > 2 ? "" : g.id,
                 name: g.name,
                 email: g.email,
@@ -312,157 +315,163 @@ export default function ModalEditStudent({ isOpen, setOpen, close, studentId, is
                                                             />
                                                             <FieldError />
                                                         </TextField>
-                                                        <TextField
-                                                            isRequired
-                                                            name="school"
-                                                        >
-                                                            <Label htmlFor="school" className="font-medium text-foreground/80">
-                                                                Lớp - Trường đang học
-                                                            </Label>
-                                                            <Input
-                                                                suppressHydrationWarning
-                                                                variant={getInputVariant()}
-                                                                id="school"
-                                                                fullWidth
+                                                        {isTargetStudent && (
+                                                            <TextField
+                                                                isRequired
                                                                 name="school"
-                                                                value={editStudent.school}
-                                                                onChange={(e) => setEditStudent({ ...editStudent, school: e.target.value })}
-                                                                placeholder="Vị dụ: Lớp 10A1 - Trần Đại Nghĩa"
-                                                                type="text"
-                                                            />
-                                                            <FieldError />
-                                                        </TextField>
+                                                            >
+                                                                <Label htmlFor="school" className="font-medium text-foreground/80">
+                                                                    Lớp - Trường đang học
+                                                                </Label>
+                                                                <Input
+                                                                    suppressHydrationWarning
+                                                                    variant={getInputVariant()}
+                                                                    id="school"
+                                                                    fullWidth
+                                                                    name="school"
+                                                                    value={editStudent.school}
+                                                                    onChange={(e) => setEditStudent({ ...editStudent, school: e.target.value })}
+                                                                    placeholder="Vị dụ: Lớp 10A1 - Trần Đại Nghĩa"
+                                                                    type="text"
+                                                                />
+                                                                <FieldError />
+                                                            </TextField>
+                                                        )}
                                                     </div>
                                                 </div>
-                                                 {isStaff && (
-                                                     <div className="flex flex-row items-center justify-end">
-                                                         <Button onPress={() => hanndleSelectResetPasswordModal(studentId, studentDetail.name || "")}>
-                                                             Đặt lại mật khẩu
-                                                         </Button>
-                                                     </div>
-                                                 )}
-                                                <div className="space-y-4 border-t border-divider" />
-                                                <h3 className="font-semibold text-foreground">Thông tin phụ huynh</h3>
-                                                {guardianList.map((guardian) => (
-                                                    <div key={guardian.id} className="space-y-4 border border-divider p-5 rounded-2xl">
-                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                            <TextField isRequired name="parent-name">
-                                                                <Label htmlFor="parent-name" className="font-medium text-foreground/80">
-                                                                    Họ và tên
-                                                                </Label>
-                                                                <Input
-                                                                    suppressHydrationWarning
-                                                                    variant={getInputVariant()}
-                                                                    id="parent-name"
-                                                                    fullWidth
-                                                                    value={guardian.name}
-                                                                    name="parent-name"
-                                                                    placeholder="Họ và tên"
-                                                                    type="text"
-                                                                    onChange={(e) => handleGuardianFieldChange(guardian.id, "name", e.target.value)}
-                                                                />
-                                                                <FieldError />
-                                                            </TextField>
-                                                            <TextField isRequired name="parent-phone">
-                                                                <Label htmlFor="parent-phone" className="font-medium text-foreground/80">
-                                                                    SDT phụ huynh
-                                                                </Label>
-                                                                <Input
-                                                                    suppressHydrationWarning
-                                                                    variant={getInputVariant()}
-                                                                    id="parent-phone"
-                                                                    fullWidth
-                                                                    value={guardian.phone}
-                                                                    name="parent-phone"
-                                                                    placeholder="Vị dụ: 0909xxxxxx"
-                                                                    type="tel"
-                                                                    onChange={(e) => handleGuardianFieldChange(guardian.id, "phone", e.target.value)}
-                                                                />
-                                                                <FieldError />
-                                                            </TextField>
-                                                        </div>
-
-                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-                                                            <TextField name="parent-email" isRequired>
-                                                                <Label htmlFor="parent-email" className="font-medium text-foreground/80">
-                                                                    Email
-                                                                </Label>
-                                                                <Input
-                                                                    suppressHydrationWarning
-                                                                    variant={getInputVariant()}
-                                                                    id="parent-email"
-                                                                    fullWidth
-                                                                    value={guardian.email}
-                                                                    name="parent-email"
-                                                                    placeholder="Email"
-                                                                    type="email"
-                                                                    onChange={(e) => handleGuardianFieldChange(guardian.id, "email", e.target.value)}
-                                                                />
-                                                                <FieldError />
-                                                            </TextField>
-                                                            <div className="flex flex-wrap items-center justify-between gap-4 pb-2">
-                                                                <div className="flex gap-4 items-center flex-1 min-w-[200px]">
-                                                                    <Label htmlFor="relation" className="font-medium text-foreground/80 shrink-0">
-                                                                        Quan hệ
-                                                                    </Label>
-                                                                    <Select
-                                                                        aria-label="Quan hệ"
-                                                                        variant={resolvedTheme === "dark" ? "secondary" : undefined}
-                                                                        className="w-full"
-                                                                        placeholder="Chọn quan hệ"
-                                                                        value={guardian.relation || guardianOptions[0].value}
-                                                                        onChange={(value) => {
-                                                                            if (value !== null) {
-                                                                                handleGuardianFieldChange(guardian.id, "relation", String(value));
-                                                                            }
-                                                                        }}
-                                                                    >
-                                                                        <Select.Trigger>
-                                                                            <Select.Value />
-                                                                            <Select.Indicator />
-                                                                        </Select.Trigger>
-                                                                        <Select.Popover>
-                                                                            <ListBox>
-                                                                                {guardianOptions.map((option) => (
-                                                                                    <ListBox.Item key={option.value} id={option.value} textValue={option.label}>
-                                                                                        {option.label}
-                                                                                        <ListBox.ItemIndicator />
-                                                                                    </ListBox.Item>
-                                                                                ))}
-                                                                            </ListBox>
-                                                                        </Select.Popover>
-                                                                    </Select>
+                                                {isStaff && !isSelf && (
+                                                    <div className="flex flex-row items-center justify-end">
+                                                        <Button onPress={() => hanndleSelectResetPasswordModal(studentId, studentDetail.name || "")}>
+                                                            Đặt lại mật khẩu
+                                                        </Button>
+                                                    </div>
+                                                )}
+                                                {isTargetStudent && (
+                                                    <>
+                                                        <div className="space-y-4 border-t border-divider" />
+                                                        <h3 className="font-semibold text-foreground">Thông tin phụ huynh</h3>
+                                                        {guardianList.map((guardian) => (
+                                                            <div key={guardian.id} className="space-y-4 border border-divider p-5 rounded-2xl">
+                                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                    <TextField isRequired name="parent-name">
+                                                                        <Label htmlFor="parent-name" className="font-medium text-foreground/80">
+                                                                            Họ và tên
+                                                                        </Label>
+                                                                        <Input
+                                                                            suppressHydrationWarning
+                                                                            variant={getInputVariant()}
+                                                                            id="parent-name"
+                                                                            fullWidth
+                                                                            value={guardian.name}
+                                                                            name="parent-name"
+                                                                            placeholder="Họ và tên"
+                                                                            type="text"
+                                                                            onChange={(e) => handleGuardianFieldChange(guardian.id, "name", e.target.value)}
+                                                                        />
+                                                                        <FieldError />
+                                                                    </TextField>
+                                                                    <TextField isRequired name="parent-phone">
+                                                                        <Label htmlFor="parent-phone" className="font-medium text-foreground/80">
+                                                                            SDT phụ huynh
+                                                                        </Label>
+                                                                        <Input
+                                                                            suppressHydrationWarning
+                                                                            variant={getInputVariant()}
+                                                                            id="parent-phone"
+                                                                            fullWidth
+                                                                            value={guardian.phone}
+                                                                            name="parent-phone"
+                                                                            placeholder="Vị dụ: 0909xxxxxx"
+                                                                            type="tel"
+                                                                            onChange={(e) => handleGuardianFieldChange(guardian.id, "phone", e.target.value)}
+                                                                        />
+                                                                        <FieldError />
+                                                                    </TextField>
                                                                 </div>
-                                                                <div className="flex gap-2 items-center shrink-0">
-                                                                    <span className="text-md text-muted">Liên hệ chính</span>
-                                                                    <Switch aria-label="Liên hệ chính" isSelected={guardian.isPrimary} onChange={() => handleGuardianPrimaryChange(guardian.id)}>
-                                                                        <Switch.Control>
-                                                                            <Switch.Thumb />
-                                                                        </Switch.Control>
-                                                                    </Switch>
+
+                                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                                                                    <TextField name="parent-email" isRequired>
+                                                                        <Label htmlFor="parent-email" className="font-medium text-foreground/80">
+                                                                            Email
+                                                                        </Label>
+                                                                        <Input
+                                                                            suppressHydrationWarning
+                                                                            variant={getInputVariant()}
+                                                                            id="parent-email"
+                                                                            fullWidth
+                                                                            value={guardian.email}
+                                                                            name="parent-email"
+                                                                            placeholder="Email"
+                                                                            type="email"
+                                                                            onChange={(e) => handleGuardianFieldChange(guardian.id, "email", e.target.value)}
+                                                                        />
+                                                                        <FieldError />
+                                                                    </TextField>
+                                                                    <div className="flex flex-wrap items-center justify-between gap-4 pb-2">
+                                                                        <div className="flex gap-4 items-center flex-1 min-w-[200px]">
+                                                                            <Label htmlFor="relation" className="font-medium text-foreground/80 shrink-0">
+                                                                                Quan hệ
+                                                                            </Label>
+                                                                            <Select
+                                                                                aria-label="Quan hệ"
+                                                                                variant={resolvedTheme === "dark" ? "secondary" : undefined}
+                                                                                className="w-full"
+                                                                                placeholder="Chọn quan hệ"
+                                                                                value={guardian.relation || guardianOptions[0].value}
+                                                                                onChange={(value) => {
+                                                                                    if (value !== null) {
+                                                                                        handleGuardianFieldChange(guardian.id, "relation", String(value));
+                                                                                    }
+                                                                                }}
+                                                                            >
+                                                                                <Select.Trigger>
+                                                                                    <Select.Value />
+                                                                                    <Select.Indicator />
+                                                                                </Select.Trigger>
+                                                                                <Select.Popover>
+                                                                                    <ListBox>
+                                                                                        {guardianOptions.map((option) => (
+                                                                                            <ListBox.Item key={option.value} id={option.value} textValue={option.label}>
+                                                                                                {option.label}
+                                                                                                <ListBox.ItemIndicator />
+                                                                                            </ListBox.Item>
+                                                                                        ))}
+                                                                                    </ListBox>
+                                                                                </Select.Popover>
+                                                                            </Select>
+                                                                        </div>
+                                                                        <div className="flex gap-2 items-center shrink-0">
+                                                                            <span className="text-md text-muted">Liên hệ chính</span>
+                                                                            <Switch aria-label="Liên hệ chính" isSelected={guardian.isPrimary} onChange={() => handleGuardianPrimaryChange(guardian.id)}>
+                                                                                <Switch.Control>
+                                                                                    <Switch.Thumb />
+                                                                                </Switch.Control>
+                                                                            </Switch>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex flex-row justify-end gap-2">
+                                                                    {isStaff && !guardian.id.startsWith("g-") && (
+                                                                        <Button onPress={() => hanndleSelectResetPasswordModal(guardian.id, guardian.name || "")}>
+                                                                            Đặt lại mật khẩu
+                                                                        </Button>
+                                                                    )}
+                                                                    <Button
+                                                                        variant="secondary"
+                                                                        className="text-red-400"
+                                                                        onClick={() => handleRemoveGuardian(guardian.id)}
+                                                                        isDisabled={guardianList.length === 1}
+                                                                    >
+                                                                        Xóa phụ huynh
+                                                                    </Button>
                                                                 </div>
                                                             </div>
-                                                        </div>
-                                                        <div className="flex flex-row justify-end gap-2">
-                                                             {isStaff && !guardian.id.startsWith("g-") && (
-                                                                 <Button onPress={() => hanndleSelectResetPasswordModal(guardian.id, guardian.name || "")}>
-                                                                     Đặt lại mật khẩu
-                                                                 </Button>
-                                                             )}
-                                                            <Button
-                                                                variant="secondary"
-                                                                className="text-red-400"
-                                                                onClick={() => handleRemoveGuardian(guardian.id)}
-                                                                isDisabled={guardianList.length === 1}
-                                                            >
-                                                                Xóa phụ huynh
-                                                            </Button>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                                <Button variant="primary" className="text-white" onClick={handleAddGuardian}>
-                                                    Thêm phụ huynh
-                                                </Button>
+                                                        ))}
+                                                        <Button variant="primary" className="text-white" onClick={handleAddGuardian}>
+                                                            Thêm phụ huynh
+                                                        </Button>
+                                                    </>
+                                                )}
                                             </Fieldset.Group>
 
                                         </Fieldset>

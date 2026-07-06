@@ -14,6 +14,7 @@ export type LoginUser = {
   phoneNumber?: string;
   role: "admin" | "student" | "guardian" | "manager";
   token: string;
+  isNeedChangePassword?: boolean;
 };
 
 export type RegisterPayload = {
