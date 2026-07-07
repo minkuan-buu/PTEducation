@@ -8,6 +8,7 @@ import * as React from "react";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 
 import { AttendanceProvider } from "@/context/attendance-context";
+import { ChatProvider } from "@/context/chat-context";
 import { UserProvider } from "@/context/user-context";
 import { TanStackProvider } from "@/providers/tanstack-provider";
 import { setUnauthorizedHandler, v2 } from "@/services/api";
@@ -107,8 +108,10 @@ export function Providers({ children, themeProps }: ProvidersProps) {
       <TanStackProvider>
         <UserProvider>
           <AttendanceProvider>
-            <Toast.Provider placement="bottom end" />
-            {children}
+            <ChatProvider>
+              <Toast.Provider placement="bottom end" />
+              {children}
+            </ChatProvider>
           </AttendanceProvider>
         </UserProvider>
       </TanStackProvider>

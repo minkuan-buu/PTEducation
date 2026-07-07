@@ -220,19 +220,25 @@ export default function ProfileClient() {
                 }
               </Avatar.Fallback>
             </Avatar>
-            <div>
-              <div onClick={() => router.push(`/profile?id=${currentStudent.id}`)} className="hover:underline cursor-pointer"><h3 className="font-bold text-foreground text-lg">{currentStudent.name}</h3></div>
-              <p className="text-xs text-default-500">
-                Quan hệ: {currentStudent.relationship} {currentStudent.isPrimary && (
-                  <Chip color="accent">
-                    <Chip.Label>Liên hệ chính</Chip.Label>
-                  </Chip>
-                )}
-              </p>
+            <div className="flex flex-col">
+              <div onClick={() => router.push(`/profile?id=${currentStudent.id}`)} className="hover:underline cursor-pointer flex flex-row items-center gap-3"><h3 className="font-bold text-foreground text-lg">{currentStudent.name}</h3>
+                <Chip color="accent" size="md" variant="primary">
+                  <Chip.Label className="text-md">{currentStudent.className}</Chip.Label>
+                </Chip>
+              </div>
+              <div className="flex flex-row">
+                <p className="text-sm text-default-500">
+                  Quan hệ: {currentStudent.relationship} {currentStudent.isPrimary && (
+                    <Chip color="accent">
+                      <Chip.Label>Liên hệ chính</Chip.Label>
+                    </Chip>
+                  )}
+                </p>
+              </div>
             </div>
           </div>
           <Separator />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-2 text-sm text-default-600">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-2 text-md text-default-600">
             <div><span className="font-semibold text-default-800">Email:</span> {currentStudent.email || "Chưa cập nhật"}</div>
             <div><span className="font-semibold text-default-800">SĐT:</span> {currentStudent.phone || "Chưa cập nhật"}</div>
             {currentStudent.schoolInfo && (

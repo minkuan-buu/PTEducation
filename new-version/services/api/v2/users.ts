@@ -7,6 +7,7 @@ import type { Guardian } from "./admin";
 export type GuardianStudentDto = {
   id: string;
   name: string;
+  className:string;
   email: string;
   phone: string;
   avatarUrl?: string | null;

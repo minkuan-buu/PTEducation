@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Button, Skeleton } from "@heroui/react";
 
 import { useAttendanceRealtime } from "@/context/attendance-context";
+import { useChatRealtime } from "@/context/chat-context";
 import { useUser } from "@/context/user-context";
 import { v2 } from "@/services/api";
 import { UserCard } from "./user-sidebar-card";
@@ -19,7 +20,8 @@ import {
     TbClipboardCheck,
     TbReportAnalytics,
     TbLogout2,
-    TbReceipt2
+    TbReceipt2,
+    TbMessage
 } from "react-icons/tb";
 import NextLink from "next/link";
 import OpenIcon from '@iconify-react/majesticons/open';
@@ -58,6 +60,7 @@ export const Sidebar = () => {
     const pathname = usePathname();
     const { user, isAuthenticated, clearUser, isLoading } = useUser();
     const attendanceRealtime = useAttendanceRealtime();
+    const { totalUnreadCount } = useChatRealtime();
     const [tick, setTick] = useState(() => new Date());
     const [isMounted, setIsMounted] = useState(false);
 
@@ -120,6 +123,7 @@ export const Sidebar = () => {
                     title: "",
                     items: [
                         { label: "Trang tổng quan", href: "/", icon: TbLayoutDashboard },
+                        { label: "Trò chuyện", href: "/chat", icon: TbMessage },
                     ],
                 },
                 {
@@ -138,6 +142,7 @@ export const Sidebar = () => {
                         { label: "Tổng quan", href: "/", icon: TbLayoutDashboard },
                         { label: "Lịch học & Điểm danh", href: "/schedule", icon: TbCalendar },
                         { label: "Điểm số", href: "/grades", icon: TbAward },
+                        { label: "Trò chuyện", href: "/chat", icon: TbMessage },
                     ],
                 },
             ],
@@ -148,6 +153,7 @@ export const Sidebar = () => {
                         { label: "Tổng quan", href: "/", icon: TbLayoutDashboard },
                         { label: "Lịch học & Điểm danh", href: "/schedule", icon: TbCalendar },
                         { label: "Điểm số", href: "/grades", icon: TbAward },
+                        { label: "Trò chuyện", href: "/chat", icon: TbMessage },
                     ],
                 },
             ],
@@ -287,6 +293,11 @@ export const Sidebar = () => {
                                                 >
                                                     <Icon className="size-5 shrink-0 transition-transform duration-200 group-hover:scale-110" />
                                                     <span>{item.label}</span>
+                                                    {item.href === "/chat" && totalUnreadCount > 0 && (
+                                                        <span className="ml-auto flex items-center justify-center size-5 rounded-full text-[10px] font-bold text-white bg-red-500 shadow-sm animate-pulse">
+                                                            {totalUnreadCount > 99 ? "99+" : totalUnreadCount}
+                                                        </span>
+                                                    )}
                                                 </Button>
                                             </NextLink>
                                         );
