@@ -11,6 +11,8 @@ import {
   Spinner,
   Chip,
   Badge,
+  Modal,
+  useOverlayState,
 } from "@heroui/react";
 import { toast } from "@heroui/react";
 import {
@@ -19,6 +21,7 @@ import {
   TbSearch,
   TbCircleDot,
   TbBrandHipchat,
+  TbUsers,
 } from "react-icons/tb";
 
 import { useUser } from "@/context/user-context";
@@ -27,7 +30,10 @@ import {
   getChatMessages,
   sendMessage,
   markAsRead,
+  getSupportContacts,
+  getOrCreatePrivateChat,
   type ChatMessageResModel,
+  type ChatContactResModel,
 } from "@/services/api/v2/chat";
 
 function formatMessageTime(timestamp: number) {
@@ -73,6 +79,50 @@ export default function ChatClient() {
 
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
+
+  const { isOpen, setOpen, open, close } = useOverlayState();
+
+  // Fetch support contacts
+  const { data: contacts = [], isLoading: isContactsLoading, refetch: refetchContacts } = useQuery<ChatContactResModel[]>({
+    queryKey: ["support-contacts"],
+    queryFn: getSupportContacts,
+    enabled: !!user && (user.role?.toLowerCase() === "student" || user.role?.toLowerCase() === "guardian"),
+  });
+
+  const [isCreatingChat, setIsCreatingChat] = React.useState(false);
+
+  const handleContactClick = async (contact: ChatContactResModel) => {
+    if (isCreatingChat) return;
+
+    if (contact.chatId) {
+      setActiveChatId(contact.chatId);
+      close();
+      return;
+    }
+
+    setIsCreatingChat(true);
+    try {
+      const newChatId = await getOrCreatePrivateChat(contact.userId);
+      if (newChatId) {
+        await refetchChats(); // refresh conversation list
+        await refetchContacts(); // refresh contact list to associate ChatId
+        setActiveChatId(newChatId);
+        close();
+      } else {
+        toast.danger("Không thể tạo phòng chat riêng.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.danger("Có lỗi xảy ra khi bắt đầu cuộc trò chuyện.");
+    } finally {
+      setIsCreatingChat(false);
+    }
+  };
+
+  const handleOpenContacts = () => {
+    void refetchContacts();
+    open();
+  };
 
   // 1. Fetch messages of active room
   const { data: messages = [], isLoading: isMessagesLoading } = useQuery<ChatMessageResModel[]>({
@@ -195,6 +245,17 @@ export default function ChatClient() {
           <TbSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground size-4" />
         </div>
 
+        {/* Contact Support Button for students/parents */}
+        {user && (user.role?.toLowerCase() === "student" || user.role?.toLowerCase() === "guardian") && (
+          <Button
+            onClick={handleOpenContacts}
+            className="mb-4 w-full bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 shrink-0 font-medium flex items-center justify-center gap-2"
+          >
+            <TbUsers className="size-4" />
+            Liên hệ hỗ trợ (Admin/Manager)
+          </Button>
+        )}
+
         {/* List of chat rooms */}
         <ScrollShadow className="flex-1 space-y-2 pr-1 no-scrollbar">
           {filteredRooms.length === 0 ? (
@@ -255,7 +316,9 @@ export default function ChatClient() {
             <div className="flex items-center justify-between border-b border-divider bg-content1/20 px-6 py-4">
               <div>
                 <h2 className="font-bold text-md text-foreground">{activeRoom.title}</h2>
-                <p className="text-xs text-muted-foreground">Phòng học realtime</p>
+                <p className="text-xs text-muted-foreground">
+                  {activeRoom.classId ? "Phòng học realtime" : "Liên hệ hỗ trợ riêng tư"}
+                </p>
               </div>
             </div>
 
@@ -365,6 +428,74 @@ export default function ChatClient() {
           </div>
         )}
       </Card>
+
+      {/* Modal danh bạ hỗ trợ */}
+      <Modal>
+        <Modal.Backdrop isOpen={isOpen} onOpenChange={setOpen}>
+          <Modal.Container size="md">
+            <Modal.Dialog>
+              <Modal.Header>
+                <Modal.Heading>Danh bạ liên hệ hỗ trợ</Modal.Heading>
+              </Modal.Header>
+              <Modal.Body className="pb-6">
+                {isContactsLoading ? (
+                  <div className="flex flex-col gap-2 py-8 items-center justify-center">
+                    <Spinner />
+                    <span className="text-xs text-muted-foreground">Đang tải liên hệ...</span>
+                  </div>
+                ) : contacts.length === 0 ? (
+                  <div className="text-center py-8 text-xs text-muted-foreground">
+                    Không tìm thấy Admin/Manager khả dụng.
+                  </div>
+                ) : (
+                  <ScrollShadow className="max-h-96 space-y-2 no-scrollbar">
+                    {contacts.map((contact) => (
+                      <button
+                        key={contact.userId}
+                        onClick={() => handleContactClick(contact)}
+                        disabled={isCreatingChat}
+                        className="w-full flex items-center justify-between p-3 rounded-2xl border border-divider/50 bg-content2/20 hover:bg-primary/10 hover:border-primary/30 transition-all duration-300"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Avatar
+                            className="size-10 font-bold shrink-0 text-white"
+                          >
+                            <Avatar.Fallback className="border-none bg-gradient-to-br from-[#00b4d8] to-[#90e0ef] text-white">
+                              {contact.name.substring(0, 2).toUpperCase()}
+                            </Avatar.Fallback>
+                          </Avatar>
+                          <div className="text-left">
+                            <p className="font-semibold text-sm">{contact.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {contact.role.toLowerCase() === "admin" ? "Admin Hệ Thống" : "Quản Lý"}
+                            </p>
+                          </div>
+                        </div>
+                        {isCreatingChat ? (
+                          <Spinner />
+                        ) : (
+                          <Chip
+                            size="sm"
+                            variant="soft"
+                            color={contact.chatId ? "success" : "default"}
+                          >
+                            <Chip.Label>{contact.chatId ? "Nhắn tin" : "Bắt đầu chat"}</Chip.Label>
+                          </Chip>
+                        )}
+                      </button>
+                    ))}
+                  </ScrollShadow>
+                )}
+              </Modal.Body>
+              <Modal.Footer>
+                <Button variant="ghost" onPress={() => close()}>
+                  Hủy
+                </Button>
+              </Modal.Footer>
+            </Modal.Dialog>
+          </Modal.Container>
+        </Modal.Backdrop>
+      </Modal>
     </div>
   );
 }

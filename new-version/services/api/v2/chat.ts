@@ -22,6 +22,14 @@ export type ChatMessageResModel = {
   createdAt: number;
 };
 
+export type ChatContactResModel = {
+  userId: string;
+  name: string;
+  avatarUrl?: string | null;
+  role: string;
+  chatId?: string | null;
+};
+
 const apiV2 = createApiClient("v2");
 
 export async function getMyChats(): Promise<ChatRoomResModel[]> {
@@ -48,3 +56,16 @@ export async function markAsRead(chatId: string): Promise<boolean> {
   const response = await apiV2.post<ApiResponse<any>>(`/chats/${chatId}/read`);
   return response.data?.success ?? false;
 }
+
+export async function getSupportContacts(): Promise<ChatContactResModel[]> {
+  const response = await apiV2.get<ApiResponse<ChatContactResModel[]>>("/chats/contacts");
+  return response.data?.data ?? [];
+}
+
+export async function getOrCreatePrivateChat(targetUserId: string): Promise<string | null> {
+  const response = await apiV2.post<ApiResponse<string>>("/chats/private", {
+    targetUserId,
+  });
+  return response.data?.data ?? null;
+}
+
