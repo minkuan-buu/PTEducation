@@ -219,7 +219,7 @@ export default function GradesPage() {
             </Card>
 
             {/* Parent Confirmation (Guardian role only) */}
-            {isGuardian && (
+            {/* {isGuardian && (
                 <Card className="p-6 border border-divider bg-purple-500/5 dark:bg-purple-500/10 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="space-y-1">
                         <h3 className="text-sm font-bold text-purple-600 dark:text-purple-400">Xác nhận kết quả học tập</h3>
@@ -235,7 +235,7 @@ export default function GradesPage() {
                         <span>Xác nhận ký tên phụ huynh</span>
                     </Button>
                 </Card>
-            )}
+            )} */}
         </div>
     );
 }
