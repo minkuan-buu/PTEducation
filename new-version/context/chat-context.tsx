@@ -16,6 +16,8 @@ type ChatContextValue = {
   activeChatId: string | null;
   setActiveChatId: (id: string | null) => void;
   refetchChats: () => Promise<any>;
+  typingUsers: Record<string, { userId: string; userName: string; avatarUrl?: string }[]>;
+  sendTypingIndicator: (chatId: string, isTyping: boolean) => void;
 };
 
 const ChatContext = React.createContext<ChatContextValue | undefined>(undefined);
@@ -27,6 +29,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   
   const [connectionStatus, setConnectionStatus] = React.useState<ChatContextValue["connectionStatus"]>("idle");
   const [activeChatId, setActiveChatId] = React.useState<string | null>(null);
+  
+  const [typingUsers, setTypingUsers] = React.useState<Record<string, { userId: string; userName: string; avatarUrl?: string }[]>>({});
+  const typingTimeoutsRef = React.useRef<Record<string, Record<string, NodeJS.Timeout>>>({});
 
   // 1. Fetch user chats using React Query
   const { data: chats = [], refetch: refetchChats } = useQuery<ChatRoomResModel[]>({
@@ -51,6 +56,16 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       } catch (err) {
         console.error(`[ChatHub] Failed to join room: ${roomId}`, err);
       }
+    }
+  }, []);
+
+  // Send typing indicator
+  const sendTypingIndicator = React.useCallback((chatId: string, isTyping: boolean) => {
+    const conn = connectionRef.current;
+    if (conn && conn.state === HubConnectionState.Connected) {
+      const userName = userRef.current?.name || "Một thành viên";
+      const avatarUrl = userRef.current?.avatarUrl;
+      conn.invoke("SendTypingIndicator", chatId, userName, avatarUrl, isTyping).catch(console.error);
     }
   }, []);
 
@@ -119,7 +134,60 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
+    const handleReceiveTyping = (chatId: string, userId: string, userName: string, avatarUrl: string | undefined | null, isTyping: boolean) => {
+      // Sometimes signalR sends null instead of undefined
+      const resolvedAvatarUrl = avatarUrl === null ? undefined : avatarUrl;
+      
+      setTypingUsers((prev) => {
+        const roomTyping = prev[chatId] || [];
+        const isUserAlreadyTyping = roomTyping.some(u => u.userId === userId);
+
+        if (isTyping) {
+          // Clear existing timeout if any
+          if (typingTimeoutsRef.current[chatId]?.[userId]) {
+            clearTimeout(typingTimeoutsRef.current[chatId][userId]);
+          }
+
+          // Set new auto-clear timeout (20 seconds)
+          if (!typingTimeoutsRef.current[chatId]) {
+            typingTimeoutsRef.current[chatId] = {};
+          }
+          typingTimeoutsRef.current[chatId][userId] = setTimeout(() => {
+            setTypingUsers((current) => {
+              const currentRoomTyping = current[chatId] || [];
+              return {
+                ...current,
+                [chatId]: currentRoomTyping.filter(u => u.userId !== userId)
+              };
+            });
+          }, 20000);
+
+          if (!isUserAlreadyTyping) {
+            return {
+              ...prev,
+              [chatId]: [...roomTyping, { userId, userName, avatarUrl: resolvedAvatarUrl }]
+            };
+          }
+          return prev;
+        } else {
+          // Stop typing
+          if (typingTimeoutsRef.current[chatId]?.[userId]) {
+            clearTimeout(typingTimeoutsRef.current[chatId][userId]);
+            delete typingTimeoutsRef.current[chatId][userId];
+          }
+          if (isUserAlreadyTyping) {
+            return {
+              ...prev,
+              [chatId]: roomTyping.filter(u => u.userId !== userId)
+            };
+          }
+          return prev;
+        }
+      });
+    };
+
     connection.on(CHAT_SIGNALR_EVENTS.receiveMessage, handleReceiveMessage);
+    connection.on("ReceiveTypingIndicator", handleReceiveTyping);
 
     connection.onreconnecting(() => setConnectionStatus("reconnecting"));
     connection.onreconnected(() => {
@@ -141,6 +209,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       connection.off(CHAT_SIGNALR_EVENTS.receiveMessage, handleReceiveMessage);
+      connection.off("ReceiveTypingIndicator", handleReceiveTyping);
       connectionRef.current = null;
       void connection.stop();
     };
@@ -161,8 +230,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       activeChatId,
       setActiveChatId,
       refetchChats,
+      typingUsers,
+      sendTypingIndicator,
     }),
-    [chats, totalUnreadCount, connectionStatus, activeChatId, refetchChats]
+    [chats, totalUnreadCount, connectionStatus, activeChatId, refetchChats, typingUsers, sendTypingIndicator]
   );
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

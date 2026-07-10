@@ -8,6 +8,7 @@ export type ChatRoomResModel = {
   lastMessage?: string;
   lastMessageTime?: number;
   unreadCount: number;
+  numberOfParticipant?: number;
 };
 
 export type ChatMessageResModel = {
@@ -37,11 +38,18 @@ export async function getMyChats(): Promise<ChatRoomResModel[]> {
   return response.data?.data ?? [];
 }
 
-export async function getChatMessages(chatId: string, limit?: number): Promise<ChatMessageResModel[]> {
-  const response = await apiV2.get<ApiResponse<ChatMessageResModel[]>>(`/chats/${chatId}/messages`, {
-    params: { limit },
+export type PagedResponse<T> = {
+  data: T[];
+  pageNumber: number;
+  pageSize: number;
+  totalPages: number;
+};
+
+export async function getChatMessages(chatId: string, pageIndex: number = 1, limit?: number): Promise<PagedResponse<ChatMessageResModel>> {
+  const response = await apiV2.get<PagedResponse<ChatMessageResModel>>(`/chats/${chatId}/messages`, {
+    params: { pageIndex, limit },
   });
-  return response.data?.data ?? [];
+  return response.data ?? { data: [], pageNumber: 1, pageSize: limit ?? 50, totalPages: 0 };
 }
 
 export async function sendMessage(chatId: string, content: string, messageType: number = 0): Promise<ChatMessageResModel | null> {

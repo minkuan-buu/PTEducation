@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import {
   Card,
   Avatar,
@@ -26,6 +26,7 @@ import {
 
 import { useUser } from "@/context/user-context";
 import { useChatRealtime } from "@/context/chat-context";
+import typingStyles from "./typing-indicator.module.css";
 import {
   getChatMessages,
   sendMessage,
@@ -39,10 +40,65 @@ import {
 function formatMessageTime(timestamp: number) {
   if (!timestamp) return "";
   const date = new Date(timestamp * 1000);
-  return date.toLocaleTimeString("vi-VN", {
+  const now = new Date();
+
+  // Start of today (00:00:00)
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  // Start of yesterday (00:00:00)
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  const timeStr = date.toLocaleTimeString("vi-VN", {
     hour: "2-digit",
     minute: "2-digit",
   });
+
+  if (date >= today) {
+    return timeStr;
+  } else if (date >= yesterday) {
+    return `Hôm qua, ${timeStr}`;
+  } else {
+    const dateStr = date.toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+    return `${dateStr}, ${timeStr}`;
+  }
+}
+
+function isDifferentDay(t1: number, t2: number) {
+  if (!t1 || !t2) return false;
+  const d1 = new Date(t1 * 1000);
+  const d2 = new Date(t2 * 1000);
+  return (
+    d1.getDate() !== d2.getDate() ||
+    d1.getMonth() !== d2.getMonth() ||
+    d1.getFullYear() !== d2.getFullYear()
+  );
+}
+
+function formatDividerDate(timestamp: number) {
+  if (!timestamp) return "";
+  const date = new Date(timestamp * 1000);
+  const now = new Date();
+
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  if (date >= today) {
+    return "Hôm nay";
+  } else if (date >= yesterday) {
+    return "Hôm qua";
+  } else {
+    return date.toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  }
 }
 
 function formatRoomDate(timestamp: number) {
@@ -71,8 +127,8 @@ function getRoleBadge(role: string) {
 
 export default function ChatClient() {
   const { user } = useUser();
-  const { chats, connectionStatus, activeChatId, setActiveChatId, refetchChats } = useChatRealtime();
-  
+  const { chats, connectionStatus, activeChatId, setActiveChatId, refetchChats, typingUsers, sendTypingIndicator } = useChatRealtime();
+
   const [searchQuery, setSearchQuery] = React.useState("");
   const [inputText, setInputText] = React.useState("");
   const [isSending, setIsSending] = React.useState(false);
@@ -125,29 +181,69 @@ export default function ChatClient() {
   };
 
   // 1. Fetch messages of active room
-  const { data: messages = [], isLoading: isMessagesLoading } = useQuery<ChatMessageResModel[]>({
+  const {
+    data: messagesData,
+    isLoading: isMessagesLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage
+  } = useInfiniteQuery({
     queryKey: ["chat-messages", activeChatId],
-    queryFn: () => getChatMessages(activeChatId!),
+    queryFn: ({ pageParam = 1 }) => getChatMessages(activeChatId!, pageParam, 50),
+    getNextPageParam: (lastPage) => {
+      if (lastPage.pageNumber < lastPage.totalPages) {
+        return lastPage.pageNumber + 1;
+      }
+      return undefined;
+    },
     enabled: !!activeChatId,
+    initialPageParam: 1,
     staleTime: Infinity, // messages are driven entirely by SignalR invalidation
   });
+
+  const messages = React.useMemo(() => {
+    if (!messagesData) return [];
+    return [...messagesData.pages].reverse().flatMap(page => page.data || []).filter(Boolean);
+  }, [messagesData]);
 
   const activeRoom = React.useMemo(() => {
     return chats.find((r) => r.chatId === activeChatId) || null;
   }, [chats, activeChatId]);
 
+  const newestMessageIdRef = React.useRef<string | null>(null);
+  const [isInitialScrollDone, setIsInitialScrollDone] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsInitialScrollDone(false);
+    newestMessageIdRef.current = null;
+  }, [activeChatId]);
+
   // Scroll to bottom when messages update
-  const scrollToBottom = React.useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  const scrollToBottom = React.useCallback((behavior: ScrollBehavior = "smooth") => {
+    messagesEndRef.current?.scrollIntoView({ behavior });
+    setTimeout(() => setIsInitialScrollDone(true), 100);
   }, []);
 
   React.useEffect(() => {
     if (messages.length > 0) {
-      // Small timeout to ensure DOM layout has completed
-      const timer = setTimeout(scrollToBottom, 50);
-      return () => clearTimeout(timer);
+      const newestMessageId = messages[messages.length - 1].id;
+      if (newestMessageId !== newestMessageIdRef.current) {
+        const isFirstLoad = newestMessageIdRef.current === null;
+        newestMessageIdRef.current = newestMessageId;
+        // Use instant scroll for first load, smooth for new messages
+        const timer = setTimeout(() => scrollToBottom(isFirstLoad ? "instant" : "smooth"), 50);
+        return () => clearTimeout(timer);
+      }
     }
   }, [messages, scrollToBottom]);
+
+  // Scroll to bottom when typing status changes
+  const typingCount = activeChatId ? typingUsers[activeChatId]?.length || 0 : 0;
+  React.useEffect(() => {
+    if (typingCount > 0 && isInitialScrollDone) {
+      scrollToBottom("smooth");
+    }
+  }, [typingCount, scrollToBottom, isInitialScrollDone]);
 
   // Focus input when changing rooms
   React.useEffect(() => {
@@ -177,6 +273,38 @@ export default function ChatClient() {
   };
 
   // Handle send message
+  const [isTyping, setIsTyping] = React.useState(false);
+  const typingTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  const handleInputChange = (val: string) => {
+    setInputText(val);
+    if (!activeChatId) return;
+
+    if (!val.trim()) {
+      if (isTyping) {
+        setIsTyping(false);
+        sendTypingIndicator(activeChatId, false);
+      }
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = null;
+      }
+      return;
+    }
+
+    if (!isTyping) {
+      setIsTyping(true);
+      sendTypingIndicator(activeChatId, true);
+    }
+
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+
+    typingTimeoutRef.current = setTimeout(() => {
+      setIsTyping(false);
+      sendTypingIndicator(activeChatId, false);
+    }, 15000);
+  };
+
   const handleSend = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!inputText.trim() || !activeChatId || isSending) return;
@@ -195,6 +323,16 @@ export default function ChatClient() {
       setIsSending(false);
       // Keep input focused
       setTimeout(() => inputRef.current?.focus(), 50);
+
+      // Stop typing indicator immediately
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = null;
+      }
+      setIsTyping(false);
+      if (activeChatId) {
+        sendTypingIndicator(activeChatId, false);
+      }
     }
   };
 
@@ -212,18 +350,18 @@ export default function ChatClient() {
         <div className="flex items-center justify-between pb-3">
           <div className="flex items-center gap-2">
             <TbMessage className="size-6 text-primary" />
-            <h1 className="text-xl font-bold tracking-tight">Hộp thư lớp học</h1>
+            <h1 className="text-xl font-bold tracking-tight">Trò chuyện</h1>
           </div>
           {/* SignalR Connection Status Indicator */}
-          <Chip
+          {/* <Chip
             size="sm"
             variant="soft"
             color={
               connectionStatus === "connected"
                 ? "success"
                 : connectionStatus === "connecting" || connectionStatus === "reconnecting"
-                ? "warning"
-                : "danger"
+                  ? "warning"
+                  : "danger"
             }
             className="capitalize"
           >
@@ -231,13 +369,13 @@ export default function ChatClient() {
               <TbCircleDot className="animate-pulse size-3" />
               {connectionStatus === "connected" ? "Realtime" : "Kết nối..."}
             </span>
-          </Chip>
+          </Chip> */}
         </div>
 
         {/* Search */}
         <div className="relative mb-4">
           <Input
-            placeholder="Tìm kiếm lớp học..."
+            placeholder="Tìm kiếm cuộc trò chuyện..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9 pr-4 w-full"
@@ -252,7 +390,7 @@ export default function ChatClient() {
             className="mb-4 w-full bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 shrink-0 font-medium flex items-center justify-center gap-2"
           >
             <TbUsers className="size-4" />
-            Liên hệ hỗ trợ (Admin/Manager)
+            Liên hệ hỗ trợ
           </Button>
         )}
 
@@ -269,11 +407,10 @@ export default function ChatClient() {
                 <button
                   key={room.chatId}
                   onClick={() => handleSelectRoom(room.chatId)}
-                  className={`w-full rounded-2xl p-3 text-left transition-all duration-300 flex items-center gap-3 border ${
-                    isActive
-                      ? "bg-primary/10 border-primary/30 shadow-sm"
-                      : "bg-content1/30 border-transparent hover:bg-content1/50 hover:border-divider"
-                  }`}
+                  className={`w-full rounded-2xl p-3 text-left transition-all duration-300 flex items-center gap-3 cursor-pointer border ${isActive
+                    ? "bg-primary/10 border-primary/30 shadow-sm hover:bg-primary/20 hover:border-primary/40"
+                    : "bg-content1/40 border-divider/80 hover:bg-primary/5 hover:border-primary/30 hover:shadow-sm"
+                    }`}
                 >
                   <Avatar
                     color={isActive ? "accent" : "default"}
@@ -317,7 +454,7 @@ export default function ChatClient() {
               <div>
                 <h2 className="font-bold text-md text-foreground">{activeRoom.title}</h2>
                 <p className="text-xs text-muted-foreground">
-                  {activeRoom.classId ? "Phòng học realtime" : "Liên hệ hỗ trợ riêng tư"}
+                  {activeRoom.classId ? activeRoom.numberOfParticipant + " thành viên" : "Liên hệ hỗ trợ riêng tư"}
                 </p>
               </div>
             </div>
@@ -330,7 +467,20 @@ export default function ChatClient() {
                   <span className="text-xs text-muted-foreground">Đang tải tin nhắn...</span>
                 </div>
               ) : (
-                <ScrollShadow className="h-full w-full p-6 space-y-4 no-scrollbar">
+                <ScrollShadow
+                  className="h-full w-full p-6 space-y-4 no-scrollbar"
+                  onScroll={(e) => {
+                    const target = e.target as HTMLDivElement;
+                    if (isInitialScrollDone && target.scrollTop <= 150 && hasNextPage && !isFetchingNextPage) {
+                      void fetchNextPage();
+                    }
+                  }}
+                >
+                  {isFetchingNextPage && (
+                    <div className="flex justify-center py-2">
+                      <Spinner size="sm" />
+                    </div>
+                  )}
                   {messages.length === 0 ? (
                     <div className="flex h-full flex-col items-center justify-center text-center">
                       <TbBrandHipchat className="size-16 text-muted/40 mb-3" />
@@ -340,51 +490,91 @@ export default function ChatClient() {
                       <p className="text-xs text-muted/60 mt-1">Hãy gửi tin nhắn đầu tiên.</p>
                     </div>
                   ) : (
-                    messages.map((msg) => {
+                    messages.map((msg, idx) => {
                       const isMe = msg.senderId === user?.id;
                       const badgeInfo = getRoleBadge(msg.senderRole);
+                      const showDivider = idx === 0 || isDifferentDay(msg.createdAt, messages[idx - 1].createdAt);
 
                       return (
-                        <div
-                          key={msg.id}
-                          className={`flex gap-3 max-w-[75%] ${isMe ? "ml-auto flex-row-reverse" : "mr-auto"}`}
-                        >
-                           <Avatar className="size-8 shrink-0 font-semibold">
-                            {msg.senderAvatarUrl && <Avatar.Image src={msg.senderAvatarUrl} />}
-                            <Avatar.Fallback className="border-none bg-gradient-to-br from-[#00b4d8] to-[#90e0ef] text-white text-[10px] flex items-center justify-center">
-                              {msg.senderName.substring(0, 2).toUpperCase()}
-                            </Avatar.Fallback>
-                          </Avatar>
-                          <div className="flex flex-col gap-1">
-                            {/* Sender Info (Only show if not me) */}
-                            {!isMe && (
-                              <div className="flex items-center gap-1.5 px-1">
-                                <span className="text-xs font-semibold text-foreground/80">
-                                  {msg.senderName}
-                                </span>
-                                <Chip size="sm" variant="soft" color={badgeInfo.color} className="h-4 text-[9px] px-1 font-bold">
-                                  {badgeInfo.label}
-                                </Chip>
-                              </div>
-                            )}
-                            
-                            {/* Message Bubble */}
-                            <div
-                              className={`rounded-2xl px-4 py-2.5 shadow-sm text-sm break-words ${
-                                isMe
+                        <React.Fragment key={msg.id}>
+                          {showDivider && (
+                            <div className="flex items-center justify-center my-4 w-full">
+                              <div className="border-t border-divider flex-grow" />
+                              <span className="mx-4 text-[10px] font-bold tracking-wide uppercase text-muted-foreground bg-content2/30 px-3 py-1 rounded-full border border-divider/45 shadow-sm">
+                                {formatDividerDate(msg.createdAt)}
+                              </span>
+                              <div className="border-t border-divider flex-grow" />
+                            </div>
+                          )}
+                          <div
+                            className={`flex gap-3 max-w-[75%] min-w-0 ${isMe ? "ml-auto flex-row-reverse" : "mr-auto"}`}
+                          >
+                            <Avatar className="size-10 shrink-0 font-semibold">
+                              {msg.senderAvatarUrl && <Avatar.Image src={msg.senderAvatarUrl} />}
+                              <Avatar.Fallback className="border-none bg-gradient-to-br from-[#00b4d8] to-[#90e0ef] text-white text-[10px] flex items-center justify-center">
+                                {msg.senderName.substring(0, 2).toUpperCase()}
+                              </Avatar.Fallback>
+                            </Avatar>
+                            <div className={`flex flex-col gap-1 min-w-0 max-w-full ${isMe ? "items-end" : "items-start"}`}>
+                              {/* Sender Info (Only show if not me) */}
+                              {!isMe && (
+                                <div className="flex items-center gap-1.5 px-1">
+                                  <span className="text-xs font-semibold text-foreground/80">
+                                    {msg.senderName}
+                                  </span>
+                                  <Chip size="sm" variant="soft" color={badgeInfo.color} className="h-4 text-[9px] px-1 font-bold">
+                                    {badgeInfo.label}
+                                  </Chip>
+                                </div>
+                              )}
+
+                              {/* Message Bubble */}
+                              <div
+                                className={`rounded-2xl px-4 py-2.5 shadow-sm text-sm break-words max-w-full ${isMe
                                   ? "bg-gradient-to-tr from-sky-400 to-blue-500 text-white rounded-tr-none"
                                   : "bg-content1 border border-divider/60 text-foreground rounded-tl-none"
-                              }`}
-                            >
-                              {msg.content}
+                                  }`}
+                              >
+                                {msg.content}
+                              </div>
+                              <span className="text-[9px] text-muted-foreground px-1 mt-0.5">
+                                {formatMessageTime(msg.createdAt)}
+                              </span>
                             </div>
-                            <span className="text-[9px] text-muted-foreground px-1 mt-0.5 text-right">
-                              {formatMessageTime(msg.createdAt)}
-                            </span>
                           </div>
-                        </div>
+                        </React.Fragment>
                       );
                     })
+                  )}
+                  {activeChatId && typingUsers[activeChatId]?.length > 0 && (
+                    <div className="flex gap-3 max-w-[75%] min-w-0 mr-auto items-end animate-fade-in pb-2">
+                      <div className="flex -space-x-2 shrink-0">
+                        {typingUsers[activeChatId].map((u) => (
+                          <Avatar
+                            key={u.userId}
+                            className="size-10 text-[10px] bg-gradient-to-br from-[#00b4d8] to-[#90e0ef] text-white shadow-sm"
+                            title={u.userName}
+                          >
+                            {u.avatarUrl ? (
+                              <Avatar.Image
+                                alt={u.userName}
+                                src={u.avatarUrl}
+                              />
+                            ) : null}
+                            <Avatar.Fallback className="border-none bg-gradient-to-br from-[#00b4d8] to-[#90e0ef] text-white">
+                              {u.userName.split(" ").map((part) => part[0]).join("").slice(u.userName.split(" ").length - 2, u.userName.split(" ").length).toUpperCase()}
+                            </Avatar.Fallback>
+                          </Avatar>
+                        ))}
+                      </div>
+                      <div className="flex flex-col gap-1 min-w-0 max-w-full items-start">
+                        <div className={`bg-content1 border border-divider/60 rounded-2xl rounded-tl-none shadow-sm px-5 py-4 ${typingStyles.typingBubble}`}>
+                          <div className={typingStyles.typingDot}></div>
+                          <div className={typingStyles.typingDot}></div>
+                          <div className={typingStyles.typingDot}></div>
+                        </div>
+                      </div>
+                    </div>
                   )}
                   {/* Anchor div for auto-scrolling */}
                   <div ref={messagesEndRef} />
@@ -393,37 +583,39 @@ export default function ChatClient() {
             </div>
 
             {/* Input gửi tin nhắn */}
-            <form
-              onSubmit={handleSend}
-              className="border-t border-divider bg-content1/10 px-6 py-4 flex items-center gap-3 shrink-0"
-            >
-              <Input
-                ref={inputRef}
-                placeholder="Nhập tin nhắn..."
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                disabled={isSending}
-                autoComplete="off"
-                className="flex-1"
-              />
-              <Button
-                type="submit"
-                isIconOnly
-                variant="primary"
-                isDisabled={!inputText.trim() || isSending}
-                isPending={isSending}
-                className="shadow-md shadow-[#00b4d8]/20 rounded-xl"
+            <div className="border-t border-divider bg-content1/10 flex flex-col shrink-0">
+              <form
+                onSubmit={handleSend}
+                className="px-6 py-4 flex items-center gap-3"
               >
-                <TbSend className="size-5" />
-              </Button>
-            </form>
+                <Input
+                  ref={inputRef}
+                  placeholder="Nhập tin nhắn..."
+                  value={inputText}
+                  onChange={(e) => handleInputChange(e.target.value)}
+                  disabled={isSending}
+                  autoComplete="off"
+                  className="flex-1"
+                />
+                <Button
+                  type="submit"
+                  isIconOnly
+                  variant="primary"
+                  isDisabled={!inputText.trim() || isSending}
+                  isPending={isSending}
+                  className="shadow-md shadow-[#00b4d8]/20 rounded-xl"
+                >
+                  <TbSend className="size-5" />
+                </Button>
+              </form>
+            </div>
           </>
         ) : (
           <div className="flex h-full flex-col items-center justify-center text-center p-8">
             <TbBrandHipchat className="size-20 text-primary/30 mb-4 animate-bounce" />
-            <h2 className="text-xl font-bold text-foreground">Trò chuyện Realtime</h2>
+            <h2 className="text-xl font-bold text-foreground">Trò chuyện</h2>
             <p className="text-sm text-muted-foreground mt-2 max-w-sm">
-              Chọn một lớp học từ danh sách bên trái để tham gia thảo luận và nhận hỗ trợ học tập trực tiếp.
+              Chọn một cuộc trò chuyện để bắt đầu.
             </p>
           </div>
         )}
@@ -449,41 +641,47 @@ export default function ChatClient() {
                   </div>
                 ) : (
                   <ScrollShadow className="max-h-96 space-y-2 no-scrollbar">
-                    {contacts.map((contact) => (
-                      <button
-                        key={contact.userId}
-                        onClick={() => handleContactClick(contact)}
-                        disabled={isCreatingChat}
-                        className="w-full flex items-center justify-between p-3 rounded-2xl border border-divider/50 bg-content2/20 hover:bg-primary/10 hover:border-primary/30 transition-all duration-300"
-                      >
-                        <div className="flex items-center gap-3">
-                          <Avatar
-                            className="size-10 font-bold shrink-0 text-white"
-                          >
-                            <Avatar.Fallback className="border-none bg-gradient-to-br from-[#00b4d8] to-[#90e0ef] text-white">
-                              {contact.name.substring(0, 2).toUpperCase()}
-                            </Avatar.Fallback>
-                          </Avatar>
-                          <div className="text-left">
-                            <p className="font-semibold text-sm">{contact.name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {contact.role.toLowerCase() === "admin" ? "Admin Hệ Thống" : "Quản Lý"}
-                            </p>
+                    {contacts.map((contact) => {
+                      const isContactActive = !!contact.chatId && contact.chatId === activeChatId;
+                      return (
+                        <button
+                          key={contact.userId}
+                          onClick={() => handleContactClick(contact)}
+                          disabled={isCreatingChat}
+                          className={`w-full flex items-center justify-between p-3 rounded-2xl border transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${isContactActive
+                            ? "bg-primary/10 border-primary/30 shadow-sm hover:bg-primary/20 hover:border-primary/40"
+                            : "bg-content1/40 border-divider/80 hover:bg-primary/5 hover:border-primary/30 hover:shadow-sm"
+                            }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <Avatar
+                              className="size-10 font-bold shrink-0 text-white"
+                            >
+                              <Avatar.Fallback className="border-none bg-gradient-to-br from-[#00b4d8] to-[#90e0ef] text-white">
+                                {contact.name.substring(0, 2).toUpperCase()}
+                              </Avatar.Fallback>
+                            </Avatar>
+                            <div className="text-left">
+                              <p className="font-semibold text-sm">{contact.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {contact.role.toLowerCase() === "admin" ? "Quản trị viên" : "Giảng viên/Trợ giảng"}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                        {isCreatingChat ? (
-                          <Spinner />
-                        ) : (
-                          <Chip
-                            size="sm"
-                            variant="soft"
-                            color={contact.chatId ? "success" : "default"}
-                          >
-                            <Chip.Label>{contact.chatId ? "Nhắn tin" : "Bắt đầu chat"}</Chip.Label>
-                          </Chip>
-                        )}
-                      </button>
-                    ))}
+                          {isCreatingChat ? (
+                            <Spinner />
+                          ) : (
+                            <Chip
+                              size="sm"
+                              variant="soft"
+                              color={contact.chatId ? "success" : "default"}
+                            >
+                              <Chip.Label>{contact.chatId ? "Nhắn tin" : "Bắt đầu chat"}</Chip.Label>
+                            </Chip>
+                          )}
+                        </button>
+                      );
+                    })}
                   </ScrollShadow>
                 )}
               </Modal.Body>
