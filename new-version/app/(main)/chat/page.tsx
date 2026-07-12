@@ -4,7 +4,7 @@ import { Metadata } from "next";
 import ChatClient from './chat-client';
 
 export const metadata: Metadata = {
-    title: "Trò chuyện realtime",
+    title: "Trò chuyện",
     description: "Hệ thống giáo dục PTEducation.",
 };
 
