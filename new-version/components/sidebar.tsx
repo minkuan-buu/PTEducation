@@ -157,23 +157,23 @@ export const Sidebar = () => {
                     ],
                 },
             ],
-            // manager: [
-            //     {
-            //         title: "Vận hành",
-            //         items: [
-            //             { label: "Tổng quan", href: "/", icon: TbLayoutDashboard },
-            //             { label: "Lớp học", href: "/classes", icon: TbSchool },
-            //             { label: "Lịch học", href: "/schedule", icon: TbCalendar },
-            //         ],
-            //     },
-            //     {
-            //         title: "Báo cáo",
-            //         items: [
-            //             { label: "Điểm danh", href: "/reports/attendance", icon: TbClipboardCheck },
-            //             { label: "Điểm số", href: "/reports/scores", icon: TbReportAnalytics },
-            //         ],
-            //     },
-            // ],
+            manager: [
+                {
+                    title: "",
+                    items: [
+                        { label: "Trang tổng quan", href: "/", icon: TbLayoutDashboard },
+                        { label: "Trò chuyện", href: "/chat", icon: TbMessage },
+                    ],
+                },
+                {
+                    title: "Quản lý",
+                    items: [
+                        { label: "Người dùng", href: "/users", icon: TbUsers },
+                        { label: "Lớp học", href: "/classes", icon: TbSchool },
+                        { label: "Học phí", href: "/tuitions", icon: TbReceipt2 },
+                    ],
+                },
+            ],
             null: []
         }),
         [],
