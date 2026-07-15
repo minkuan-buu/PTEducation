@@ -20,10 +20,19 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+            if [ -d "$HOME/.local/share/fnm" ]; then
+              export PATH="$HOME/.local/share/fnm:$PATH"
+              eval "`fnm env`"
+            fi
+
             cd ${{ secrets.DEPLOY_PATH }}
 
             sudo git reset --hard
             sudo git pull origin main
 
             npm run build
+            
             pm2 restart 0
