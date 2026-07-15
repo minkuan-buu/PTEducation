@@ -59,12 +59,11 @@ export default function UserClient({ initialData }: UserClientProps) {
             isValid = false;
         }
 
-        if (!newUser.phone.trim()) {
-            errors.phone = "Vui lòng nhập số điện thoại";
-            isValid = false;
-        } else if (!/^0\d{9}$/.test(newUser.phone)) {
-            errors.phone = "Số điện thoại không hợp lệ (phải có 10 số bắt đầu bằng 0)";
-            isValid = false;
+        if (newUser.phone.trim()) {
+            if (!/^0\d{9}$/.test(newUser.phone)) {
+                errors.phone = "Số điện thoại không hợp lệ (phải có 10 số bắt đầu bằng 0)";
+                isValid = false;
+            }
         }
 
         setFormErrors(errors);
@@ -159,12 +158,11 @@ export default function UserClient({ initialData }: UserClientProps) {
                                                     <FieldError />
                                                 </TextField>
                                                 <TextField
-                                                    isRequired
-                                                    name="phone"
-                                                >
-                                                    <Label htmlFor="phone" className="font-medium text-foreground/80">
-                                                        Số điện thoại
-                                                    </Label>
+                                                     name="phone"
+                                                 >
+                                                     <Label htmlFor="phone" className="font-medium text-foreground/80">
+                                                         Số điện thoại (tùy chọn)
+                                                     </Label>
                                                     <div className="flex gap-2">
                                                         <Input
                                                             suppressHydrationWarning
