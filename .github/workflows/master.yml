@@ -30,9 +30,18 @@ jobs:
 
             cd ${{ secrets.DEPLOY_PATH }}
 
+            # Back up the .env file if it exists to prevent it from being overwritten by git reset
+            if [ -f .env ]; then
+              cp .env .env.backup
+            fi
+
             sudo git reset --hard
             sudo git pull origin main
 
+            # Restore the backed-up .env file
+            if [ -f .env.backup ]; then
+              mv .env.backup .env
+            fi
+
             npm run build
-            
             pm2 restart 0
