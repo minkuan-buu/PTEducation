@@ -1,0 +1,287 @@
+﻿diff --git a/new-version/app/(main)/classes/[id]/_components/class-general-panel.tsx b/new-version/app/(main)/classes/[id]/_components/class-general-panel.tsx
+index 19f2823..9f37fdf 100644
+--- a/new-version/app/(main)/classes/[id]/_components/class-general-panel.tsx
++++ b/new-version/app/(main)/classes/[id]/_components/class-general-panel.tsx
+@@ -1,7 +1,7 @@
+ "use client";
+ 
+ import { Icon } from "@iconify/react";
+-import { Button, Chip, cn, Modal, Pagination, Spinner, Table, Tooltip, useOverlayState } from "@heroui/react";
++import { Button, Chip, cn, Modal, Pagination, Spinner, Table, Tooltip, useOverlayState, Dropdown } from "@heroui/react";
+ import type { Key } from "@react-types/shared";
+ import { useEffect, useMemo, useState } from "react";
+ import { useQueryClient } from "@tanstack/react-query";
+@@ -26,6 +26,18 @@ function UsersTable({ classId, isPendingFilter }: { classId: string; isPendingFi
+     const totalPages = Math.max(1, data?.totalPages ?? 1);
+     const hasNextPage = (data?.pageNumber ?? 1) < totalPages;
+ 
++    const [isScaled, setIsScaled] = useState(false);
++
++    useEffect(() => {
++        const checkScale = () => {
++            setIsScaled(window.devicePixelRatio >= 1.25 || window.innerWidth < 1280);
++        };
++
++        checkScale();
++        window.addEventListener("resize", checkScale);
++        return () => window.removeEventListener("resize", checkScale);
++    }, []);
++
+     useEffect(() => {
+         setPageIndex((prev) => (prev === 1 ? prev : 1));
+     }, [keyword]);
+@@ -101,16 +113,28 @@ function UsersTable({ classId, isPendingFilter }: { classId: string; isPendingFi
+         }
+ 
+         return (
+-            <div className="flex h-10 gap-2">
++            <div className="flex h-10 gap-2 items-center">
+                 <Tooltip delay={0}>
+-                    <Button className="rounded-full" size="md" variant="outline" onPress={() => handlePress("Approved")}>
+-                        <Icon icon="simple-line-icons:check" color="#38b000" width="20" height="20" />
+-                    </Button>
++                    <button
++                        className="button button--icon-only button--sm button--outline rounded-full cursor-pointer flex items-center justify-center"
++                        onClick={() => handlePress("Approved")}
++                    >
++                        <Icon icon="simple-line-icons:check" color="#38b000" width="16" height="16" />
++                    </button>
++                    <Tooltip.Content placement="bottom">
++                        Ph├¬ duyß╗çt
++                    </Tooltip.Content>
+                 </Tooltip>
+                 <Tooltip delay={0}>
+-                    <Button className="rounded-full" size="md" variant="outline" onPress={() => handlePress("Rejected")}>
+-                        <Icon icon="oui:cross-in-circle-empty" color="#fd0a3a" width="20" height="20" />
+-                    </Button>
++                    <button
++                        className="button button--icon-only button--sm button--outline rounded-full cursor-pointer flex items-center justify-center"
++                        onClick={() => handlePress("Rejected")}
++                    >
++                        <Icon icon="oui:cross-in-circle-empty" color="#fd0a3a" width="16" height="16" />
++                    </button>
++                    <Tooltip.Content placement="bottom">
++                        Tß╗½ chß╗æi
++                    </Tooltip.Content>
+                 </Tooltip>
+             </div>
+         );
+@@ -142,31 +166,70 @@ function UsersTable({ classId, isPendingFilter }: { classId: string; isPendingFi
+             );
+         }
+ 
++        if (isScaled) {
++            return (
++                <div className="flex h-10 items-center justify-center">
++                    <Dropdown>
++                        <button className="cursor-pointer hover:bg-muted/20 rounded-full p-2 transition-colors flex items-center justify-center outline-none border-none bg-transparent">
++                            <Icon icon="lucide:more-vertical" width="16" height="16" />
++                        </button>
++                        <Dropdown.Popover>
++                            <Dropdown.Menu onAction={(key) => {
++                                if (key === "delete") void handlePress();
++                            }}>
++                                <Dropdown.Item id="edit" textValue="Chß╗ënh sß╗¡a">
++                                    <div className="flex items-center gap-2">
++                                        <Icon icon="lucide:edit" width="16" height="16" />
++                                        <span>Chß╗ënh sß╗¡a</span>
++                                    </div>
++                                </Dropdown.Item>
++                                <Dropdown.Item id="disable" textValue="V├┤ hiß╗çu h├│a">
++                                    <div className="flex items-center gap-2">
++                                        <Icon icon="ep:remove" width="16" height="16" />
++                                        <span>V├┤ hiß╗çu h├│a</span>
++                                    </div>
++                                </Dropdown.Item>
++                                <Dropdown.Item id="delete" textValue="X├│a" className="text-danger" variant="danger">
++                                    <div className="flex items-center gap-2 text-red-500">
++                                        <Icon icon="mingcute:delete-2-fill" width="16" height="16" />
++                                        <span>X├│a</span>
++                                    </div>
++                                </Dropdown.Item>
++                            </Dropdown.Menu>
++                        </Dropdown.Popover>
++                    </Dropdown>
++                </div>
++            );
++        }
++
+         return (
+-            <div className="flex h-10 gap-2">
++            <div className="flex h-10 gap-2 items-center">
+                 <Tooltip delay={0}>
+-                    <Button className="rounded-full" size="md" variant="outline">
+-                        <Icon icon="lucide:edit" width="20" height="20" />
+-                        <Tooltip.Content placement="bottom">
+-                            <p>Chß╗ënh sß╗¡a</p>
+-                        </Tooltip.Content>
+-                    </Button>
++                    <button className="button button--icon-only button--sm button--outline rounded-full cursor-pointer flex items-center justify-center">
++                        <Icon icon="lucide:edit" width="16" height="16" />
++                    </button>
++                    <Tooltip.Content placement="bottom">
++                        Chß╗ënh sß╗¡a
++                    </Tooltip.Content>
+                 </Tooltip>
+                 <Tooltip delay={0}>
+-                    <Button className="rounded-full" size="md" variant="outline">
+-                        <Icon icon="ep:remove" width="20" height="20" />
+-                        <Tooltip.Content placement="bottom">
+-                            <p>V├┤ hiß╗çu h├│a</p>
+-                        </Tooltip.Content>
+-                    </Button>
++                    <button className="button button--icon-only button--sm button--outline rounded-full cursor-pointer flex items-center justify-center">
++                        <Icon icon="ep:remove" width="16" height="16" />
++                    </button>
++                    <Tooltip.Content placement="bottom">
++                        V├┤ hiß╗çu h├│a
++                    </Tooltip.Content>
+                 </Tooltip>
+                 <Tooltip delay={0}>
+-                    <Button className="rounded-full" size="md" variant="outline" onPress={() => handlePress()}>
+-                        <Icon icon="mingcute:delete-2-fill" color="#fd0a3a" width="20" height="20" />
+-                        <Tooltip.Content placement="bottom">
+-                            <p>X├│a</p>
+-                        </Tooltip.Content>
+-                    </Button>
++                    <button
++                        className="button button--icon-only button--sm button--outline rounded-full cursor-pointer flex items-center justify-center"
++                        onClick={() => handlePress()}
++                    >
++                        <Icon icon="mingcute:delete-2-fill" color="#fd0a3a" width="16" height="16" />
++                    </button>
++                    <Tooltip.Content placement="bottom">
++                        X├│a
++                    </Tooltip.Content>
+                 </Tooltip>
+             </div>
+         );
+@@ -191,11 +254,11 @@ function UsersTable({ classId, isPendingFilter }: { classId: string; isPendingFi
+                 </Table.Cell>
+ 
+                 <Table.Cell>
+-                    <div className="flex flex-row items-center gap-4">
++                    <div className="flex flex-row flex-wrap items-center gap-2">
+                         <span>{item.name}</span>
+                         {isGuardian && (item as AdminGuardian).isPrimary ? (
+-                            <Chip color="accent">
+-                                <Chip.Label>Li├¬n hß╗ç ch├¡nh</Chip.Label>
++                            <Chip color="accent" size="sm">
++                                <Chip.Label className="text-[10px]">Li├¬n hß╗ç ch├¡nh</Chip.Label>
+                             </Chip>
+                         ) : null}
+                     </div>
+@@ -223,23 +286,24 @@ function UsersTable({ classId, isPendingFilter }: { classId: string; isPendingFi
+     const [expandedKeys, setExpandedKeys] = useState<Set<Key>>(() => new Set(["1"]));
+ 
+     return (
+-        <Table>
+-            <Table.ScrollContainer>
+-                <Table.Content aria-label="User management table" expandedKeys={expandedKeys} selectionMode="none" treeColumn="id" onExpandedChange={setExpandedKeys}>
+-                    <Table.Header>
+-                        <Table.Column id="id" isRowHeader>
+-                            ID
+-                        </Table.Column>
+-                        <Table.Column id="name">Hß╗ì T├¬n</Table.Column>
+-                        <Table.Column id="email">Email</Table.Column>
+-                        <Table.Column id="phone">─Éiß╗çn thoß║íi</Table.Column>
+-                        <Table.Column id="role">Vai tr├▓/Quan hß╗ç</Table.Column>
+-                        <Table.Column id="actions">H├ánh ─æß╗Öng</Table.Column>
+-                    </Table.Header>
+-                    <Table.Body items={tableData}>{(item) => renderExpandableRow(item as AdminStudent)}</Table.Body>
+-                </Table.Content>
+-            </Table.ScrollContainer>
+-            <Table.Footer>
++        <div className="w-full overflow-x-auto custom-scrollbar">
++            <Table>
++                <Table.ScrollContainer>
++                    <Table.Content aria-label="User management table" expandedKeys={expandedKeys} selectionMode="none" treeColumn="id" onExpandedChange={setExpandedKeys}>
++                        <Table.Header>
++                            <Table.Column id="id" isRowHeader>
++                                ID
++                            </Table.Column>
++                            <Table.Column id="name">Hß╗ì T├¬n</Table.Column>
++                            <Table.Column id="email">Email</Table.Column>
++                            <Table.Column id="phone">─Éiß╗çn thoß║íi</Table.Column>
++                            <Table.Column id="role">Vai tr├▓/Quan hß╗ç</Table.Column>
++                            <Table.Column id="actions" className="w-[140px] min-w-[140px]">H├ánh ─æß╗Öng</Table.Column>
++                        </Table.Header>
++                        <Table.Body items={tableData}>{(item) => renderExpandableRow(item as AdminStudent)}</Table.Body>
++                    </Table.Content>
++                </Table.ScrollContainer>
++                <Table.Footer>
+                 {tableData.length === 0 && !isPending ? (
+                     <div className="flex w-full items-center justify-center py-4">
+                         <p className="text-center text-sm text-muted-foreground">Danh s├ích trß╗æng</p>
+@@ -274,7 +338,8 @@ function UsersTable({ classId, isPendingFilter }: { classId: string; isPendingFi
+                 )}
+                 {isPending ? <p className="mt-3 text-center text-sm text-muted-foreground">─Éang tß║úi dß╗» liß╗çu...</p> : null}
+             </Table.Footer>
+-        </Table>
++            </Table>
++        </div>
+     );
+ }
+ 
+@@ -338,6 +403,17 @@ export function ClassGeneralPanel({ classId, classData }: { classId: string; cla
+     const { isOpen, setOpen, close } = useOverlayState();
+     const [schedules, setSchedules] = useState<ClassSchedule[]>([]);
+     const [isPendingFilter, setIsPendingFilter] = useState(false);
++    const [isScaled, setIsScaled] = useState(false);
++
++    useEffect(() => {
++        const checkScale = () => {
++            setIsScaled(window.devicePixelRatio >= 1.25 || window.innerWidth < 1280);
++        };
++
++        checkScale();
++        window.addEventListener("resize", checkScale);
++        return () => window.removeEventListener("resize", checkScale);
++    }, []);
+ 
+     const updateClassMutation = useUpdateClass(classId, () => {
+         handleCloseModal();
+@@ -416,7 +492,7 @@ export function ClassGeneralPanel({ classId, classData }: { classId: string; cla
+     return (
+         <section>
+             <div className="grid grid-cols-1 gap-6 md:grid-cols-12">
+-                <div className="md:col-span-8">
++                <div className="md:col-span-8 min-w-0">
+                     <div className="mb-4 flex items-center justify-between">
+                         <h2 className="text-lg font-semibold">Danh s├ích hß╗ìc sinh</h2>
+                         <Button variant={!isPendingFilter ? "outline" : "primary"} onClick={() => setIsPendingFilter(!isPendingFilter)}>
+@@ -432,11 +508,29 @@ export function ClassGeneralPanel({ classId, classData }: { classId: string; cla
+                             <Card logo={<CgCalendarToday className="h-5 w-5" />} title="Buß╗òi hß╗ìc tiß║┐p theo sß║╜ bß║»t ─æß║ºu v├áo" description={`${classData.nextSession != null ? formatDateTimeNextSession(classData.nextSession) : "Ch╞░a c├│ buß╗òi hß╗ìc tiß║┐p theo"}`} />
+                         </div>
+                         <div>
+-                            <div className="mb-4 flex items-center justify-between">
+-                                <h2 className="text-lg font-semibold">Lß╗ïch hß╗ìc trong tuß║ºn</h2>
+-                                <Button variant="primary" onPress={() => { setSchedules(classData.weeklySchedules ? [...classData.weeklySchedules] : []); setOpen(true); }}>
+-                                    Chß╗ënh sß╗¡a lß╗ïch
+-                                </Button>
++                            <div className="mb-4 flex items-center justify-between gap-2">
++                                <h2 className="text-lg font-semibold truncate">Lß╗ïch hß╗ìc trong tuß║ºn</h2>
++                                {isScaled ? (
++                                    <Tooltip delay={0}>
++                                        <button
++                                            className="h-10 w-10 flex items-center justify-center rounded-full bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
++                                            onClick={() => {
++                                                setSchedules(classData.weeklySchedules ? [...classData.weeklySchedules] : []);
++                                                setOpen(true);
++                                            }}
++                                            aria-label="Chß╗ënh sß╗¡a lß╗ïch hß╗ìc"
++                                        >
++                                            <Icon icon="lucide:calendar-cog" className="size-5" />
++                                        </button>
++                                        <Tooltip.Content>
++                                            Chß╗ënh sß╗¡a lß╗ïch hß╗ìc
++                                        </Tooltip.Content>
++                                    </Tooltip>
++                                ) : (
++                                    <Button variant="primary" onPress={() => { setSchedules(classData.weeklySchedules ? [...classData.weeklySchedules] : []); setOpen(true); }}>
++                                        Chß╗ënh sß╗¡a lß╗ïch
++                                    </Button>
++                                )}
+                             </div>
+                             <Modal>
+                                 <Modal.Backdrop isOpen={isOpen} onOpenChange={handleOpenChange}>

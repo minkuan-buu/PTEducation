@@ -227,7 +227,7 @@ export default function AttendancePage() {
                     <Select
                         placeholder="Chọn tháng xem điểm danh"
                         aria-label="Chọn tháng xem điểm danh"
-                        className="rounded-lg min-w-50 font-semibold"
+                        className="rounded-lg w-full font-semibold"
                         value={selectedMonthId}
                         onChange={(key) => setSelectedMonthId(String(key))}
                     >
@@ -378,9 +378,9 @@ export default function AttendancePage() {
                                 <p className="text-xs text-muted-foreground">Chưa có lịch sử điểm danh trong tháng này.</p>
                             ) : (
                                 attendanceLogs.map((log, idx) => (
-                                    <div key={idx} className="flex items-center justify-between p-3 border border-divider/60 rounded-xl bg-content1/20">
-                                        <div className="flex flex-col gap-0.5">
-                                            <div className="flex flex-row gap-2 items-center">
+                                    <div key={idx} className="flex items-center justify-between gap-3 p-3 border border-divider/60 rounded-xl bg-content1/20">
+                                        <div className="flex flex-col gap-1 min-w-0 flex-1">
+                                            <div className="flex flex-wrap gap-2 items-center">
                                                 <p className="text-sm font-semibold">{formatDateTime(log.date)}</p>
                                                 {log.makeUpAttendance && (
                                                     <Chip

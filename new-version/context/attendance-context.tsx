@@ -105,7 +105,22 @@ export function AttendanceProvider({ children }: { children: React.ReactNode }) 
         const connection = new HubConnectionBuilder()
             .withUrl(buildAttendanceHubUrl(), { withCredentials: true })
             .withAutomaticReconnect()
-            .configureLogging(LogLevel.Information)
+            .configureLogging({
+                log(logLevel: LogLevel, message: string) {
+                    if (message.includes("stopped during negotiation")) {
+                        return;
+                    }
+                    if (logLevel >= LogLevel.Information) {
+                        if (logLevel === LogLevel.Error || logLevel === LogLevel.Critical) {
+                            console.error(message);
+                        } else if (logLevel === LogLevel.Warning) {
+                            console.warn(message);
+                        } else {
+                            console.info(message);
+                        }
+                    }
+                }
+            })
             .build();
 
         connectionRef.current = connection;
@@ -204,9 +219,12 @@ export function AttendanceProvider({ children }: { children: React.ReactNode }) 
             } catch { }
         });
 
+        let isMounted = true;
+
         connection
             .start()
             .then(() => {
+                if (!isMounted) return;
                 setConnectionStatus("connected");
                 void resubscribeClassGroups();
 
@@ -216,6 +234,7 @@ export function AttendanceProvider({ children }: { children: React.ReactNode }) 
                 } catch { }
             })
             .catch((connectionError: unknown) => {
+                if (!isMounted) return;
                 const message = connectionError instanceof Error ? connectionError.message : "Không thể kết nối SignalR";
                 setConnectionStatus("error");
                 setErrorMessage(message);
@@ -226,6 +245,7 @@ export function AttendanceProvider({ children }: { children: React.ReactNode }) 
             });
 
         return () => {
+            isMounted = false;
             connection.off(ATTENDANCE_SIGNALR_EVENTS.serverTimeSynced, applyServerTime);
             connection.off(ATTENDANCE_SIGNALR_EVENTS.windowStateChanged, applyWindowState);
             connection.off(ATTENDANCE_SIGNALR_EVENTS.attendanceUpdated, applyWindowState);

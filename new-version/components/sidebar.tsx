@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Button, Skeleton } from "@heroui/react";
+import { Button, Skeleton, Tooltip, Avatar, buttonVariants } from "@heroui/react";
+import { useSidebar } from "@/context/sidebar-context";
 
 import { useAttendanceRealtime } from "@/context/attendance-context";
 import { useChatRealtime } from "@/context/chat-context";
@@ -21,7 +22,9 @@ import {
     TbReportAnalytics,
     TbLogout2,
     TbReceipt2,
-    TbMessage
+    TbMessage,
+    TbChevronLeft,
+    TbChevronRight
 } from "react-icons/tb";
 import NextLink from "next/link";
 import OpenIcon from '@iconify-react/majesticons/open';
@@ -58,6 +61,7 @@ type MenuSection = {
 export const Sidebar = () => {
     const router = useRouter();
     const pathname = usePathname();
+    const { isCollapsed, toggleSidebar } = useSidebar();
     const { user, isAuthenticated, clearUser, isLoading } = useUser();
     const attendanceRealtime = useAttendanceRealtime();
     const { totalUnreadCount } = useChatRealtime();
@@ -202,61 +206,97 @@ export const Sidebar = () => {
     }
 
     return (
-        <aside className="fixed left-0 top-0 z-50 h-screen w-72 border-r border-separator bg-background/95 backdrop-blur-md flex flex-col">
-            <div className="flex h-18 items-center justify-between px-6 shrink-0">
-                <div className="flex flex-col">
-                    <p className="font-bold text-inherit">PTEducation</p>
-                    <span className="text-xs text-muted">Biological Sciences</span>
+        <aside className={`fixed left-0 top-0 z-50 h-screen border-r border-separator bg-background/95 backdrop-blur-md flex flex-col transition-all duration-300 ${isCollapsed ? "w-20" : "w-64"}`}>
+            <div className={`flex items-center shrink-0 transition-all duration-300 ${isCollapsed ? "flex-col py-4 gap-3 justify-center w-20 h-auto" : "h-18 justify-between px-6 w-64"}`}>
+                {!isCollapsed ? (
+                    <div className="flex flex-col">
+                        <p className="font-bold text-inherit">PTEducation</p>
+                        <span className="text-xs text-muted">Biological Sciences</span>
+                    </div>
+                ) : null}
+                <div className={`flex items-center gap-2 ${isCollapsed ? "flex-col-reverse" : "flex-row"}`}>
+                    <ThemeSwitch />
+                    <Button
+                        isIconOnly
+                        size="sm"
+                        variant="ghost"
+                        className="text-muted-foreground hover:bg-content2 hover:text-foreground transition-all duration-200 rounded-xl"
+                        onPress={toggleSidebar}
+                        aria-label={isCollapsed ? "Mở rộng" : "Thu gọn"}
+                    >
+                        {isCollapsed ? <TbChevronRight className="size-4" /> : <TbChevronLeft className="size-4" />}
+                    </Button>
                 </div>
-                <ThemeSwitch />
             </div>
 
             <div className="border-t border-divider/60" />
 
-            <div className="flex-1 overflow-y-auto no-scrollbar py-4 space-y-5 px-3">
-                <div className="rounded-2xl border border-divider bg-content1/80 p-4 shadow-sm backdrop-blur-md transition-all duration-300 hover:border-divider/80">
-                    <div className="flex items-center justify-between gap-2">
-                        <div>
-                            {/* <p className="text-xs uppercase tracking-wide text-muted">Đồng hồ hệ thống</p> */}
-                            <p className="text-2xl font-semibold tabular-nums tracking-tight">{displayNow ? formatClock(displayNow) : "--:--:--"}</p>
-                        </div>
-                        <span
-                            aria-label={attendanceRealtime.connectionStatus}
-                            title={attendanceRealtime.connectionStatus}
-                            className="relative inline-flex size-5 items-center justify-center"
-                        >
-                            {attendanceRealtime.connectionStatus === "connected" ? (
-                                <>
-                                    <span
-                                        className={`absolute inline-block size-5 rounded-full ${connectionBadge.dotClass} opacity-20 ${connectionBadge.animateClass}`}
-                                        style={{ animationDuration: "2.5s" }}
-                                    />
-                                    <span
-                                        className={`absolute inline-block size-4 rounded-full ${connectionBadge.dotClass} opacity-35 ${connectionBadge.animateClass}`}
-                                        style={{ animationDuration: "2.5s", animationDelay: "0.8s" }}
-                                    />
-                                </>
-                            ) : null}
-                            <span
-                                className={`relative inline-block size-2.5 rounded-full ${connectionBadge.dotClass} shadow-[0_0_0_4px_rgba(255,255,255,0.08)]`}
-                            />
-                        </span>
-                    </div>
-                    <p className="mt-2 text-xs text-muted">{displayNow ? formatDateLabel(displayNow) : "Đang tải giờ..."}</p>
-                    {/* <p className="mt-1 text-xs text-muted">
-                        {attendanceRealtime.serverTime ? "Đang sync giờ từ BE" : "Đang dùng giờ máy tạm thời"}
-                    </p> */}
-                </div>
-
-                <div>
-                    {isLoading ? (
-                        <div className="w-full rounded-xl px-3 py-3 border border-divider/60 bg-content2/50 flex flex-row gap-4 items-center">
-                            <Skeleton className="size-10 rounded-full" />
-                            <div className="flex flex-col gap-2 flex-1">
-                                <Skeleton className="h-4 w-2/3 rounded-lg" />
-                                <Skeleton className="h-3 w-1/3 rounded-lg" />
+            <div className={`flex-1 overflow-y-auto custom-scrollbar py-4 space-y-5 transition-all duration-300 ${isCollapsed ? "px-2" : "px-3"}`}>
+                {!isCollapsed && (
+                    <div className="rounded-2xl border border-divider bg-content1/80 p-4 shadow-sm backdrop-blur-md transition-all duration-300 hover:border-divider/80">
+                        <div className="flex items-center justify-between gap-2">
+                            <div>
+                                {/* <p className="text-xs uppercase tracking-wide text-muted">Đồng hồ hệ thống</p> */}
+                                <p className="text-2xl font-semibold tabular-nums tracking-tight">{displayNow ? formatClock(displayNow) : "--:--:--"}</p>
                             </div>
+                            <span
+                                aria-label={attendanceRealtime.connectionStatus}
+                                title={attendanceRealtime.connectionStatus}
+                                className="relative inline-flex size-5 items-center justify-center"
+                            >
+                                {attendanceRealtime.connectionStatus === "connected" ? (
+                                    <>
+                                        <span
+                                            className={`absolute inline-block size-5 rounded-full ${connectionBadge.dotClass} opacity-20 ${connectionBadge.animateClass}`}
+                                            style={{ animationDuration: "2.5s" }}
+                                        />
+                                        <span
+                                            className={`absolute inline-block size-4 rounded-full ${connectionBadge.dotClass} opacity-35 ${connectionBadge.animateClass}`}
+                                            style={{ animationDuration: "2.5s", animationDelay: "0.8s" }}
+                                        />
+                                    </>
+                                ) : null}
+                                <span
+                                    className={`relative inline-block size-2.5 rounded-full ${connectionBadge.dotClass} shadow-[0_0_0_4px_rgba(255,255,255,0.08)]`}
+                                />
+                            </span>
                         </div>
+                        <p className="mt-2 text-xs text-muted">{displayNow ? formatDateLabel(displayNow) : "Đang tải giờ..."}</p>
+                    </div>
+                )}
+
+                <div className="flex justify-center transition-all duration-300">
+                    {isLoading ? (
+                        isCollapsed ? (
+                            <Skeleton className="size-10 rounded-full" />
+                        ) : (
+                            <div className="w-full rounded-xl px-3 py-3 border border-divider/60 bg-content2/50 flex flex-row gap-4 items-center">
+                                <Skeleton className="size-10 rounded-full" />
+                                <div className="flex flex-col gap-2 flex-1">
+                                    <Skeleton className="h-4 w-2/3 rounded-lg" />
+                                    <Skeleton className="h-3 w-1/3 rounded-lg" />
+                                </div>
+                            </div>
+                        )
+                    ) : isCollapsed ? (
+                        <Tooltip delay={0}>
+                            <div className="cursor-pointer" onClick={() => router.push("/profile")}>
+                                <Avatar size="md">
+                                    {user?.avatarUrl ? (
+                                        <Avatar.Image
+                                            alt={user.name || "User"}
+                                            src={user.avatarUrl}
+                                        />
+                                    ) : null}
+                                    <Avatar.Fallback className="border-none bg-gradient-to-br from-[#00b4d8] to-[#90e0ef] text-white text-xs">
+                                        {(user?.name || "User").split(" ").map((part) => part[0]).join("").slice(-2).toUpperCase()}
+                                    </Avatar.Fallback>
+                                </Avatar>
+                            </div>
+                            <Tooltip.Content placement="right">
+                                <p>{`${user?.name || "User"} (${user?.role?.toLocaleLowerCase() === "guardian" ? "Phụ huynh" : user?.role?.toLocaleLowerCase() === "admin" ? "Quản trị viên" : user?.role?.toLocaleLowerCase() === "manager" ? "Quản lý" : "Học sinh"})`}</p>
+                            </Tooltip.Content>
+                        </Tooltip>
                     ) : (
                         <UserCard name={user?.name || "User"} role={user?.role?.toLocaleLowerCase() === "guardian" ? "Phụ huynh" : user?.role?.toLocaleLowerCase() === "admin" ? "Quản trị viên" : user?.role?.toLocaleLowerCase() === "manager" ? "Quản lý" : "Học sinh"} avatarUrl={user?.avatarUrl || ""} />
                     )}
@@ -264,12 +304,16 @@ export const Sidebar = () => {
 
                 <nav className="py-2">
                     <div className="flex flex-col gap-5">
-                        {sections.map((section) => (
-                            <div key={section.title} className="flex flex-col gap-2">
+                        {sections.map((section, secIdx) => (
+                            <div key={section.title || secIdx} className="flex flex-col gap-2">
                                 {section.title && (
-                                    <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
-                                        {section.title}
-                                    </p>
+                                    !isCollapsed ? (
+                                        <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
+                                            {section.title}
+                                        </p>
+                                    ) : (
+                                        <div className="border-t border-divider/40 mx-2 my-1" />
+                                    )
                                 )}
                                 <div className="flex flex-col gap-1">
                                     {section.items.map((item) => {
@@ -280,25 +324,43 @@ export const Sidebar = () => {
 
                                         const Icon = item.icon;
 
-                                        return (
-                                            <NextLink key={item.href} href={item.href} className="w-full">
-                                                <Button
-                                                    className={
-                                                        isActive
-                                                            ? "group w-full h-11 justify-start rounded-xl px-4 text-sm font-semibold text-white bg-gradient-to-tr from-[#48cae4] to-[#00b4d8] shadow-md shadow-[#00b4d8]/20 transition-all duration-300 transform scale-[1.01] flex items-center gap-3"
-                                                            : "group w-full h-11 justify-start rounded-xl px-4 text-sm font-medium text-foreground hover:bg-content2 hover:text-foreground transition-all duration-200 flex items-center gap-3"
-                                                    }
-                                                    fullWidth
-                                                    variant="ghost"
-                                                >
+                                        const buttonClass = isActive
+                                            ? "group w-full h-11 rounded-xl text-sm font-semibold text-white bg-gradient-to-tr from-[#48cae4] to-[#00b4d8] shadow-md shadow-[#00b4d8]/20 transition-all duration-300 transform scale-[1.01] flex items-center"
+                                            : "group w-full h-11 rounded-xl text-sm font-medium text-foreground hover:bg-content2 hover:text-foreground transition-all duration-200 flex items-center";
+
+                                        const buttonContent = (
+                                            <div
+                                                className={`${buttonClass} ${isCollapsed ? "justify-center px-0" : "justify-start px-4 gap-3"} w-full cursor-pointer h-11`}
+                                            >
+                                                <div className="relative flex items-center justify-center">
                                                     <Icon className="size-5 shrink-0 transition-transform duration-200 group-hover:scale-110" />
-                                                    <span>{item.label}</span>
-                                                    {item.href === "/chat" && totalUnreadCount > 0 && (
-                                                        <span className="ml-auto flex items-center justify-center size-5 rounded-full text-[10px] font-bold text-white bg-red-500 shadow-sm animate-pulse">
+                                                    {isCollapsed && item.href === "/chat" && totalUnreadCount > 0 && (
+                                                        <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center size-4 rounded-full text-[8px] font-bold text-white bg-red-500 shadow-sm animate-pulse">
                                                             {totalUnreadCount > 99 ? "99+" : totalUnreadCount}
                                                         </span>
                                                     )}
-                                                </Button>
+                                                </div>
+                                                {!isCollapsed && <span>{item.label}</span>}
+                                                {!isCollapsed && item.href === "/chat" && totalUnreadCount > 0 && (
+                                                    <span className="ml-auto flex items-center justify-center size-5 rounded-full text-[10px] font-bold text-white bg-red-500 shadow-sm animate-pulse">
+                                                        {totalUnreadCount > 99 ? "99+" : totalUnreadCount}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        );
+
+                                        return (
+                                            <NextLink key={item.href} href={item.href} className="w-full flex justify-center no-underline">
+                                                {isCollapsed ? (
+                                                    <Tooltip delay={0}>
+                                                        <div className="w-full px-2 flex justify-center">{buttonContent}</div>
+                                                        <Tooltip.Content placement="right">
+                                                            <p>{item.label}</p>
+                                                        </Tooltip.Content>
+                                                    </Tooltip>
+                                                ) : (
+                                                    buttonContent
+                                                )}
                                             </NextLink>
                                         );
                                     })}
@@ -308,29 +370,73 @@ export const Sidebar = () => {
                     </div>
                 </nav>
             </div>
-            <div className="absolute bottom-0 left-0 w-full border-t border-divider p-4">
+            <div className={`mt-auto border-t border-divider shrink-0 bg-background/95 transition-all duration-300 ${isCollapsed ? "p-2" : "p-4"}`}>
                 <div className="flex flex-col gap-2">
-                    <NextLink className="flex items-center gap-1" href="https://pteducation.edu.vn/" target="_blank" rel="noopener noreferrer">
+                    {isCollapsed ? (
+                        <Tooltip delay={0}>
+                            <div className="w-full flex justify-center">
+                                <a
+                                    href="https://pteducation.edu.vn/"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className={`${buttonVariants({
+                                        variant: "secondary",
+                                        size: "lg",
+                                        isIconOnly: true,
+                                    })} rounded-xl`}
+                                >
+                                    <OpenIcon height="1.2em" />
+                                </a>
+                            </div>
+                            <Tooltip.Content placement="right">
+                                <p>Truy cập E-Learning</p>
+                            </Tooltip.Content>
+                        </Tooltip>
+                    ) : (
+                        <a
+                            href="https://pteducation.edu.vn/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`${buttonVariants({
+                                variant: "secondary",
+                                size: "lg",
+                                fullWidth: true,
+                            })} w-full justify-start rounded-xl px-3 py-2 text-md font-medium`}
+                        >
+                            <OpenIcon height="1em" />
+                            Truy cập E-Learning
+                        </a>
+                    )}
+
+                    {isCollapsed ? (
+                        <Tooltip delay={0}>
+                            <div className="w-full flex justify-center">
+                                <Button
+                                    size="lg"
+                                    isIconOnly
+                                    className="rounded-xl"
+                                    onPress={handleLogout}
+                                    variant="danger-soft"
+                                >
+                                    <TbLogout2 className="size-5" />
+                                </Button>
+                            </div>
+                            <Tooltip.Content placement="right">
+                                <p>Đăng xuất</p>
+                            </Tooltip.Content>
+                        </Tooltip>
+                    ) : (
                         <Button
                             size="lg"
                             className="w-full justify-start rounded-xl px-3 py-2 text-md font-medium"
                             fullWidth
-                            variant="secondary"
+                            onPress={handleLogout}
+                            variant="danger-soft"
                         >
-                            <OpenIcon height="1em" />
-                            Truy cập E-Learning
+                            <TbLogout2 />
+                            Đăng xuất
                         </Button>
-                    </NextLink>
-                    <Button
-                        size="lg"
-                        className="w-full justify-start rounded-xl px-3 py-2 text-md font-medium"
-                        fullWidth
-                        onPress={handleLogout}
-                        variant="danger-soft"
-                    >
-                        <TbLogout2 />
-                        Đăng xuất
-                    </Button>
+                    )}
                 </div>
             </div>
         </aside>

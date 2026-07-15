@@ -81,8 +81,14 @@ function writeUser(newUser: UserProfile | null) {
     _cache = newUser;
     if (newUser) {
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(newUser));
+        try {
+            document.cookie = `user_role=${newUser.role}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
+        } catch {}
     } else {
         window.localStorage.removeItem(STORAGE_KEY);
+        try {
+            document.cookie = "user_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        } catch {}
     }
     _emitChange();
 }
@@ -92,9 +98,10 @@ function writeUser(newUser: UserProfile | null) {
 export interface UserProviderProps {
     children: React.ReactNode;
     initialUser?: UserProfile | null;
+    initialRole?: string | null;
 }
 
-export function UserProvider({ children, initialUser = null }: UserProviderProps) {
+export function UserProvider({ children, initialUser = null, initialRole = null }: UserProviderProps) {
     const user = React.useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
     const [isHydrated, setIsHydrated] = React.useState(false);
 
@@ -107,16 +114,19 @@ export function UserProvider({ children, initialUser = null }: UserProviderProps
         if (initialUser && !_cache) writeUser(initialUser);
     }, [initialUser]);
 
+    // Use server role as fallback before client hydration completes
+    const activeUser = user || (initialRole ? { id: "", name: "User", role: initialRole as any } as UserProfile : null);
+
     const value = React.useMemo<UserContextValue>(
         () => ({
-            user,
-            isAuthenticated: Boolean(user),
+            user: activeUser,
+            isAuthenticated: Boolean(activeUser),
             setUser: writeUser,
             clearUser: () => writeUser(null),
             // While hydrating, we don't know the local user yet, so we are loading.
-            isLoading: !isHydrated && !initialUser,
+            isLoading: !isHydrated && !initialUser && !initialRole,
         }),
-        [user, isHydrated, initialUser],
+        [activeUser, isHydrated, initialUser, initialRole],
     );
 
     return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

@@ -588,14 +588,15 @@ export default function ChatClient() {
                 onSubmit={handleSend}
                 className="px-6 py-4 flex items-center gap-3"
               >
-                <Input
+                <input
                   ref={inputRef}
+                  type="text"
                   placeholder="Nhập tin nhắn..."
                   value={inputText}
                   onChange={(e) => handleInputChange(e.target.value)}
                   disabled={isSending}
                   autoComplete="off"
-                  className="flex-1"
+                  className="flex-grow bg-default-100/80 hover:bg-default-200/50 focus:bg-background border border-divider/50 focus:border-primary/60 rounded-xl px-4 py-2.5 text-sm outline-none transition-all duration-200"
                 />
                 <Button
                   type="submit"

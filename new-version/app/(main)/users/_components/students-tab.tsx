@@ -228,11 +228,11 @@ export function StudentsTab() {
                 </Table.Cell>
 
                 <Table.Cell>
-                    <div className="flex flex-row items-center gap-4">
+                    <div className="flex flex-row flex-wrap items-center gap-2">
                         <span>{item.name}</span>
                         {isGuardian && item.isPrimary ? (
-                            <Chip color="accent">
-                                <Chip.Label>Liên hệ chính</Chip.Label>
+                            <Chip color="accent" size="sm">
+                                <Chip.Label className="text-[10px]">Liên hệ chính</Chip.Label>
                             </Chip>
                         ) : null}
                     </div>

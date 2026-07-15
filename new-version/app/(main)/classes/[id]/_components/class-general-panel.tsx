@@ -1,7 +1,7 @@
 "use client";
 
 import { Icon } from "@iconify/react";
-import { Button, Chip, cn, Modal, Pagination, Spinner, Table, Tooltip, useOverlayState } from "@heroui/react";
+import { Button, Chip, cn, Modal, Pagination, Spinner, Table, Tooltip, useOverlayState, Dropdown } from "@heroui/react";
 import type { Key } from "@react-types/shared";
 import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -25,6 +25,7 @@ function UsersTable({ classId, isPendingFilter }: { classId: string; isPendingFi
     const tableData = useMemo(() => data?.data ?? [], [data]);
     const totalPages = Math.max(1, data?.totalPages ?? 1);
     const hasNextPage = (data?.pageNumber ?? 1) < totalPages;
+
 
     useEffect(() => {
         setPageIndex((prev) => (prev === 1 ? prev : 1));
@@ -106,11 +107,17 @@ function UsersTable({ classId, isPendingFilter }: { classId: string; isPendingFi
                     <Button className="rounded-full" size="md" variant="outline" onPress={() => handlePress("Approved")}>
                         <Icon icon="simple-line-icons:check" color="#38b000" width="20" height="20" />
                     </Button>
+                    <Tooltip.Content placement="bottom">
+                        Phê duyệt
+                    </Tooltip.Content>
                 </Tooltip>
                 <Tooltip delay={0}>
                     <Button className="rounded-full" size="md" variant="outline" onPress={() => handlePress("Rejected")}>
                         <Icon icon="oui:cross-in-circle-empty" color="#fd0a3a" width="20" height="20" />
                     </Button>
+                    <Tooltip.Content placement="bottom">
+                        Từ chối
+                    </Tooltip.Content>
                 </Tooltip>
             </div>
         );
@@ -136,38 +143,45 @@ function UsersTable({ classId, isPendingFilter }: { classId: string; isPendingFi
 
         if (isProcessing) {
             return (
-                <div className="flex h-10 min-w-[88px] items-center">
+                <div className="flex h-10 items-center justify-center">
                     <Spinner size="md" />
                 </div>
             );
         }
 
         return (
-            <div className="flex h-10 gap-2">
-                <Tooltip delay={0}>
-                    <Button className="rounded-full" size="md" variant="outline">
-                        <Icon icon="lucide:edit" width="20" height="20" />
-                        <Tooltip.Content placement="bottom">
-                            <p>Chỉnh sửa</p>
-                        </Tooltip.Content>
-                    </Button>
-                </Tooltip>
-                <Tooltip delay={0}>
-                    <Button className="rounded-full" size="md" variant="outline">
-                        <Icon icon="ep:remove" width="20" height="20" />
-                        <Tooltip.Content placement="bottom">
-                            <p>Vô hiệu hóa</p>
-                        </Tooltip.Content>
-                    </Button>
-                </Tooltip>
-                <Tooltip delay={0}>
-                    <Button className="rounded-full" size="md" variant="outline" onPress={() => handlePress()}>
-                        <Icon icon="mingcute:delete-2-fill" color="#fd0a3a" width="20" height="20" />
-                        <Tooltip.Content placement="bottom">
-                            <p>Xóa</p>
-                        </Tooltip.Content>
-                    </Button>
-                </Tooltip>
+            <div className="flex h-10 items-center justify-center">
+                <Dropdown>
+                    <Dropdown.Trigger className="rounded-full">
+                        <div className="cursor-pointer hover:bg-muted/20 rounded-full p-2 transition-colors flex items-center justify-center">
+                            <Icon icon="lucide:more-vertical" width="18" height="18" />
+                        </div>
+                    </Dropdown.Trigger>
+                    <Dropdown.Popover>
+                        <Dropdown.Menu onAction={(key) => {
+                            if (key === "delete") void handlePress();
+                        }}>
+                            <Dropdown.Item id="edit" textValue="Chỉnh sửa">
+                                <div className="flex items-center gap-2">
+                                    <Icon icon="lucide:edit" width="16" height="16" />
+                                    <span>Chỉnh sửa</span>
+                                </div>
+                            </Dropdown.Item>
+                            <Dropdown.Item id="disable" textValue="Vô hiệu hóa">
+                                <div className="flex items-center gap-2">
+                                    <Icon icon="ep:remove" width="16" height="16" />
+                                    <span>Vô hiệu hóa</span>
+                                </div>
+                            </Dropdown.Item>
+                            <Dropdown.Item id="delete" textValue="Xóa" className="text-danger" variant="danger">
+                                <div className="flex items-center gap-2 text-red-500">
+                                    <Icon icon="mingcute:delete-2-fill" width="16" height="16" />
+                                    <span>Xóa</span>
+                                </div>
+                            </Dropdown.Item>
+                        </Dropdown.Menu>
+                    </Dropdown.Popover>
+                </Dropdown>
             </div>
         );
     };
@@ -191,11 +205,11 @@ function UsersTable({ classId, isPendingFilter }: { classId: string; isPendingFi
                 </Table.Cell>
 
                 <Table.Cell>
-                    <div className="flex flex-row items-center gap-4">
+                    <div className="flex flex-row flex-wrap items-center gap-2">
                         <span>{item.name}</span>
                         {isGuardian && (item as AdminGuardian).isPrimary ? (
-                            <Chip color="accent">
-                                <Chip.Label>Liên hệ chính</Chip.Label>
+                            <Chip color="accent" size="sm">
+                                <Chip.Label className="text-[10px]">Liên hệ chính</Chip.Label>
                             </Chip>
                         ) : null}
                     </div>
@@ -223,23 +237,24 @@ function UsersTable({ classId, isPendingFilter }: { classId: string; isPendingFi
     const [expandedKeys, setExpandedKeys] = useState<Set<Key>>(() => new Set(["1"]));
 
     return (
-        <Table>
-            <Table.ScrollContainer>
-                <Table.Content aria-label="User management table" expandedKeys={expandedKeys} selectionMode="none" treeColumn="id" onExpandedChange={setExpandedKeys}>
-                    <Table.Header>
-                        <Table.Column id="id" isRowHeader>
-                            ID
-                        </Table.Column>
-                        <Table.Column id="name">Họ Tên</Table.Column>
-                        <Table.Column id="email">Email</Table.Column>
-                        <Table.Column id="phone">Điện thoại</Table.Column>
-                        <Table.Column id="role">Vai trò/Quan hệ</Table.Column>
-                        <Table.Column id="actions">Hành động</Table.Column>
-                    </Table.Header>
-                    <Table.Body items={tableData}>{(item) => renderExpandableRow(item as AdminStudent)}</Table.Body>
-                </Table.Content>
-            </Table.ScrollContainer>
-            <Table.Footer>
+        <div className="w-full overflow-x-auto custom-scrollbar">
+            <Table>
+                <Table.ScrollContainer>
+                    <Table.Content aria-label="User management table" expandedKeys={expandedKeys} selectionMode="none" treeColumn="id" onExpandedChange={setExpandedKeys}>
+                        <Table.Header>
+                            <Table.Column id="id" isRowHeader>
+                                ID
+                            </Table.Column>
+                            <Table.Column id="name">Họ Tên</Table.Column>
+                            <Table.Column id="email">Email</Table.Column>
+                            <Table.Column id="phone">Điện thoại</Table.Column>
+                            <Table.Column id="role">Vai trò/Quan hệ</Table.Column>
+                            <Table.Column id="actions">Hành động</Table.Column>
+                        </Table.Header>
+                        <Table.Body items={tableData}>{(item) => renderExpandableRow(item as AdminStudent)}</Table.Body>
+                    </Table.Content>
+                </Table.ScrollContainer>
+                <Table.Footer>
                 {tableData.length === 0 && !isPending ? (
                     <div className="flex w-full items-center justify-center py-4">
                         <p className="text-center text-sm text-muted-foreground">Danh sách trống</p>
@@ -274,7 +289,8 @@ function UsersTable({ classId, isPendingFilter }: { classId: string; isPendingFi
                 )}
                 {isPending ? <p className="mt-3 text-center text-sm text-muted-foreground">Đang tải dữ liệu...</p> : null}
             </Table.Footer>
-        </Table>
+            </Table>
+        </div>
     );
 }
 
@@ -338,6 +354,26 @@ export function ClassGeneralPanel({ classId, classData }: { classId: string; cla
     const { isOpen, setOpen, close } = useOverlayState();
     const [schedules, setSchedules] = useState<ClassSchedule[]>([]);
     const [isPendingFilter, setIsPendingFilter] = useState(false);
+    const [isScaled, setIsScaled] = useState(false);
+
+    useEffect(() => {
+        const checkScale = () => {
+            setIsScaled(window.devicePixelRatio > 1.3);
+        };
+
+        checkScale();
+
+        const mqString = `(resolution: ${window.devicePixelRatio}dppx)`;
+        const mq = window.matchMedia(mqString);
+        const handleChange = () => checkScale();
+        mq.addEventListener("change", handleChange);
+        window.addEventListener("resize", handleChange);
+
+        return () => {
+            mq.removeEventListener("change", handleChange);
+            window.removeEventListener("resize", handleChange);
+        };
+    }, []);
 
     const updateClassMutation = useUpdateClass(classId, () => {
         handleCloseModal();
@@ -416,7 +452,7 @@ export function ClassGeneralPanel({ classId, classData }: { classId: string; cla
     return (
         <section>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-12">
-                <div className="md:col-span-8">
+                <div className="md:col-span-8 min-w-0">
                     <div className="mb-4 flex items-center justify-between">
                         <h2 className="text-lg font-semibold">Danh sách học sinh</h2>
                         <Button variant={!isPendingFilter ? "outline" : "primary"} onClick={() => setIsPendingFilter(!isPendingFilter)}>
@@ -432,11 +468,31 @@ export function ClassGeneralPanel({ classId, classData }: { classId: string; cla
                             <Card logo={<CgCalendarToday className="h-5 w-5" />} title="Buổi học tiếp theo sẽ bắt đầu vào" description={`${classData.nextSession != null ? formatDateTimeNextSession(classData.nextSession) : "Chưa có buổi học tiếp theo"}`} />
                         </div>
                         <div>
-                            <div className="mb-4 flex items-center justify-between">
-                                <h2 className="text-lg font-semibold">Lịch học trong tuần</h2>
-                                <Button variant="primary" onPress={() => { setSchedules(classData.weeklySchedules ? [...classData.weeklySchedules] : []); setOpen(true); }}>
-                                    Chỉnh sửa lịch
-                                </Button>
+                            <div className="mb-4 flex items-center justify-between gap-2">
+                                <h2 className="text-lg font-semibold truncate">Lịch học trong tuần</h2>
+                                {isScaled ? (
+                                    <Tooltip delay={0}>
+                                        <Button
+                                            variant="primary"
+                                            isIconOnly
+                                            className="rounded-full"
+                                            onPress={() => {
+                                                setSchedules(classData.weeklySchedules ? [...classData.weeklySchedules] : []);
+                                                setOpen(true);
+                                            }}
+                                            aria-label="Chỉnh sửa lịch học"
+                                        >
+                                            <Icon icon="lucide:calendar-cog" className="size-5" />
+                                        </Button>
+                                        <Tooltip.Content>
+                                            Chỉnh sửa lịch học
+                                        </Tooltip.Content>
+                                    </Tooltip>
+                                ) : (
+                                    <Button variant="primary" onPress={() => { setSchedules(classData.weeklySchedules ? [...classData.weeklySchedules] : []); setOpen(true); }}>
+                                        Chỉnh sửa lịch
+                                    </Button>
+                                )}
                             </div>
                             <Modal>
                                 <Modal.Backdrop isOpen={isOpen} onOpenChange={handleOpenChange}>

@@ -122,6 +122,135 @@ function getRoleBadge(role: string) {
   return { label: "Học sinh", color: "accent" as const };
 }
 
+type MessageListProps = {
+  messages: ChatMessageResModel[];
+  userId: string | undefined;
+  activeChatId: string | null;
+  currentTypingUsers: { userId: string; userName: string; avatarUrl?: string | null }[] | undefined;
+};
+
+const MessageList = React.memo(({ messages, userId, activeChatId, currentTypingUsers }: MessageListProps) => {
+  if (messages.length === 0) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center text-center p-4">
+        <TbBrandHipchat className="size-12 text-muted-foreground/30 mb-2" />
+        <p className="text-xs font-semibold text-muted-foreground">
+          Chưa có tin nhắn nào.
+        </p>
+        <p className="text-[10px] text-muted-foreground/60 mt-0.5">
+          Gửi tin nhắn đầu tiên để bắt đầu trò chuyện.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {messages.map((msg, idx) => {
+        const isMe = msg.senderId === userId;
+        const badgeInfo = getRoleBadge(msg.senderRole);
+        const showDivider =
+          idx === 0 || isDifferentDay(msg.createdAt, messages[idx - 1].createdAt);
+
+        return (
+          <React.Fragment key={msg.id}>
+            {showDivider && (
+              <div className="flex items-center justify-center my-3 w-full">
+                <div className="border-t border-divider flex-grow" />
+                <span className="mx-2.5 text-[9px] font-bold uppercase tracking-wide text-muted-foreground bg-content2/30 px-2.5 py-0.5 rounded-full border border-divider/40">
+                  {formatDividerDate(msg.createdAt)}
+                </span>
+                <div className="border-t border-divider flex-grow" />
+              </div>
+            )}
+            <div
+              className={`flex gap-2 max-w-[85%] min-w-0 ${isMe ? "ml-auto flex-row-reverse" : "mr-auto"
+                }`}
+            >
+              <Avatar className="size-7 shrink-0 font-semibold text-[9px]">
+                {msg.senderAvatarUrl && <Avatar.Image src={msg.senderAvatarUrl} />}
+                <Avatar.Fallback className="border-none bg-gradient-to-br from-[#00b4d8] to-[#90e0ef] text-white">
+                  {msg.senderName.substring(0, 2).toUpperCase()}
+                </Avatar.Fallback>
+              </Avatar>
+              <div
+                className={`flex flex-col gap-0.5 min-w-0 max-w-full ${isMe ? "items-end" : "items-start"
+                  }`}
+              >
+                {!isMe && (
+                  <div className="flex items-center gap-1 px-1">
+                    <span className="text-[10px] font-semibold text-foreground/80">
+                      {msg.senderName}
+                    </span>
+                    <Chip
+                      size="sm"
+                      variant="soft"
+                      color={badgeInfo.color}
+                      className="h-3 text-[8px] px-1 font-bold rounded"
+                    >
+                      {badgeInfo.label}
+                    </Chip>
+                  </div>
+                )}
+                <div
+                  className={`rounded-2xl px-3 py-1.5 shadow-sm text-xs break-words max-w-full ${isMe
+                    ? "bg-gradient-to-tr from-sky-400 to-blue-500 text-white rounded-tr-none"
+                    : "bg-content1 border border-divider/60 text-foreground rounded-tl-none"
+                    }`}
+                >
+                  {msg.content}
+                </div>
+                <span className="text-[8px] text-muted-foreground px-1 mt-0.5">
+                  {formatMessageTime(msg.createdAt)}
+                </span>
+              </div>
+            </div>
+          </React.Fragment>
+        );
+      })}
+      {activeChatId && currentTypingUsers && currentTypingUsers.length > 0 && (
+        <div className="flex gap-2 max-w-[85%] min-w-0 mr-auto items-end animate-fade-in pb-1">
+          <div className="flex -space-x-1.5 shrink-0">
+            {currentTypingUsers.map((u) => (
+              <Avatar
+                key={u.userId}
+                className="size-7 text-[8px] bg-gradient-to-br from-[#00b4d8] to-[#90e0ef] text-white shadow-sm"
+                title={u.userName}
+              >
+                {u.avatarUrl ? (
+                  <Avatar.Image alt={u.userName} src={u.avatarUrl} />
+                ) : null}
+                <Avatar.Fallback className="border-none bg-gradient-to-br from-[#00b4d8] to-[#90e0ef] text-white">
+                  {u.userName
+                    .split(" ")
+                    .map((part) => part[0])
+                    .join("")
+                    .slice(
+                      u.userName.split(" ").length - 2,
+                      u.userName.split(" ").length
+                    )
+                    .toUpperCase()}
+                </Avatar.Fallback>
+              </Avatar>
+            ))}
+          </div>
+          <div className="flex flex-col gap-0.5 min-w-0 max-w-full items-start">
+            <div
+              className={`bg-content1 border border-divider/60 rounded-2xl rounded-tl-none shadow-sm px-4 py-2.5 ${typingStyles.typingBubble}`}
+            >
+              <div className={typingStyles.typingDot}></div>
+              <div className={typingStyles.typingDot}></div>
+              <div className={typingStyles.typingDot}></div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+});
+
+MessageList.displayName = "MessageList";
+
 export function QuickChat() {
   const pathname = usePathname();
   const { user, isAuthenticated } = useUser();
@@ -569,117 +698,12 @@ export function QuickChat() {
                             <Spinner size="sm" />
                           </div>
                         )}
-                        {messages.length === 0 ? (
-                          <div className="flex h-full flex-col items-center justify-center text-center p-4">
-                            <TbBrandHipchat className="size-12 text-muted-foreground/30 mb-2" />
-                            <p className="text-xs font-semibold text-muted-foreground">
-                              Chưa có tin nhắn nào.
-                            </p>
-                            <p className="text-[10px] text-muted-foreground/60 mt-0.5">
-                              Gửi tin nhắn đầu tiên để bắt đầu trò chuyện.
-                            </p>
-                          </div>
-                        ) : (
-                          messages.map((msg, idx) => {
-                            const isMe = msg.senderId === user?.id;
-                            const badgeInfo = getRoleBadge(msg.senderRole);
-                            const showDivider =
-                              idx === 0 || isDifferentDay(msg.createdAt, messages[idx - 1].createdAt);
-
-                            return (
-                              <React.Fragment key={msg.id}>
-                                {showDivider && (
-                                  <div className="flex items-center justify-center my-3 w-full">
-                                    <div className="border-t border-divider flex-grow" />
-                                    <span className="mx-2.5 text-[9px] font-bold uppercase tracking-wide text-muted-foreground bg-content2/30 px-2.5 py-0.5 rounded-full border border-divider/40">
-                                      {formatDividerDate(msg.createdAt)}
-                                    </span>
-                                    <div className="border-t border-divider flex-grow" />
-                                  </div>
-                                )}
-                                <div
-                                  className={`flex gap-2 max-w-[85%] min-w-0 ${isMe ? "ml-auto flex-row-reverse" : "mr-auto"
-                                    }`}
-                                >
-                                  <Avatar className="size-7 shrink-0 font-semibold text-[9px]">
-                                    {msg.senderAvatarUrl && <Avatar.Image src={msg.senderAvatarUrl} />}
-                                    <Avatar.Fallback className="border-none bg-gradient-to-br from-[#00b4d8] to-[#90e0ef] text-white">
-                                      {msg.senderName.substring(0, 2).toUpperCase()}
-                                    </Avatar.Fallback>
-                                  </Avatar>
-                                  <div
-                                    className={`flex flex-col gap-0.5 min-w-0 max-w-full ${isMe ? "items-end" : "items-start"
-                                      }`}
-                                  >
-                                    {!isMe && (
-                                      <div className="flex items-center gap-1 px-1">
-                                        <span className="text-[10px] font-semibold text-foreground/80">
-                                          {msg.senderName}
-                                        </span>
-                                        <Chip
-                                          size="sm"
-                                          variant="soft"
-                                          color={badgeInfo.color}
-                                          className="h-3 text.5 text-[8px] px-1 font-bold rounded"
-                                        >
-                                          {badgeInfo.label}
-                                        </Chip>
-                                      </div>
-                                    )}
-                                    <div
-                                      className={`rounded-2xl px-3 py-1.5 shadow-sm text-xs break-words max-w-full ${isMe
-                                        ? "bg-gradient-to-tr from-sky-400 to-blue-500 text-white rounded-tr-none"
-                                        : "bg-content1 border border-divider/60 text-foreground rounded-tl-none"
-                                        }`}
-                                    >
-                                      {msg.content}
-                                    </div>
-                                    <span className="text-[8px] text-muted-foreground px-1 mt-0.5">
-                                      {formatMessageTime(msg.createdAt)}
-                                    </span>
-                                  </div>
-                                </div>
-                              </React.Fragment>
-                            );
-                          })
-                        )}
-                        {activeChatId && typingUsers[activeChatId]?.length > 0 && (
-                          <div className="flex gap-2 max-w-[85%] min-w-0 mr-auto items-end animate-fade-in pb-1">
-                            <div className="flex -space-x-1.5 shrink-0">
-                              {typingUsers[activeChatId].map((u) => (
-                                <Avatar
-                                  key={u.userId}
-                                  className="size-7 text-[8px] bg-gradient-to-br from-[#00b4d8] to-[#90e0ef] text-white shadow-sm"
-                                  title={u.userName}
-                                >
-                                  {u.avatarUrl ? (
-                                    <Avatar.Image alt={u.userName} src={u.avatarUrl} />
-                                  ) : null}
-                                  <Avatar.Fallback className="border-none bg-gradient-to-br from-[#00b4d8] to-[#90e0ef] text-white">
-                                    {u.userName
-                                      .split(" ")
-                                      .map((part) => part[0])
-                                      .join("")
-                                      .slice(
-                                        u.userName.split(" ").length - 2,
-                                        u.userName.split(" ").length
-                                      )
-                                      .toUpperCase()}
-                                  </Avatar.Fallback>
-                                </Avatar>
-                              ))}
-                            </div>
-                            <div className="flex flex-col gap-0.5 min-w-0 max-w-full items-start">
-                              <div
-                                className={`bg-content1 border border-divider/60 rounded-2xl rounded-tl-none shadow-sm px-4 py-2.5 ${typingStyles.typingBubble}`}
-                              >
-                                <div className={typingStyles.typingDot}></div>
-                                <div className={typingStyles.typingDot}></div>
-                                <div className={typingStyles.typingDot}></div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
+                        <MessageList
+                          messages={messages}
+                          userId={user?.id}
+                          activeChatId={activeChatId}
+                          currentTypingUsers={activeChatId ? typingUsers[activeChatId] : undefined}
+                        />
                         <div ref={messagesEndRef} />
                       </ScrollShadow>
                     )}
@@ -688,14 +712,15 @@ export function QuickChat() {
                   {/* Message Input Form */}
                   <div className="border-t border-divider bg-content1/10 flex flex-col shrink-0">
                     <form onSubmit={handleSend} className="px-3 py-2.5 flex items-center gap-2">
-                      <Input
+                      <input
                         ref={inputRef}
+                        type="text"
                         placeholder="Nhập tin nhắn..."
                         value={inputText}
                         onChange={(e) => handleInputChange(e.target.value)}
                         disabled={isSending}
                         autoComplete="off"
-                        className="flex-1"
+                        className="flex-grow bg-default-100/80 hover:bg-default-200/50 focus:bg-background border border-divider/50 focus:border-primary/60 rounded-xl px-3 py-2 text-sm outline-none transition-all duration-200"
                       />
                       <Button
                         type="submit"

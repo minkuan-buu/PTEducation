@@ -372,7 +372,7 @@ export default function AuthClient({ nextPath }: AuthClientProps) {
     ];
 
     return (
-        <section className="auth-page-bg relative isolate flex h-full w-full items-center justify-center overflow-hidden">
+        <section className={`auth-page-bg relative isolate flex w-full justify-center overflow-clip ${isRegistering ? 'min-h-dvh items-start py-12' : 'h-dvh items-center overflow-y-hidden'}`}>
             <div className="pointer-events-none absolute inset-0">
                 <div className="auth-glow-left absolute left-[-8%] top-[-6%] h-[34rem] w-[34rem] rounded-full blur-3xl" />
                 <div className="auth-glow-right absolute right-[-2%] top-[2%] h-[28rem] w-[28rem] rounded-full blur-3xl" />
@@ -380,17 +380,18 @@ export default function AuthClient({ nextPath }: AuthClientProps) {
                 <div className="auth-glow-top absolute left-1/2 top-[18%] h-[12rem] w-[22rem] -translate-x-1/2 rounded-full blur-3xl" />
             </div>
 
-            <div className="relative flex h-full w-full items-center justify-center">
-                <div className={`relative px-4 flex items-center justify-center ${!isRegistering ? "w-full" : "w-[85%]"}`}>
+            <div className="relative flex min-h-full w-full items-center justify-center py-12">
+                <div className="relative px-4 flex items-center justify-center w-full">
                     {/* Login Card */}
                     {!isRegistering && !isResettingPassword && (
                         <motion.div
+                            className="w-full flex justify-center"
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
                             transition={{ type: "spring", stiffness: 300, damping: 30 }}
                         >
-                            <Card className="min-w-[26vw] border border-divider/70 bg-content1/80 p-8 shadow-xl shadow-black/10 backdrop-blur-md">
+                            <Card className="w-full max-w-[520px] border border-divider/70 bg-content1/80 p-8 shadow-xl shadow-black/10 backdrop-blur-md">
                                 <form autoComplete="on" onSubmit={handleLoginSubmit}>
                                     <Fieldset className="w-full">
                                         <FieldsetLegend className="text-2xl font-bold text-foreground">PT Education</FieldsetLegend>
@@ -509,13 +510,13 @@ export default function AuthClient({ nextPath }: AuthClientProps) {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                            className="w-[85%] py-8 mx-auto"
+                            className="w-full max-w-7xl px-4 py-8 mx-auto"
                         >
                             <div className="flex flex-col items-center">
                                 <h2 className="text-3xl font-bold text-foreground mb-2">PT Education</h2>
                                 <p className="text-muted mb-6">Điền thông tin để đăng ký tài khoản mới</p>
                             </div>
-                            <div className="grid grid-cols-2 gap-8">
+                            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                                 {/* Left Card - Student Info */}
                                 <Card className="border border-divider/70 bg-content1/80 p-8 shadow-xl shadow-black/10 backdrop-blur-md">
                                     <form autoComplete="on" onSubmit={handleRegisterSubmit}>
@@ -799,12 +800,13 @@ export default function AuthClient({ nextPath }: AuthClientProps) {
                     {/* Reset Password Card */}
                     {isResettingPassword && (
                         <motion.div
+                            className="w-full flex justify-center"
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
                             transition={{ type: "spring", stiffness: 300, damping: 30 }}
                         >
-                            <Card className="min-w-[26vw] border border-divider/70 bg-content1/80 p-8 shadow-xl shadow-black/10 backdrop-blur-md">
+                            <Card className="w-full max-w-[520px] border border-divider/70 bg-content1/80 p-8 shadow-xl shadow-black/10 backdrop-blur-md">
                                 <Fieldset className="w-full">
                                     <FieldsetLegend className="text-2xl font-bold text-foreground">PT Education</FieldsetLegend>
                                     <Description className="mb-2 text-muted">Đặt lại mật khẩu</Description>

@@ -2,6 +2,7 @@ import "@/styles/globals.css";
 import { Metadata, Viewport } from "next";
 import clsx from "clsx";
 
+import { cookies } from "next/headers";
 import { Providers } from "./providers";
 
 import { siteConfig } from "@/config/site";
@@ -27,11 +28,14 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const cookieStore = await cookies();
+  const isCollapsed = cookieStore.get("sidebar_collapsed")?.value === "true";
+  const userRole = cookieStore.get("user_role")?.value || null;
   return (
     <html suppressHydrationWarning lang="en">
       <head />
@@ -43,13 +47,15 @@ export default function RootLayout({
         )}
       >
         <Providers
+          initialCollapsed={isCollapsed}
+          initialRole={userRole}
           themeProps={{
             attribute: "class",
             defaultTheme: "dark",
             enableSystem: false,
           }}
         >
-          <div className="relative flex flex-col h-screen">
+          <div className="relative flex flex-col min-h-screen">
             {/* <Navbar /> */}
             <main className="flex-grow w-full">
               {children}

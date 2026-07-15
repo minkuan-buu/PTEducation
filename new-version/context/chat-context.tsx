@@ -104,7 +104,22 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     const connection = new HubConnectionBuilder()
       .withUrl(buildChatHubUrl(), { withCredentials: true })
       .withAutomaticReconnect()
-      .configureLogging(LogLevel.Information)
+      .configureLogging({
+        log(logLevel: LogLevel, message: string) {
+          if (message.includes("stopped during negotiation")) {
+            return;
+          }
+          if (logLevel >= LogLevel.Information) {
+            if (logLevel === LogLevel.Error || logLevel === LogLevel.Critical) {
+              console.error(message);
+            } else if (logLevel === LogLevel.Warning) {
+              console.warn(message);
+            } else {
+              console.info(message);
+            }
+          }
+        }
+      })
       .build();
 
     connectionRef.current = connection;
@@ -196,18 +211,23 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     });
     connection.onclose(() => setConnectionStatus("disconnected"));
 
+    let isMounted = true;
+
     connection
       .start()
       .then(() => {
+        if (!isMounted) return;
         setConnectionStatus("connected");
         void resubscribeAllChats();
       })
       .catch((err) => {
+        if (!isMounted) return;
         console.error("[ChatHub] Connection error:", err);
         setConnectionStatus("error");
       });
 
     return () => {
+      isMounted = false;
       connection.off(CHAT_SIGNALR_EVENTS.receiveMessage, handleReceiveMessage);
       connection.off("ReceiveTypingIndicator", handleReceiveTyping);
       connectionRef.current = null;

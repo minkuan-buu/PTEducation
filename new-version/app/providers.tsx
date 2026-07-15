@@ -10,6 +10,7 @@ import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { AttendanceProvider } from "@/context/attendance-context";
 import { ChatProvider } from "@/context/chat-context";
 import { UserProvider } from "@/context/user-context";
+import { SidebarProvider } from "@/context/sidebar-context";
 import { TanStackProvider } from "@/providers/tanstack-provider";
 import { setUnauthorizedHandler, v2 } from "@/services/api";
 
@@ -29,9 +30,11 @@ if (typeof window !== "undefined") {
 export interface ProvidersProps {
   children: React.ReactNode;
   themeProps?: ThemeProviderProps;
+  initialCollapsed?: boolean;
+  initialRole?: string | null;
 }
 
-export function Providers({ children, themeProps }: ProvidersProps) {
+export function Providers({ children, themeProps, initialCollapsed, initialRole }: ProvidersProps) {
   const router = useRouter();
   const hasNotifiedRef = React.useRef(false);
   const logoutInFlightRef = React.useRef<Promise<void> | null>(null);
@@ -106,11 +109,13 @@ export function Providers({ children, themeProps }: ProvidersProps) {
   return (
     <NextThemesProvider {...themeProps}>
       <TanStackProvider>
-        <UserProvider>
+        <UserProvider initialRole={initialRole}>
           <AttendanceProvider>
             <ChatProvider>
-              <Toast.Provider placement="bottom end" />
-              {children}
+              <SidebarProvider initialCollapsed={initialCollapsed}>
+                <Toast.Provider placement="bottom end" />
+                {children}
+              </SidebarProvider>
             </ChatProvider>
           </AttendanceProvider>
         </UserProvider>
