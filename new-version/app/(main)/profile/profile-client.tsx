@@ -17,7 +17,7 @@ import {
   Button,
   useOverlayState,
 } from "@heroui/react";
-import { Mail, Phone, MapPin, Shield, GraduationCap, User as UserIcon, Award, Calendar, BookOpen, Users } from "lucide-react";
+import { Mail, Phone, MapPin, Shield, GraduationCap, User as UserIcon, Award, Calendar, BookOpen, Users, MessageSquare } from "lucide-react";
 import { FaCamera } from "react-icons/fa";
 import ModalEditStudent from "@/components/users/modal-edit-student";
 import ModalChangePassword from "@/components/users/modal-change-password";
@@ -282,6 +282,14 @@ export default function ProfileClient() {
     );
   };
 
+  const handleMessageClick = () => {
+    if (!profileData?.id) return;
+    const event = new CustomEvent("trigger-quick-chat", {
+      detail: { targetUserId: profileData.id }
+    });
+    window.dispatchEvent(event);
+  };
+
   const showOverlay = isHovered || uploadAvatarMutation.isPending;
   const avatarStyle = {
     WebkitMaskImage: `radial-gradient(circle at var(--mask-center) var(--mask-center), transparent var(--mask-radius), black calc(var(--mask-radius) + 0.5px))`,
@@ -361,6 +369,17 @@ export default function ProfileClient() {
                 <Chip color="accent" variant="soft">
                   Chế độ Quản trị viên
                 </Chip>
+              )}
+
+              {isAdminOrManager && profileData && profileData.id !== user?.id && (
+                <Button
+                  variant="primary"
+                  className="bg-accent text-white"
+                  onPress={handleMessageClick}
+                >
+                  <MessageSquare className="mr-2 h-4 w-4" />
+                  Nhắn tin
+                </Button>
               )}
 
               <Button

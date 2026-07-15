@@ -150,6 +150,39 @@ export function QuickChat() {
   // Auto-hide on /chat route
   const isChatRoute = pathname === "/chat" || pathname?.startsWith("/chat/");
 
+  // Listen to profile private chat triggers
+  React.useEffect(() => {
+    const handleTriggerChat = async (e: Event) => {
+      const customEvent = e as CustomEvent<{ targetUserId: string }>;
+      const targetUserId = customEvent.detail?.targetUserId;
+      if (!targetUserId) return;
+
+      setIsOpen(true);
+      setIsContactsOpen(false);
+      setIsCreatingChat(true);
+
+      try {
+        const newChatId = await getOrCreatePrivateChat(targetUserId);
+        if (newChatId) {
+          await refetchChats();
+          setActiveChatId(newChatId);
+        } else {
+          toast.danger("Không thể tạo phòng chat riêng.");
+        }
+      } catch (err) {
+        console.error(err);
+        toast.danger("Có lỗi xảy ra khi bắt đầu cuộc trò chuyện.");
+      } finally {
+        setIsCreatingChat(false);
+      }
+    };
+
+    window.addEventListener("trigger-quick-chat", handleTriggerChat);
+    return () => {
+      window.removeEventListener("trigger-quick-chat", handleTriggerChat);
+    };
+  }, [setActiveChatId, refetchChats]);
+
   // Fetch support contacts (only if student or guardian)
   const isStudentOrGuardian =
     user && (user.role?.toLowerCase() === "student" || user.role?.toLowerCase() === "guardian");

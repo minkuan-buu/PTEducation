@@ -2,9 +2,12 @@
 
 import { useState, useMemo } from "react";
 import { useManagers } from "@/hooks/users/use-get-managers";
-import { Table, Pagination, Spinner, Chip } from "@heroui/react";
+import { Table, Pagination, Spinner, Chip, Tooltip, Button } from "@heroui/react";
+import { useRouter } from "next/navigation";
+import { Icon } from "@iconify/react";
 
 export function TeachersTab() {
+    const router = useRouter();
     const [pageIndex, setPageIndex] = useState(1);
     const { data, isLoading } = useManagers({ pageIndex, keyword: "" });
 
@@ -41,6 +44,7 @@ export function TeachersTab() {
                             <Table.Column id="email">Email</Table.Column>
                             <Table.Column id="phone">Điện thoại</Table.Column>
                             <Table.Column id="status">Trạng thái</Table.Column>
+                            <Table.Column id="actions">Thao tác</Table.Column>
                         </Table.Header>
 
                         <Table.Body items={tableData}>
@@ -54,6 +58,16 @@ export function TeachersTab() {
                                         <Chip color={getStatusColor(item.status) as any} variant="soft" size="sm">
                                             <Chip.Label>{item.status}</Chip.Label>
                                         </Chip>
+                                    </Table.Cell>
+                                    <Table.Cell>
+                                        <Tooltip delay={0}>
+                                            <Button className="rounded-full" size="md" variant="outline" onPress={() => router.push(`/profile?id=${item.id}`)}>
+                                                <Icon icon="lucide:info" width="1024" height="1024" />
+                                                <Tooltip.Content placement="bottom">
+                                                    <p>Thông tin chi tiết</p>
+                                                </Tooltip.Content>
+                                            </Button>
+                                        </Tooltip>
                                     </Table.Cell>
                                 </Table.Row>
                             )}
