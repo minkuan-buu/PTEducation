@@ -132,10 +132,24 @@ export async function updateClass(classId: string, payload: UpdateClassPayload) 
 }
 
 export async function deleteClass(classId: string) {
-  const response = await api.delete<
-    ClassData[] | ApiListResponse<ClassData> | ApiResponse<ClassData[]>
-  >(`/admin/classes/${classId}`);
-  return normalizeClasses(response.data);
+  const response = await api.delete<ApiResponse<{ message: string }>>(
+    `/classes/${encodeURIComponent(classId)}`,
+  );
+  return response.data;
+}
+
+export async function hardDeleteClass(classId: string) {
+  const response = await api.delete<ApiResponse<{ message: string }>>(
+    `/classes/${encodeURIComponent(classId)}/hard`,
+  );
+  return response.data;
+}
+
+export async function restoreClass(classId: string) {
+  const response = await api.patch<ApiResponse<{ message: string }>>(
+    `/classes/${encodeURIComponent(classId)}/restore`,
+  );
+  return response.data;
 }
 
 export async function getClassDetails(classId: string) {

@@ -500,7 +500,7 @@ export default function ClassClient() {
                         classItem.status === "Active" ? "primary" : "secondary"
                       }
                     >
-                      {classItem.status === "Active" ? "Hoạt động" : "Vô hiệu"}
+                      {classItem.status === "Active" ? "Hoạt động" : "Vô hiệu hóa"}
                     </Chip>
                   </div>
                   <div className="text-sm text-muted">
@@ -535,19 +535,21 @@ export default function ClassClient() {
                   </div>
                   <div>Tạo bởi: {classItem.createdBy?.name ?? "-"}</div>
                   <Tooltip>
-                    <Button
-                      variant="secondary"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        handleDelete(classItem.id);
-                      }}
-                    >
-                      <Icon
-                        icon="mingcute:delete-2-fill"
-                        width="20"
-                        height="20"
-                      />
-                    </Button>
+                    {classItem.status === "Active" && (
+                      <Button
+                        variant="secondary"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleDelete(classItem.id);
+                        }}
+                      >
+                        <Icon
+                          icon="mingcute:delete-2-fill"
+                          width="20"
+                          height="20"
+                        />
+                      </Button>
+                    )}
                     <Tooltip.Content placement="bottom">
                       <p>Xóa lớp</p>
                     </Tooltip.Content>
