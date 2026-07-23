@@ -291,12 +291,12 @@ export default function ClassClient() {
     if (!confirm("Bạn có chắc chắn muốn xóa lớp học này?")) return;
     try {
       await v2.deleteClass(classId);
-      // await loadClasses();
+      await queryClient.invalidateQueries({ queryKey: ["classes", "pagination"] });
     } catch (err) {
       console.error("Error deleting class:", err);
       alert("Có lỗi xảy ra khi xóa lớp học.");
     }
-  }, []);
+  }, [queryClient]);
 
   const handleCloseModal = () => {
     resetForm();
